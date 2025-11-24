@@ -1,6 +1,6 @@
 Purpose of the Script
 
-drugbank_to_html_2_beta
+drugbank_to_html_2
 
 
 The script is an automated DrugBank → Pharmaoffer HTML generator.
