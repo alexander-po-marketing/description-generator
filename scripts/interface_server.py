@@ -100,7 +100,7 @@ def build_command(options: dict) -> list[str]:
 
     command = [
         sys.executable,
-        str(REPO_ROOT / "src" / "main.py"),
+        "-m", "src.main",
         "--xml-path",
         str(xml_path),
         "--output-database-json",
