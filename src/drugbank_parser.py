@@ -20,6 +20,7 @@ from src.models import (
     Dosage,
     DrugData,
     DrugInteraction,
+    ExternalIdentifier,
     GeneralReferences,
     Patent,
     ReferenceArticle,
@@ -176,9 +177,9 @@ class DrugbankParser:
             self._parse_calculated_properties(drug_el, handled_tags)
         )
 
-        packagers = text_field("packagers")
-        manufacturers = text_field("manufacturers")
-        external_identifiers = text_field("external-identifiers")
+        packagers = self._parse_packagers(drug_el, handled_tags)
+        manufacturers = self._parse_manufacturers(drug_el, handled_tags)
+        external_identifiers = self._parse_external_identifiers(drug_el, handled_tags)
 
         raw_fields = self._capture_raw_fields(drug_el, handled_tags)
 
@@ -228,11 +229,8 @@ class DrugbankParser:
             synthesis_reference=synthesis_reference,
             scientific_articles=scientific_articles,
             general_references=GeneralReferences(
-                articles=scientific_articles,
                 links=general_links,
             ),
-            references=scientific_articles,
-            external_links=regulatory_links,
             packagers=packagers,
             manufacturers=manufacturers,
             external_identifiers=external_identifiers,
@@ -500,6 +498,58 @@ class DrugbankParser:
             )
 
         return scientific_articles, general_links
+
+    def _parse_packagers(self, drug_el: etree._Element, handled: Set[str]) -> List[str]:
+        if not self._want("packagers"):
+            return []
+        handled.add("packagers")
+        packagers_el = _first_match(drug_el, "packagers")
+        if not packagers_el:
+            return []
+
+        packagers: List[str] = []
+        for packager_el in _iter_matches(packagers_el, "packager"):
+            name = _text(_first_match(packager_el, "name")) or _text(packager_el)
+            if name:
+                packagers.append(name)
+        return packagers
+
+    def _parse_manufacturers(self, drug_el: etree._Element, handled: Set[str]) -> List[str]:
+        if not self._want("manufacturers"):
+            return []
+        handled.add("manufacturers")
+        manufacturers_el = _first_match(drug_el, "manufacturers")
+        if not manufacturers_el:
+            return []
+
+        manufacturers: List[str] = []
+        for manufacturer_el in _iter_matches(manufacturers_el, "manufacturer"):
+            name = _text(manufacturer_el)
+            if name:
+                manufacturers.append(name)
+        return manufacturers
+
+    def _parse_external_identifiers(
+        self, drug_el: etree._Element, handled: Set[str]
+    ) -> List[ExternalIdentifier]:
+        if not self._want("external-identifiers"):
+            return []
+        handled.add("external-identifiers")
+
+        identifiers: List[ExternalIdentifier] = []
+        identifiers_el = _first_match(drug_el, "external-identifiers")
+        if not identifiers_el:
+            return []
+
+        for identifier_el in _iter_matches(identifiers_el, "external-identifier"):
+            resource = _text(_first_match(identifier_el, "resource"))
+            identifier_value = _text(_first_match(identifier_el, "identifier"))
+            if resource or identifier_value:
+                identifiers.append(
+                    ExternalIdentifier(resource=resource, identifier=identifier_value)
+                )
+
+        return identifiers
 
     def _parse_calculated_properties(
         self, drug_el: etree._Element, handled: Set[str]
