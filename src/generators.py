@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict, is_dataclass
 from textwrap import dedent
 from typing import Dict
 
@@ -11,8 +12,10 @@ from src.models import DrugData
 def _format_optional(value) -> str:
     if value is None:
         return "Not specified"
+    if is_dataclass(value):
+        value = asdict(value)
     if isinstance(value, list):
-        return ", ".join(value) if value else "Not specified"
+        return ", ".join(_format_optional(item) for item in value) if value else "Not specified"
     if isinstance(value, dict):
         return "; ".join(f"{k}: {v}" for k, v in value.items()) if value else "Not specified"
     return str(value)
