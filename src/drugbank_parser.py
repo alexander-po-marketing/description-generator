@@ -114,6 +114,18 @@ class DrugbankParser:
             drugbank_id = self._primary_id(drug_el)
             if not drugbank_id:
                 continue
+            if kind == "Molecular Formula":
+                molecular_formula = value
+            elif kind == "Molecular Weight":
+                molecular_weight = _to_float(value)
+            elif kind == "logP":
+                logp = value
+            elif kind == "Water Solubility":
+                water_solubility = value
+            elif kind == "Melting Point":
+                melting_point = value
+            elif kind == "SMILES":
+                smiles = value
 
             if self.config.valid_drug_ids and drugbank_id not in self.config.valid_drug_ids:
                 continue
