@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DrugBank Description Generator Controller</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <header class="hero">
+        <div>
+            <p class="eyebrow">Interactive control panel</p>
+            <h1>DrugBank → Pharmaoffer description pipeline</h1>
+            <p class="lede">
+                Configure OpenAI credentials, choose DrugBank XML sources, align output folders, and launch the generator without
+                memorizing command-line flags. The interface wraps the existing CLI, keeping outputs compatible with the
+                documented JSON and XML artifacts.
+            </p>
+            <div class="hero-actions">
+                <button type="button" id="refresh-files" class="ghost">Refresh file suggestions</button>
+                <span class="hint">Serve this page with <code>python scripts/interface_server.py</code>.</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="layout">
+        <section class="card wide">
+            <h2>Repository layout</h2>
+            <p>Suggested folders for interactive runs:</p>
+            <ul class="pill-list">
+                <li><strong>inputs/</strong> – DrugBank XML, valid-drug ID lists</li>
+                <li><strong>outputs/</strong> – <code>database.json</code>, <code>api_descriptions.json</code>, <code>api_descriptions.xml</code></li>
+                <li><strong>logs/</strong> – prompt logs and pipeline logs</li>
+                <li><strong>cache/</strong> – any scratch data created by experiments</li>
+                <li><strong>scripts/</strong> – the local web server and helper utilities</li>
+                <li><strong>interface/</strong> – this UI and its assets</li>
+            </ul>
+            <p class="hint">File pickers below suggest paths from these folders and the repository root.</p>
+        </section>
+
+        <section class="card">
+            <h2>OpenAI credentials &amp; model settings</h2>
+            <form id="credentials-form" class="stack">
+                <div class="field-grid">
+                    <label>API key
+                        <input type="password" id="api-key" name="apiKey" autocomplete="off" placeholder="sk-..." />
+                    </label>
+                    <label>Organization ID
+                        <input type="text" id="org-id" name="orgId" autocomplete="off" placeholder="Optional" />
+                    </label>
+                    <label>Project ID
+                        <input type="text" id="project-id" name="projectId" autocomplete="off" placeholder="Optional" />
+                    </label>
+                </div>
+                <div class="field-grid">
+                    <label>Model
+                        <input type="text" id="model" name="model" value="gpt-5.1-chat-latest" />
+                    </label>
+                    <label>Summary model
+                        <input type="text" id="summary-model" name="summaryModel" value="gpt-4o-mini" />
+                    </label>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Input &amp; output locations</h2>
+            <form id="paths-form" class="stack">
+                <div class="field-grid">
+                    <label>DrugBank XML
+                        <input type="text" id="xml-path" list="xml-suggestions" placeholder="inputs/drugbank.xml" />
+                    </label>
+                    <label>Existing database JSON (continue runs)
+                        <input type="text" id="database-path" list="json-suggestions" placeholder="outputs/database.json" value="outputs/database.json" />
+                    </label>
+                </div>
+                <div class="field-grid">
+                    <label>Descriptions JSON output
+                        <input type="text" id="descriptions-json" list="json-suggestions" placeholder="outputs/api_descriptions.json" value="outputs/api_descriptions.json" />
+                    </label>
+                    <label>Descriptions XML output
+                        <input type="text" id="descriptions-xml" list="xml-suggestions" placeholder="outputs/api_descriptions.xml" value="outputs/api_descriptions.xml" />
+                    </label>
+                </div>
+                <div class="field-grid">
+                    <label>Description prompt log
+                        <input type="text" id="description-log" list="log-suggestions" placeholder="logs/description_prompts.log" value="logs/description_prompts.log" />
+                    </label>
+                    <label>Summary prompt log
+                        <input type="text" id="summary-log" list="log-suggestions" placeholder="logs/summary_prompts.log" value="logs/summary_prompts.log" />
+                    </label>
+                </div>
+                <datalist id="xml-suggestions"></datalist>
+                <datalist id="json-suggestions"></datalist>
+                <datalist id="log-suggestions"></datalist>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Pipeline options</h2>
+            <form id="options-form" class="stack">
+                <div class="field-grid">
+                    <label>Valid DrugBank IDs (comma-separated)
+                        <input type="text" id="valid-ids" placeholder="DB0001, DB0002" />
+                    </label>
+                    <label>Valid IDs file
+                        <input type="text" id="valid-ids-file" list="text-suggestions" placeholder="inputs/valid_ids.txt" />
+                    </label>
+                    <label>Max drugs
+                        <input type="number" id="max-drugs" min="1" placeholder="Optional" />
+                    </label>
+                </div>
+                <div class="field-grid">
+                    <label>Log level
+                        <select id="log-level">
+                            <option value="DEBUG">DEBUG</option>
+                            <option value="INFO" selected>INFO</option>
+                            <option value="WARNING">WARNING</option>
+                            <option value="ERROR">ERROR</option>
+                        </select>
+                    </label>
+                    <label class="checkbox">
+                        <input type="checkbox" id="overwrite" /> Allow overwriting existing outputs
+                    </label>
+                    <label class="checkbox">
+                        <input type="checkbox" id="continue" /> Continue if outputs already exist
+                    </label>
+                </div>
+                <datalist id="text-suggestions"></datalist>
+            </form>
+        </section>
+
+        <section class="card wide">
+            <div class="toolbar">
+                <div>
+                    <h2>Run generator</h2>
+                    <p class="hint">Settings above are serialized into a single request to the local server.</p>
+                </div>
+                <button id="run-button" class="primary">Run pipeline</button>
+            </div>
+            <pre id="status" class="status" aria-live="polite">Waiting to start…</pre>
+        </section>
+    </main>
+
+    <template id="status-template">
+        <div class="status-block">
+            <p class="status-header"></p>
+            <pre class="status-body"></pre>
+        </div>
+    </template>
+
+    <script src="app.js"></script>
+</body>
+</html>
