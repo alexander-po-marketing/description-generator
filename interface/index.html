@@ -68,26 +68,26 @@
             <form id="paths-form" class="stack">
                 <div class="field-grid">
                     <label>DrugBank XML
-                        <input type="text" id="xml-path" list="xml-suggestions" placeholder="inputs/drugbank.xml" />
+                        <input type="text" id="xml-path" list="xml-suggestions" placeholder="drugbank.xml" value="drugbank.xml" />
                     </label>
                     <label>Existing database JSON (continue runs)
-                        <input type="text" id="database-path" list="json-suggestions" placeholder="outputs/database.json" value="outputs/database.json" />
+                        <input type="text" id="database-path" list="json-suggestions" placeholder="database.json" value="database.json" />
                     </label>
                 </div>
                 <div class="field-grid">
                     <label>Descriptions JSON output
-                        <input type="text" id="descriptions-json" list="json-suggestions" placeholder="outputs/api_descriptions.json" value="outputs/api_descriptions.json" />
+                        <input type="text" id="descriptions-json" list="json-suggestions" placeholder="api_descriptions.json" value="api_descriptions.json" />
                     </label>
                     <label>Descriptions XML output
-                        <input type="text" id="descriptions-xml" list="xml-suggestions" placeholder="outputs/api_descriptions.xml" value="outputs/api_descriptions.xml" />
+                        <input type="text" id="descriptions-xml" list="xml-suggestions" placeholder="api_descriptions.xml" value="api_descriptions.xml" />
                     </label>
                 </div>
                 <div class="field-grid">
                     <label>Description prompt log
-                        <input type="text" id="description-log" list="log-suggestions" placeholder="logs/description_prompts.log" value="logs/description_prompts.log" />
+                        <input type="text" id="description-log" list="log-suggestions" placeholder="description_prompts.log" value="description_prompts.log" />
                     </label>
                     <label>Summary prompt log
-                        <input type="text" id="summary-log" list="log-suggestions" placeholder="logs/summary_prompts.log" value="logs/summary_prompts.log" />
+                        <input type="text" id="summary-log" list="log-suggestions" placeholder="summary_prompts.log" value="summary_prompts.log" />
                     </label>
                 </div>
                 <datalist id="xml-suggestions"></datalist>
@@ -101,10 +101,10 @@
             <form id="options-form" class="stack">
                 <div class="field-grid">
                     <label>Valid DrugBank IDs (comma-separated)
-                        <input type="text" id="valid-ids" placeholder="DB0001, DB0002" />
+                        <input type="text" id="valid-ids" placeholder="DB0001, DB0002" value="DB14596"/>
                     </label>
                     <label>Valid IDs file
-                        <input type="text" id="valid-ids-file" list="text-suggestions" placeholder="inputs/valid_ids.txt" />
+                        <input type="text" id="valid-ids-file" list="text-suggestions" placeholder="valid_ids.txt" />
                     </label>
                     <label>Max drugs
                         <input type="number" id="max-drugs" min="1" placeholder="Optional" />
