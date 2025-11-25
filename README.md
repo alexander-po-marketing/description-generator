@@ -1,207 +1,56 @@
-Purpose of the Script
-
-drugbank_to_html_2
-
-
-The script is an automated DrugBank → Pharmaoffer HTML generator.
-
-It takes a DrugBank XML dump, extracts selected fields (name, CAS, pharmacodynamics, MOA, categories, products, etc.), then uses OpenAI models to:
-
-Generate a 250–300-word SEO-optimized API description (HTML <p> block).
-
-Generate a 1–2 sentence pharmaceutical summary.
-
-Build structured HTML blocks (Identification, Pharmacology, Taxonomy, References).
-
-Export everything into:
-
-database.json — raw parsed drug data.
-
-api_descriptions.json — final HTML output.
-
-api_descriptions.xml — XML version.
-
-Separate text logs of prompts for debugging.
-
-This script is meant for automatically generating full API product-page content for Pharmaoffer.
-
-High-Level Flow (Simple Version)
-
-Load DrugBank XML
-Parse using lxml.etree.
-
-Extract only the needed drugs
-Controlled by valid_drugs = {"DB13928"}.
-You can expand this to process hundreds of APIs.
-
-Extract specific fields
-Using desired_fields. The parser also includes custom logic for:
-
-groups
-
-classification
-
-products (first 5)
-
-international brands
-
-categories
-
-general references
-
-external links
-
-Save raw extracted data → database.json
-
-For each drug:
-
-Build a structured prompt
-
-Call OpenAI GPT-5.1 → generate description
-
-Call GPT-5-mini → generate summary
-
-Build the final HTML with multiple sections
-
-Clean it up (remove bracketed refs)
-
-Save final output
-→ JSON & XML.
-
-Detailed “What Each Part Does” (Codex-Friendly)
-1. Config + OpenAI Client Setup
-
-Holds API keys, org, project.
-Codex could abstract this into env vars.
-
-2. Field Definitions
-
-valid_drugs → restrict which DrugBank IDs to process.
-desired_fields → whitelist of XML fields to extract.
-
-Codex could convert this into config files.
-
-3. parse_drugbank_xml() — Extracts clean drug data
-
-Reads the XML, isolates <drug> nodes, and builds a Python dict.
-
-Special logic for nested structures:
-
-<groups><group>…
-
-<classification><class-level>
-
-<international-brands>
-
-<categories>
-
-<products> (takes only up to 5 names)
-
-<general-references> → cleans citations
-
-<external-links> → maps titles + URLs
-
-Output:
-{ "DB13928": { "name": "...", "indication": "...", ... } }
-
-4. Prompt Builders
-
-generate_prompt(drug_info)
-Creates a structured OpenAI prompt using extracted fields.
-
-save_prompt_to_file()
-Logs prompts for debugging.
-
-5. OpenAI Description Generation
-
-generate_description()
-Calls gpt-5.1 with:
-
-Developer message: persona (PhD pharma scientist)
-
-User message: structured field list
-
-Generates:
-
-250–300 word <p> description
-
-Retries up to 3 times.
-
-6. Summary Generation
-
-generate_summary()
-Calls gpt-5-mini to create a punchy 1–2 sentence summary.
-
-7. HTML Block Builders
-
-Identification
-
-Pharmacology
-
-Chemical taxonomy
-
-General references table
-
-External links table
-
-These convert the structured drug data into proper HTML <section> blocks.
-
-Codex could rewrite this into components or templates.
-
-8. Final HTML Assembly
-
-generate_final_html() merges:
-
-Main description
-
-Summary
-
-Identification, Taxonomy, Pharmacology
-
-References
-
-External links
-
-Then strips bracket annotations (DrugBank references).
-Returns full HTML ready for publishing.
-
-9. Exporters
-
-generate_xml_output()
-Creates <drugs><drug><name>…</name><description>…</description></drug></drugs>.
-
-The script also writes:
-
-database.json
-
-api_descriptions.json
-
-10. CLI Entry Point: main()
-
-Asks user for XML file path
-
-Parses XML
-
-Generates JSON, HTML, XML
-
-Prints progress through tqdm
-
-Codex could remove CLI input and replace with function arguments.
-
-Why This Script Exists
-
-It solves the full pipeline of turning raw DrugBank XML into ready-to-publish Pharmaoffer API pages automatically.
-
-Instead of manually writing 300-word scientific descriptions for hundreds of APIs, this system:
-
-auto-extracts data
-
-auto-generates expert descriptions
-
-auto-generates summaries
-
-auto-generates structured HTML
-
-auto-saves everything to JSON/XML for CMS ingestion
-
-Basically: DrugBank → AI → final product page content.
+# DrugBank Description Generator
+
+This repository contains an experimental pipeline that converts a DrugBank XML export into structured drug data and AI-generated HTML descriptions for Pharmaoffer product pages. The original prototype lives in `scripts/drugbank_to_html_2.py`; new scaffolding adds a clearer repository layout plus a static interface to configure runs.
+
+## Repository layout
+
+- `interface/` – Static HTML/JS/CSS for configuring credentials, file paths, and pipeline options.
+- `inputs/` – Source files such as DrugBank XML drops and optional valid-drug ID lists.
+  - `inputs/drugbank/database_part_1.xml` – Sample XML fragment from the legacy repository.
+- `outputs/` – Targets for generated `database.json`, `api_descriptions.json`, and `api_descriptions.xml`.
+- `logs/` – Text logs from CLI runs and the helper server.
+- `cache/` – Temporary artifacts (model caches, parsed chunks, etc.).
+- `scripts/` – Python entry points and helpers, including the legacy generator and a lightweight interface server.
+
+This layout keeps inputs, outputs, transient cache data, logs, and browser assets clearly separated while preserving the legacy script.
+
+## Interface
+
+1. Start the helper API in a terminal:
+   ```bash
+   python scripts/interface_server.py --port 8000
+   ```
+2. Serve the interface (any static server works) or open it directly via file://:
+   ```bash
+   cd interface && python -m http.server 4173
+   ```
+3. In your browser, open `http://localhost:4173` (or open `interface/index.html` directly) and configure:
+   - OpenAI API key, org, and project.
+   - Model settings (model name, temperature, max tokens).
+   - Paths for the DrugBank XML, existing database JSON, and description outputs.
+   - Pipeline options such as valid drug IDs (list or file), max drug count, cache path, and log level.
+   - Whether to overwrite or continue when outputs already exist.
+4. Click **Run Generator** to POST your configuration to the helper API. The panel returns the CLI stdout/stderr so you can monitor status and logs.
+
+## CLI wrapper
+
+`scripts/run_pipeline.py` is a placeholder CLI that mirrors the options exposed by the interface and writes configuration/log messages to `logs/pipeline_run.log`. Replace the stubbed `execute_pipeline` function with the real parsing and OpenAI generation logic when the refactor is ready.
+
+Example dry-run invocation:
+```bash
+python scripts/run_pipeline.py \
+  --xml-path inputs/drugbank/database_part_1.xml \
+  --database-json outputs/database.json \
+  --descriptions-json outputs/api_descriptions.json \
+  --descriptions-xml outputs/api_descriptions.xml \
+  --valid-drug-ids DB13928 \
+  --max-drugs 5 \
+  --log-level DEBUG \
+  --dry-run
+```
+
+## Notes
+
+- Secrets are never stored; supply OpenAI credentials at runtime via the interface or CLI arguments.
+- The helper server uses permissive CORS headers so the static interface can run from `file://` or any localhost port.
+- Existing log and cache folders are created automatically by the CLI wrapper.

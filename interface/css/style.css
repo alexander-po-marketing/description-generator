@@ -1,0 +1,163 @@
+:root {
+  --primary: #1f6feb;
+  --surface: #0d1117;
+  --surface-alt: #161b22;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --border: #30363d;
+  --success: #2ea043;
+  --warning: #c69026;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+}
+
+h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+main {
+  padding: 1.5rem 2rem 3rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.panel {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.panel h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.panel p {
+  color: var(--muted);
+  margin-top: 0;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+input, select, textarea, button {
+  font: inherit;
+}
+
+input, select, textarea {
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #0b1624;
+  color: var(--text);
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.grid {
+  display: grid;
+  gap: 0.75rem 1rem;
+}
+
+.two-col {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.three-col {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.choice-row {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  font-weight: 700;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+button:hover { transform: translateY(-1px); }
+button:active { transform: translateY(0); }
+
+#status {
+  flex: 1;
+  min-height: 1.5rem;
+  color: var(--muted);
+}
+
+#logOutput {
+  background: #0b1624;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  min-height: 160px;
+  color: #c9d1d9;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.code-inline {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  background: #111821;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+@media (max-width: 720px) {
+  header, main { padding: 1rem; }
+}

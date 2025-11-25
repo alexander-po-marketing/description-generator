@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DrugBank Description Generator</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>DrugBank Description Generator</h1>
+    <p class="subtitle">Configure OpenAI credentials, select inputs/outputs, and launch the pipeline.</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>OpenAI Credentials</h2>
+      <div class="grid two-col">
+        <label>API Key
+          <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off">
+        </label>
+        <label>Organization
+          <input type="text" id="apiOrg" placeholder="org_...">
+        </label>
+        <label>Project
+          <input type="text" id="apiProject" placeholder="project_...">
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Model Settings</h2>
+      <div class="grid three-col">
+        <label>Model
+          <input type="text" id="model" list="modelOptions" value="gpt-4o">
+          <datalist id="modelOptions">
+            <option value="gpt-4o"></option>
+            <option value="gpt-4o-mini"></option>
+            <option value="gpt-3.5-turbo"></option>
+          </datalist>
+        </label>
+        <label>Temperature
+          <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.4">
+        </label>
+        <label>Max Tokens
+          <input type="number" id="maxTokens" min="128" max="8192" step="64" value="1024">
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Input &amp; Output Files</h2>
+      <div class="grid two-col">
+        <label>DrugBank XML
+          <input type="text" id="xmlPath" list="xmlSuggestions" placeholder="inputs/drugbank/database.xml">
+          <datalist id="xmlSuggestions"></datalist>
+        </label>
+        <label>Existing Database JSON
+          <input type="text" id="databaseJson" list="databaseSuggestions" placeholder="outputs/database.json">
+          <datalist id="databaseSuggestions"></datalist>
+        </label>
+        <label>Descriptions JSON
+          <input type="text" id="descriptionsJson" list="descJsonSuggestions" placeholder="outputs/api_descriptions.json">
+          <datalist id="descJsonSuggestions"></datalist>
+        </label>
+        <label>Descriptions XML
+          <input type="text" id="descriptionsXml" list="descXmlSuggestions" placeholder="outputs/api_descriptions.xml">
+          <datalist id="descXmlSuggestions"></datalist>
+        </label>
+      </div>
+      <div class="choice-row">
+        <span>When outputs exist:</span>
+        <label><input type="radio" name="outputPolicy" value="overwrite" checked> Overwrite</label>
+        <label><input type="radio" name="outputPolicy" value="continue"> Continue</label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Pipeline Options</h2>
+      <div class="grid two-col">
+        <label>Valid Drug IDs (comma-separated)
+          <textarea id="validDrugIds" placeholder="DB0001,DB13928"></textarea>
+        </label>
+        <label>Valid Drug IDs File
+          <input type="text" id="validDrugFile" placeholder="inputs/drugbank/valid_drug_ids.txt">
+        </label>
+        <label>Max Drugs to Process
+          <input type="number" id="maxDrugs" min="1" step="1" placeholder="Optional limit">
+        </label>
+        <label>Log Level
+          <select id="logLevel">
+            <option value="DEBUG">DEBUG</option>
+            <option value="INFO" selected>INFO</option>
+            <option value="WARNING">WARNING</option>
+            <option value="ERROR">ERROR</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+        </label>
+        <label>Cache Directory
+          <input type="text" id="cacheDir" placeholder="cache">
+        </label>
+        <label>Log File
+          <input type="text" id="logFile" placeholder="logs/pipeline_run.log">
+        </label>
+      </div>
+      <div class="choice-row">
+        <label><input type="checkbox" id="dryRun"> Validate configuration only (dry-run)</label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Backend Target</h2>
+      <p>Start <code>python scripts/interface_server.py --port 8000</code> locally, then run the generator from this page.</p>
+      <div class="grid two-col">
+        <label>API Endpoint
+          <input type="text" id="apiEndpoint" value="http://localhost:8000/api/run">
+        </label>
+      </div>
+    </section>
+
+    <section class="panel actions">
+      <button id="runButton">Run Generator</button>
+      <button id="resetButton" class="secondary">Reset Form</button>
+      <div id="status" aria-live="polite"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Run Log</h2>
+      <pre id="logOutput">Waiting for a run...</pre>
+    </section>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
