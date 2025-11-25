@@ -69,13 +69,20 @@ class PipelineConfig:
             "classification",
             "categories",
             "groups",
+            "food-interactions",
+            "atc-codes",
+            "dosages",
+            "patents",
+            "targets",
+            "drug-interactions",
+            "synthesis-reference",
+            "products",
             "packagers",
             "manufacturers",
             "external-identifiers",
             "external-links",
             "general-references",
             "international-brands",
-            "products",
         }
     )
 
