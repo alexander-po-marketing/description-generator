@@ -20,7 +20,7 @@ outputs/    # database.json, api_descriptions.json, api_descriptions.xml
 logs/       # prompt logs and pipeline logs
 cache/      # scratch directory for experiments
 scripts/    # helpers including the interface HTTP server
-interface/  # app.js + styles.css UI assets referenced by the root index.html
+interface/  # index.html + UI assets served by the interface HTTP server
 src/        # core pipeline modules and CLI entrypoint
 ```
 
@@ -54,7 +54,7 @@ src/        # core pipeline modules and CLI entrypoint
 
 ## Interactive web interface
 
-The root `/index.html` UI wraps the CLI with a simple control panel to set credentials, browse repository files, pick output targets, and launch runs from the browser.
+The `/interface/index.html` UI wraps the CLI with a simple control panel to set credentials, browse repository files, pick output targets, and launch runs from the browser.
 
 1. Start the local server:
 
@@ -62,7 +62,7 @@ The root `/index.html` UI wraps the CLI with a simple control panel to set crede
    python scripts/interface_server.py --host 0.0.0.0 --port 8000
    ```
 
-2. Open http://localhost:8000/ in your browser.
+2. Open http://localhost:8000/ in your browser. (The server now serves the `interface/` directory as its static root.)
 
 The UI suggests paths from `inputs/`, `outputs/`, and `logs/`, exposes overwrite/continue safeguards, and displays stdout/stderr from the underlying CLI run.
 
