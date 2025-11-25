@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import html
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
-from models import DrugData, GeneratedContent
+from src.models import DrugData, GeneratedContent
 
 
 def _dl(entries: List[Tuple[str, str]]) -> str:
@@ -94,4 +94,3 @@ def render_html(drug: DrugData, generated: GeneratedContent) -> str:
         part for part in [identification, taxonomy, pharmacology, references] if part
     )
     return f"<h3>General Description</h3>{description}{sections}"
-

@@ -7,8 +7,8 @@ from typing import Dict, List, Optional
 
 from lxml import etree
 
-from config import PipelineConfig
-from models import DrugData
+from src.config import PipelineConfig
+from src.models import DrugData
 
 logger = logging.getLogger(__name__)
 

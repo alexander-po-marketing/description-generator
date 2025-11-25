@@ -21,6 +21,7 @@ logs/       # prompt logs and pipeline logs
 cache/      # scratch directory for experiments
 scripts/    # helpers including the interface HTTP server
 interface/  # app.js + styles.css UI assets referenced by the root index.html
+src/        # core pipeline modules and CLI entrypoint
 ```
 
 ## Quickstart (CLI)
@@ -37,7 +38,7 @@ interface/  # app.js + styles.css UI assets referenced by the root index.html
 2. **Run the generator**
 
    ```bash
-   python drugbank_to_html_2.py \
+   python src/main.py \
      --xml-path inputs/drugbank.xml \
      --output-database-json outputs/database.json \
      --output-descriptions-json outputs/api_descriptions.json \
