@@ -18,8 +18,32 @@ BROWSER_URL = f"http://localhost:{DEFAULT_PORT}/"
 
 
 def find_chrome() -> list[str] | None:
-    """Return a Chrome/Chromium launch command if available."""
+    """Find Chrome on Windows, macOS, or Linux."""
 
+    import platform
+    import shutil
+    from pathlib import Path
+
+    system = platform.system()
+
+    # Windows search
+    if system == "Windows":
+        possible_paths = [
+            Path("C:/Program Files/Google/Chrome/Application/chrome.exe"),
+            Path("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"),
+        ]
+        for p in possible_paths:
+            if p.exists():
+                return [str(p)]
+        return None
+
+    # macOS search
+    if system == "Darwin":
+        mac_path = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+        if mac_path.exists():
+            return [str(mac_path)]
+
+    # Linux search via PATH
     candidates = [
         "google-chrome",
         "google-chrome-stable",
@@ -27,11 +51,13 @@ def find_chrome() -> list[str] | None:
         "chromium-browser",
         "chrome",
     ]
-    for candidate in candidates:
-        path = which(candidate)
-        if path:
-            return [path]
+    for c in candidates:
+        p = shutil.which(c)
+        if p:
+            return [p]
+
     return None
+
 
 
 def wait_for_server(server: subprocess.Popen, url: str, timeout: float = 15.0) -> None:
