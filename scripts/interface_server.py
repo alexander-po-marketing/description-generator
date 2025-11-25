@@ -26,7 +26,7 @@ from typing import Dict, Iterable
 from urllib.parse import parse_qs, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-INTERFACE_DIR = REPO_ROOT / "interface"
+STATIC_ROOT = REPO_ROOT
 
 DIRECTORIES: Dict[str, Path] = {
     "inputs": REPO_ROOT / "inputs",
@@ -232,9 +232,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     ensure_layout()
     args = parse_args(list(argv) if argv is not None else None)
-    handler = lambda *h_args, **h_kwargs: InterfaceRequestHandler(*h_args, directory=str(INTERFACE_DIR), **h_kwargs)
+    handler = lambda *h_args, **h_kwargs: InterfaceRequestHandler(*h_args, directory=str(STATIC_ROOT), **h_kwargs)
     with HTTPServer((args.host, args.port), handler) as server:
-        print(f"Serving interface on http://{args.host}:{args.port} (root: {INTERFACE_DIR})")
+        print(f"Serving interface on http://{args.host}:{args.port} (root: {STATIC_ROOT})")
         server.serve_forever()
     return 0
 

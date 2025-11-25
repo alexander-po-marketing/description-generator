@@ -52,7 +52,7 @@ async function fetchSuggestions() {
         renderSuggestions(textSuggestions, data.txt || []);
         setStatus("Updated file suggestions.");
     } catch (error) {
-        setStatus(`Unable to refresh file suggestions: ${error.message}`);
+        setStatus(`Unable to refresh file suggestions: ${error.message}. Ensure the interface server is running.`);
     }
 }
 
@@ -97,7 +97,7 @@ async function runPipeline() {
             setStatus(data.stderr, "Stderr", true);
         }
     } catch (error) {
-        setStatus(`Run failed: ${error.message}`);
+        setStatus(`Run failed: ${error.message}. Confirm the interface server is running on the same host/port.`);
     } finally {
         runButton.disabled = false;
     }

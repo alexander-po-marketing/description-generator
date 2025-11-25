@@ -20,7 +20,7 @@ outputs/    # database.json, api_descriptions.json, api_descriptions.xml
 logs/       # prompt logs and pipeline logs
 cache/      # scratch directory for experiments
 scripts/    # helpers including the interface HTTP server
-interface/  # index.html + app.js + styles.css UI assets
+interface/  # app.js + styles.css UI assets referenced by the root index.html
 ```
 
 ## Quickstart (CLI)
@@ -53,7 +53,7 @@ interface/  # index.html + app.js + styles.css UI assets
 
 ## Interactive web interface
 
-The `/interface/index.html` UI wraps the CLI with a simple control panel to set credentials, browse repository files, pick output targets, and launch runs from the browser.
+The root `/index.html` UI wraps the CLI with a simple control panel to set credentials, browse repository files, pick output targets, and launch runs from the browser.
 
 1. Start the local server:
 
