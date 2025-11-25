@@ -5,7 +5,7 @@ Endpoints
 - GET /api/files: return repository-relative files for common extensions so the UI
   can suggest local paths.
 - POST /api/run: validate paths, prepare environment variables for OpenAI
-  credentials, and launch ``drugbank_to_html_2.py`` using ``subprocess``.
+  credentials, and launch ``src/main.py`` using ``subprocess``.
 
 The server intentionally keeps all paths inside the repository root to avoid
 accidental traversal into the host machine while providing a simple bridge
@@ -100,7 +100,7 @@ def build_command(options: dict) -> list[str]:
 
     command = [
         sys.executable,
-        str(REPO_ROOT / "drugbank_to_html_2.py"),
+        str(REPO_ROOT / "src" / "main.py"),
         "--xml-path",
         str(xml_path),
         "--output-database-json",

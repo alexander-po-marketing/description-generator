@@ -10,13 +10,13 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable
 
-from config import OpenAIConfig, PipelineConfig, parse_valid_ids
-from drugbank_parser import parse_drugbank_xml
-from exporters import export_database, export_descriptions_json, export_descriptions_xml
-from generators import build_description_prompt, build_summary_prompt
-from html_renderer import render_html
-from models import DrugData, GeneratedContent
-from openai_client import OpenAIClient
+from src.config import OpenAIConfig, PipelineConfig, parse_valid_ids
+from src.drugbank_parser import parse_drugbank_xml
+from src.exporters import export_database, export_descriptions_json, export_descriptions_xml
+from src.generators import build_description_prompt, build_summary_prompt
+from src.html_renderer import render_html
+from src.models import DrugData, GeneratedContent
+from src.openai_client import OpenAIClient
 
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,9 @@ def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, 
 
 
 def parse_args(argv: Iterable[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="DrugBank to Pharmaoffer description generator")
+    parser = argparse.ArgumentParser(
+        description="DrugBank to Pharmaoffer description generator (run with `python src/main.py`)",
+    )
     parser.add_argument("--xml-path", required=True, help="Path to DrugBank XML input")
     parser.add_argument("--output-database-json", default="outputs/database.json", help="Parsed database JSON output path")
     parser.add_argument("--output-descriptions-json", default="outputs/api_descriptions.json", help="Generated descriptions JSON output path")

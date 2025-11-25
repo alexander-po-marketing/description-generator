@@ -5,7 +5,7 @@ from __future__ import annotations
 from textwrap import dedent
 from typing import Dict
 
-from models import DrugData
+from src.models import DrugData
 
 
 def _format_optional(value) -> str:

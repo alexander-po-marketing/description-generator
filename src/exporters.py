@@ -7,7 +7,7 @@ import logging
 import xml.etree.ElementTree as ET
 from typing import Dict
 
-from models import DrugData, GeneratedContent
+from src.models import DrugData, GeneratedContent
 
 logger = logging.getLogger(__name__)
 

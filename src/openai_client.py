@@ -8,7 +8,7 @@ from typing import Callable
 
 from openai import OpenAI
 
-from config import OpenAIConfig
+from src.config import OpenAIConfig
 
 logger = logging.getLogger(__name__)
 
