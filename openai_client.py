@@ -39,8 +39,7 @@ class OpenAIClient:
         def _call() -> str:
             completion = self.client.chat.completions.create(
                 model=self.config.model,
-                temperature=self.config.temperature,
-                max_tokens=self.config.max_tokens,
+                max_completion_tokens=self.config.max_completion_tokens,
                 messages=[
                     {
                         "role": "developer",
@@ -60,8 +59,7 @@ class OpenAIClient:
         def _call() -> str:
             completion = self.client.chat.completions.create(
                 model=self.config.summary_model,
-                temperature=self.config.temperature,
-                max_tokens=self.config.summary_max_tokens,
+                max_completion_tokens=self.config.summary_max_completion_tokens,
                 messages=[
                     {
                         "role": "developer",
