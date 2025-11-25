@@ -19,11 +19,12 @@ def _parse_set(value: Optional[str]) -> Set[str]:
 
 @dataclass
 class OpenAIConfig:
-    model: str = os.getenv("OPENAI_MODEL", "gpt-5.1")
+    model: str = os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest")
     summary_model: str = os.getenv("OPENAI_SUMMARY_MODEL", "gpt-4o-mini")
-    temperature: float = float(os.getenv("OPENAI_TEMPERATURE", "0.4"))
-    max_tokens: int = int(os.getenv("OPENAI_MAX_TOKENS", "700"))
-    summary_max_tokens: int = int(os.getenv("OPENAI_SUMMARY_MAX_TOKENS", "200"))
+    max_completion_tokens: int = int(os.getenv("OPENAI_MAX_COMPLETION_TOKENS", "700"))
+    summary_max_completion_tokens: int = int(
+        os.getenv("OPENAI_SUMMARY_MAX_COMPLETION_TOKENS", "200")
+    )
     max_retries: int = int(os.getenv("OPENAI_MAX_RETRIES", "3"))
     timeout_seconds: int = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "30"))
 

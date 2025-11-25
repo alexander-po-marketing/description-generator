@@ -26,7 +26,6 @@ function buildPayload() {
         projectId: document.getElementById("project-id").value.trim(),
         model: document.getElementById("model").value.trim(),
         summaryModel: document.getElementById("summary-model").value.trim(),
-        temperature: document.getElementById("temperature").value,
         xmlPath: document.getElementById("xml-path").value.trim(),
         databasePath: document.getElementById("database-path").value.trim(),
         descriptionsJson: document.getElementById("descriptions-json").value.trim(),

@@ -142,7 +142,6 @@ def build_env(options: dict) -> dict:
         "projectId": "OPENAI_PROJECT",
         "model": "OPENAI_MODEL",
         "summaryModel": "OPENAI_SUMMARY_MODEL",
-        "temperature": "OPENAI_TEMPERATURE",
     }
     for source, target in mapping.items():
         value = options.get(source)

@@ -5,7 +5,7 @@ This project transforms DrugBank XML exports into structured JSON, XML, and HTML
 ## Features
 
 - **Modular architecture:** dedicated modules for configuration, parsing, generation, rendering, exporting, and the CLI entrypoint.
-- **Configurable OpenAI usage:** models, temperature, max tokens, retries, and credentials are driven by environment variables.
+- **Configurable OpenAI usage:** models, completion token limits, retries, and credentials are driven by environment variables.
 - **Robust parsing:** pulls core DrugBank attributes, classifications, products, categories, and references with graceful handling of missing data.
 - **Enhanced prompting:** pharma-grade description and summary prompts with logged inputs for traceability.
 - **Clean HTML:** semantic sections for identification, pharmacology, taxonomy, and references.
@@ -69,11 +69,10 @@ The UI suggests paths from `inputs/`, `outputs/`, and `logs/`, exposes overwrite
 
 Environment variables control OpenAI behavior and defaults:
 
-- `OPENAI_MODEL` (default `gpt-5.1`)
+- `OPENAI_MODEL` (default `gpt-5.1-chat-latest`)
 - `OPENAI_SUMMARY_MODEL` (default `gpt-4o-mini`)
-- `OPENAI_TEMPERATURE` (default `0.4`)
-- `OPENAI_MAX_TOKENS` (default `700`)
-- `OPENAI_SUMMARY_MAX_TOKENS` (default `200`)
+- `OPENAI_MAX_COMPLETION_TOKENS` (default `700`)
+- `OPENAI_SUMMARY_MAX_COMPLETION_TOKENS` (default `200`)
 - `OPENAI_MAX_RETRIES` (default `3`)
 - `OPENAI_TIMEOUT_SECONDS` (default `30`)
 - `LOG_LEVEL` (default `INFO`)
