@@ -34,8 +34,8 @@ class PipelineConfig:
     database_json: str
     descriptions_json: str
     descriptions_xml: str
-    description_prompts_log: str = "description_prompts.log"
-    summary_prompts_log: str = "summary_prompts.log"
+    description_prompts_log: str = "logs/description_prompts.log"
+    summary_prompts_log: str = "logs/summary_prompts.log"
     valid_drug_ids: Set[str] = field(default_factory=set)
     max_drugs: Optional[int] = None
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
@@ -89,6 +89,8 @@ class PipelineConfig:
         valid_drug_ids: Optional[Iterable[str]] = None,
         max_drugs: Optional[int] = None,
         log_level: Optional[str] = None,
+        description_prompts_log: Optional[str] = None,
+        summary_prompts_log: Optional[str] = None,
     ) -> "PipelineConfig":
         return cls(
             xml_path=xml_path,
@@ -98,6 +100,8 @@ class PipelineConfig:
             valid_drug_ids=set(valid_drug_ids or []),
             max_drugs=max_drugs,
             log_level=log_level or os.getenv("LOG_LEVEL", "INFO"),
+            description_prompts_log=description_prompts_log or "logs/description_prompts.log",
+            summary_prompts_log=summary_prompts_log or "logs/summary_prompts.log",
         )
 
 

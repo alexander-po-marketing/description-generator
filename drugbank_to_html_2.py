@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import sys
+from pathlib import Path
 from typing import Dict, Iterable
 
 from config import OpenAIConfig, PipelineConfig, parse_valid_ids
@@ -41,6 +42,7 @@ def validate_drug(drug: DrugData) -> Iterable[str]:
 
 
 def write_prompt_log(path: str, prompt: str) -> None:
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as handle:
         handle.write(prompt + "\n\n")
 
@@ -86,9 +88,11 @@ def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, 
 def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="DrugBank to Pharmaoffer description generator")
     parser.add_argument("--xml-path", required=True, help="Path to DrugBank XML input")
-    parser.add_argument("--output-database-json", default="database.json", help="Parsed database JSON output path")
-    parser.add_argument("--output-descriptions-json", default="api_descriptions.json", help="Generated descriptions JSON output path")
-    parser.add_argument("--output-descriptions-xml", default="api_descriptions.xml", help="Generated descriptions XML output path")
+    parser.add_argument("--output-database-json", default="outputs/database.json", help="Parsed database JSON output path")
+    parser.add_argument("--output-descriptions-json", default="outputs/api_descriptions.json", help="Generated descriptions JSON output path")
+    parser.add_argument("--output-descriptions-xml", default="outputs/api_descriptions.xml", help="Generated descriptions XML output path")
+    parser.add_argument("--description-log", default="logs/description_prompts.log", help="Where to write description prompts used during generation")
+    parser.add_argument("--summary-log", default="logs/summary_prompts.log", help="Where to write summary prompts used during generation")
     parser.add_argument("--valid-drugs", help="Comma-separated list of DrugBank IDs or path to file with one ID per line")
     parser.add_argument("--max-drugs", type=int, help="Limit number of drugs processed")
     parser.add_argument("--log-level", default=os.getenv("LOG_LEVEL", "INFO"), help="Logging level (DEBUG, INFO, WARNING, ERROR)")
@@ -108,6 +112,8 @@ def main(argv: Iterable[str] | None = None) -> int:
         valid_drug_ids=valid_ids,
         max_drugs=args.max_drugs,
         log_level=args.log_level,
+        description_prompts_log=args.description_log,
+        summary_prompts_log=args.summary_log,
     )
     ai_config = OpenAIConfig()
 
