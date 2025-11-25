@@ -26,7 +26,7 @@ from typing import Dict, Iterable
 from urllib.parse import parse_qs, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-STATIC_ROOT = REPO_ROOT
+STATIC_ROOT = REPO_ROOT / "interface"
 
 DIRECTORIES: Dict[str, Path] = {
     "inputs": REPO_ROOT / "inputs",
