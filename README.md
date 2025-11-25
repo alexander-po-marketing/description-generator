@@ -56,13 +56,21 @@ src/        # core pipeline modules and CLI entrypoint
 
 The `/interface/index.html` UI wraps the CLI with a simple control panel to set credentials, browse repository files, pick output targets, and launch runs from the browser.
 
-1. Start the local server:
+1. Start the local server and open the UI automatically with Chrome/Chromium:
+
+   ```bash
+   python launch_interface.py
+   ```
+
+   The launcher waits for the server to respond, then opens the interface with `--app=http://localhost:8000/`. If Chrome/Chromium is not installed, the script prints the URL so you can open it manually.
+
+2. To run the server without the launcher, use:
 
    ```bash
    python scripts/interface_server.py --host 0.0.0.0 --port 8000
    ```
 
-2. Open http://localhost:8000/ in your browser. (The server now serves the `interface/` directory as its static root.)
+   Then open http://localhost:8000/ in your browser. (The server serves the `interface/` directory as its static root.)
 
 The UI suggests paths from `inputs/`, `outputs/`, and `logs/`, exposes overwrite/continue safeguards, and displays stdout/stderr from the underlying CLI run.
 
