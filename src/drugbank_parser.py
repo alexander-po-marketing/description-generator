@@ -114,18 +114,6 @@ class DrugbankParser:
             drugbank_id = self._primary_id(drug_el)
             if not drugbank_id:
                 continue
-            if kind == "Molecular Formula":
-                molecular_formula = value
-            elif kind == "Molecular Weight":
-                molecular_weight = _to_float(value)
-            elif kind == "logP":
-                logp = value
-            elif kind == "Water Solubility":
-                water_solubility = value
-            elif kind == "Melting Point":
-                melting_point = value
-            elif kind == "SMILES":
-                smiles = value
 
             if self.config.valid_drug_ids and drugbank_id not in self.config.valid_drug_ids:
                 continue
@@ -538,8 +526,17 @@ class DrugbankParser:
         for prop_el in drug_el.xpath(
             './*[local-name()="calculated-properties"]/*[local-name()="property"]'
         ):
-            kind = _text(_first_match(prop_el, "kind"))
-            value = _text(_first_match(prop_el, "value"))
+            kind: Optional[str] = None
+            value: Optional[str] = None
+
+            kind_el = _first_match(prop_el, "kind")
+            value_el = _first_match(prop_el, "value")
+
+            if kind_el is not None:
+                kind = _text(kind_el)
+            if value_el is not None:
+                value = _text(value_el)
+
             if not kind or not value:
                 continue
             if kind == "Molecular Formula":
