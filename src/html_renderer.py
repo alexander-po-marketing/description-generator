@@ -80,10 +80,10 @@ def render_taxonomy(drug: DrugData) -> str:
 
 def render_references(drug: DrugData) -> str:
     parts = []
-    if getattr(drug.general_references, "articles", None):
+    if drug.scientific_articles:
         rows = "".join(
             f"<li>{html.escape(article.citation)}</li>"
-            for article in drug.general_references.articles
+            for article in drug.scientific_articles
             if article.citation
         )
         if rows:
@@ -93,7 +93,6 @@ def render_references(drug: DrugData) -> str:
     if getattr(drug.general_references, "links", None):
         link_sources.extend(drug.general_references.links)
     link_sources.extend(drug.regulatory_links)
-    link_sources.extend(drug.external_links)
 
     if link_sources:
         rows = "".join(

@@ -71,6 +71,12 @@ class RegulatoryLink:
 
 
 @dataclass
+class ExternalIdentifier:
+    resource: Optional[str] = None
+    identifier: Optional[str] = None
+
+
+@dataclass
 class RegulatoryApproval:
     agency: Optional[str] = None
     region: Optional[str] = None
@@ -108,7 +114,6 @@ class ReferenceArticle:
 
 @dataclass
 class GeneralReferences:
-    articles: List[ReferenceArticle] = field(default_factory=list)
     links: List[RegulatoryLink] = field(default_factory=list)
 
 
@@ -164,23 +169,14 @@ class DrugData:
     synthesis_reference: Optional[str] = None
     scientific_articles: List[ReferenceArticle] = field(default_factory=list)
     general_references: GeneralReferences = field(default_factory=GeneralReferences)
-    references: List[ReferenceArticle] = field(default_factory=list)
-    external_links: List[RegulatoryLink] = field(default_factory=list)
 
-    packagers: Optional[str] = None
-    manufacturers: Optional[str] = None
-    external_identifiers: Optional[str] = None
-    raw_fields: Dict[str, str] = field(default_factory=dict)
+    packagers: List[str] = field(default_factory=list)
+    manufacturers: List[str] = field(default_factory=list)
+    external_identifiers: List[ExternalIdentifier] = field(default_factory=list)
+    raw_fields: Dict[str, object] = field(default_factory=dict)
 
     def to_serializable(self) -> Dict[str, object]:
         data = asdict(self)
-        # Compatibility aliases
-        if self.references:
-            data["references"] = [asdict(article) for article in self.references]
-        if self.external_links:
-            data["external_links"] = [asdict(link) for link in self.external_links]
-        if self.scientific_articles and not self.references:
-            data["references"] = [asdict(article) for article in self.scientific_articles]
         # CamelCase aliases for downstream consumers
         data["drugbankId"] = self.drugbank_id
         data["casNumber"] = self.cas_number
@@ -197,6 +193,7 @@ class DrugData:
         data["products"] = [asdict(product) for product in self.products]
         data["scientificArticles"] = [asdict(article) for article in self.scientific_articles]
         data["generalReferences"] = asdict(self.general_references) if self.general_references else {}
+        data["externalIdentifiers"] = [asdict(identifier) for identifier in self.external_identifiers]
         data["atcCodes"] = [asdict(code) for code in self.atc_codes]
         data["dosages"] = [asdict(dosage) for dosage in self.dosages]
         data["patents"] = [asdict(patent) for patent in self.patents]
