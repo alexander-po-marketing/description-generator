@@ -9,9 +9,13 @@ from typing import Dict, List, Optional, Sequence
 
 from src.generators import (
     build_description_prompt,
+    build_buyer_cheatsheet_prompt,
     build_lifecycle_summary_prompt,
+    build_formulation_notes_prompt,
     build_pharmacology_summary_prompt,
     build_safety_highlights_prompt,
+    build_seo_description_prompt,
+    build_supply_chain_prompt,
     build_summary_prompt,
     build_summary_sentence_prompt,
 )
@@ -283,6 +287,25 @@ def build_page_model(
         highlights = _sanitize_text(client.generate_text(safety_prompt))
         safety_highlights = _split_to_list(highlights, max_items=3)
 
+    formulation_notes: List[str] = []
+    formulation_prompt = build_formulation_notes_prompt(drug)
+    formulation_output = _sanitize_text(client.generate_text(formulation_prompt))
+    formulation_notes = _split_to_list(formulation_output, max_items=3)
+
+    supply_chain_summary: Optional[str] = None
+    if drug.manufacturers or drug.packagers or drug.products or drug.patents:
+        supply_prompt = build_supply_chain_prompt(drug)
+        supply_chain_summary = _sanitize_text(client.generate_text(supply_prompt))
+
+    buyer_cheatsheet: List[str] = []
+    cheatsheet_prompt = build_buyer_cheatsheet_prompt(drug)
+    cheatsheet_output = _sanitize_text(client.generate_text(cheatsheet_prompt))
+    buyer_cheatsheet = _split_to_list(cheatsheet_output, max_items=3)
+
+    seo_meta_description = generated.summary or generated.summary_sentence
+    seo_prompt = build_seo_description_prompt(drug)
+    seo_meta_description = _sanitize_text(client.generate_text(seo_prompt)) or seo_meta_description
+
     approval_status = None
     if drug.groups:
         approval_status = ", ".join(
@@ -324,6 +347,9 @@ def build_page_model(
             "patents": patents_table,
             "lifecycleSummary": lifecycle_summary,
         },
+        "formulationNotes": {
+            "bullets": formulation_notes,
+        },
         "categoriesAndTaxonomy": {
             "therapeuticClasses": list(drug.categories),
             "atcCodes": _atc_codes_to_dict(drug.atc_codes),
@@ -359,6 +385,7 @@ def build_page_model(
             "packagers": list(drug.packagers),
             "externalManufacturingNotes": drug.raw_fields.get("manufacturing-notes"),
             "pharmaofferSuppliers": [],
+            "supplyChainSummary": supply_chain_summary,
         },
         "safety": {
             "toxicity": drug.toxicity,
@@ -374,7 +401,7 @@ def build_page_model(
         },
         "seo": {
             "title": f"{drug.name} API suppliers, regulatory and technical information" if drug.name else None,
-            "metaDescription": generated.summary or generated.summary_sentence,
+            "metaDescription": seo_meta_description,
             "keywords": _unique(
                 [
                     drug.name,
@@ -385,6 +412,7 @@ def build_page_model(
                 ]
             ),
         },
+        "buyerCheatsheet": {"bullets": buyer_cheatsheet},
         "metadata": {
             "drugbankId": getattr(drug, "drugbank_id", None),
             "casNumber": drug.cas_number,
