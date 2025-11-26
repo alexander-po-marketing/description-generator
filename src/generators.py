@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
 from textwrap import dedent
-from typing import Dict
+from typing import Dict, List
 
-from src.models import DrugData
+from src.models import DrugData, Patent
 
 
 def _format_optional(value) -> str:
@@ -85,5 +85,65 @@ def build_summary_prompt(drug: DrugData, description: str) -> str:
         CAS: {drug.cas_number or 'N/A'}
         Description:
         {description}
+        """
+    ).strip()
+
+
+def build_summary_sentence_prompt(drug: DrugData) -> str:
+    return dedent(
+        f"""
+        Write exactly one simple, patient-friendly sentence (18-30 words) that introduces the medication.
+        Start with 'A medication that ...' and describe only the high-level therapeutic effect and use-cases.
+        Avoid brand or company names and keep it informational.
+
+        Drug name: {drug.name or 'Unknown'}
+        Indication: {_format_optional(drug.indication)}
+        Mechanism: {_format_optional(drug.mechanism_of_action)}
+        Pharmacodynamics: {_format_optional(drug.pharmacodynamics)}
+        """
+    ).strip()
+
+
+def build_pharmacology_summary_prompt(drug: DrugData) -> str:
+    return dedent(
+        f"""
+        Create 2-3 concise sentences that summarize this drug's pharmacology and mechanism in high-level, non-promotional language.
+        Focus on therapeutic intent, primary targets, and major pharmacodynamic themes. Avoid dosing guidance and clinical advice.
+
+        Mechanism of action: {_format_optional(drug.mechanism_of_action)}
+        Pharmacodynamics: {_format_optional(drug.pharmacodynamics)}
+        Targets: {_format_optional([t.name for t in drug.targets if t.name])}
+        Indication: {_format_optional(drug.indication)}
+        """
+    ).strip()
+
+
+def build_lifecycle_summary_prompt(drug: DrugData, patents: List[Patent], markets: List[str]) -> str:
+    patent_lines = []
+    for patent in patents[:5]:
+        parts = [patent.number or "", patent.country or "", patent.approved_date or "", patent.expires_date or ""]
+        patent_lines.append(" | ".join(part for part in parts if part))
+    patent_block = "\n".join(f"- {line}" for line in patent_lines) if patent_lines else "- None listed"
+    markets_text = ", ".join(markets) if markets else "Unknown"
+    return dedent(
+        f"""
+        Draft a short lifecycle summary (1-2 sentences) for an API based on patent expiry timing and where products are marketed.
+        Keep it neutral, non-promotional, and focused on market maturity.
+
+        Patents:
+        {patent_block}
+        Markets: {markets_text}
+        """
+    ).strip()
+
+
+def build_safety_highlights_prompt(drug: DrugData) -> str:
+    return dedent(
+        f"""
+        Provide 2-3 succinct, non-prescriptive safety or handling highlights for a B2B API catalog.
+        Base the points on toxicity or adverse effect information. Avoid patient advice and stick to technical tone.
+
+        Toxicity: {_format_optional(drug.toxicity)}
+        Indication: {_format_optional(drug.indication)}
         """
     ).strip()
