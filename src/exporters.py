@@ -38,3 +38,9 @@ def export_descriptions_xml(path: str, drug_data: Dict[str, DrugData], descripti
     tree = ET.ElementTree(root)
     tree.write(path, encoding="utf-8", xml_declaration=True)
 
+
+def export_page_models(path: str, pages: Dict[str, object]) -> None:
+    logger.info("Writing structured page models to %s", path)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(pages, handle, ensure_ascii=False, indent=2)
+
