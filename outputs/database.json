@@ -1,0 +1,1050 @@
+{
+  "DB14596": {
+    "drugbank_id": "DB14596",
+    "name": "Loteprednol etabonate",
+    "description": "Loteprednol Etabonate (LE) is a topical corticoid anti-inflammatory. It is used in ophthalmic solution for the treatment of steroid responsive inflammatory conditions of the eye such as allergic conjunctivitis, uveitis, acne rosacea, superficial punctate keratitis, herpes zoster keratitis, iritis, cyclitis, and selected infective conjunctivitides. As a nasal spray, it can be used for the treatment and management of seasonal allergic rhinitis.\n\n\n\nMost prescription LE products, however, tend to be indicated for the treatment of post-operative inflammation and pain following ocular surgery [FDA Label]. A number of such new formulations that have been approved include Kala Pharmaceutical's Inveltys - the first twice-daily (BID) ocular corticosteroid approved for this indication, designed specifically to enhance patient compliance and simplified dosing compared to all other similar ocular steroids that are dosed four times daily [L4545].\n\n\n\nMoreover, LE was purposefully engineered to be a 'soft drug', one that is designed to be active locally at the site of administration and then rapidly metabolized to inactive components after eliciting its actions at the desired location, thereby subsequently minimizing the chance for adverse effects [A38693].",
+    "cas_number": "82034-46-6",
+    "unii": "YEH1EZ96K6",
+    "drug_type": "small molecule",
+    "type": "small molecule",
+    "state": "solid",
+    "drug_type_short": null,
+    "molecular_formula": "C24H31ClO7",
+    "average_mass": 466.96,
+    "monoisotopic_mass": 466.175831,
+    "molecular_weight": 466.96,
+    "smiles": "[H][C@@]12CC[C@](OC(=O)OCC)(C(=O)OCCl)[C@@]1(C)C[C@H](O)[C@@]1([H])[C@@]2([H])CCC2=CC(=O)C=C[C@]12C",
+    "logp": "3.94",
+    "water_solubility": "6.93e-03 g/l",
+    "melting_point": null,
+    "indication": "A number of prescription loteprednol etabonate ophthalmic products are specifically indicated for the treatment of post-operative inflammation and pain following ocular surgery [FDA Label].",
+    "pharmacodynamics": "Loteprednol etabonate (LE) belongs to a unique class of corticosteroids with potent anti-inflammatory effects designed to be active at the site of action [A1312, L4539]. Animal studies have shown that LE has a binding affinity to steroid receptors that is 4.3 times greater than dexamethasone [L4539]. This particular class of steroids consists of bioactive molecules whose in-vivo transformation to non-toxic substances can be predicted from their chemistry and knowledge of enzymatic pathways in the body [L4539]. Cortienic acid is an inactive metabolite of hydrocortisone and analogs of cortienic acid are also devoid of corticosteroid activity [L4539]. Specifically, LE is an ester derivative of one of these analogs, cortienic acid etabonate [L4539]. In particular, LE possesses a metabolically labile 17 beta-chloromethyl ester function which was designed in order to be hydrolyzed to an inactive carboxylic acid moiety [A1312]. This inactive metabolite is more hydrophilic and is thus readily eliminated from the body [A1312]. LE also exhibits good ocular permeation properties and good skin permeation properties [A1312].",
+    "mechanism_of_action": "Corticosteroids like loteprednol etabonate inhibit the inflammatory response to a variety of inciting agents and likely delay or slow healing [FDA Label, L4539, A1312]. They inhibit the edema, fibrin deposition, capillary dilation, leukocyte migration, capillary proliferation, fibroblast proliferation, deposition of collagen, and scar formation that are commonly associated with inflammation [FDA Label, A1312]. While glucocorticoids are known to bind to and activate the glucocorticoid receptor, the molecular mechanisms involved in glucocorticoid/glucocorticoid receptor-dependent modulation of inflammation are not clearly established [FDA Label, L4539, A1312]. Moreover, corticosteroids are thought to inhibit prostaglandin production through several independent mechanisms [FDA Label, A1312]. In particular, corticosteroids are thought to act by the induction of phospholipase A2 inhibitory proteins, collectively called lipocortins [F1467]. It is postulated that these proteins control the biosynthesis of potent mediators of inflammation such as prostaglandins and leukotrienes by inhibiting the release of their common precursor arachidonic acid [F1467]. Arachidonic acid is released from membrane phospholipids by phospholipase A2 [F1467].  \n\n\n\nThe use of LE subsequently treats post-operative inflammation and pain following ocular surgery by managing the prostaglandin release, recruitment and travel of neutrophils and macrophages, and production of other inflammatory mediators that are intrinsically associated with the physical trauma of surgery [A1312].",
+    "toxicity": "The most common adverse drug reactions reported during clinical trials for the medication were eye pain and posterior capsular opacification, both of which may also be the consequence of the very surgical procedures performed on the eye(s) [FDA Label].\n\n\n\nThe agent is not absorbed systemically following topical ophthalmic administration and maternal use is not expected to result in fetal exposure to the drug [FDA Label].\n\n\n\nThe medication is not absorbed systemically by the mother following topical ophthalmic administration, and breastfeeding is not expected to result in exposure of the child to the agent [FDA Label].\n\n\n\nLong-term animal studies have not been conducted to evaluate the carcinogenic potential of loteprednol etabonate. Loteprednol etabonate was not genotoxic in vitro in the Ames test, the mouse lymphoma thymidine kinase (tk) assay, or in a chromosome aberration test in human lymphocytes, or in vivo in the single dose mouse micronucleus assay [FDA Label].\n\n\n\nOverdose is not expected to be likely to occur after ocular administration [F1467].",
+    "absorption": "Loteprednol etabonate (LE) demonstrates good ocular permeation properties as it is lipid soluble, allowing the agent to penetrate into cells with relative ease [FDA Label, A1312].\n\n\n\nResults from the ocular administration of loteprednol in normal, healthy volunteers have shown that there are low or undetectable concentrations of either unchanged material or its metabolite [L4539]. Following twice-daily unilateral topical ocular dosing of LE for 14 days in healthy subjects, the plasma concentrations of loteprednol etabonate were below the limit of quantitation (1 ng/mL) at all time points [FDA Label]. These finds suggest that limited, if any, systemic absorption of LE occurs [L4539].",
+    "half_life": "The terminal half-life of loteprednol etabonate as determined when administered intravenously at a dose of 5 mg/kg in the dog animal model is 2.8 hours [A38682].",
+    "protein_binding": "Strong protein binding of approximately 98% for loteprednol etabonate facilitates little pharmacodynamic action and/or adverse effects on the part of the agent in the systemic circulation [A38681].",
+    "metabolism": "Loteprednol etabonate (LE) is readily and extensively metabolized to two inactive metabolites, PJ-90 (Δ1-cortienic acid) and PJ-91 (Δ1-cortienic acid etabonate) [FDA Label, F1467].  Metabolism occurs locally in ocular tissues, and to the extent that loteprednol etabonate reaches the systemic circulation, likely the liver and other tissues into which it distributes [F1467].\n\n\n\nIn particular, studies have demonstrated that LE (chloromethyl 17alpha-ethoxycarbonyloxy-11beta-hydroxy-3-oxoandrosta-1,4-diene) is rapidly hydrolyzed at the location of its 17beta-chloromethyl ester function by paraoxonase 1 in human plasma at the site of administration at the level of the affected eye tissue to the 17beta-carboxylate PJ-91 metabolite and PJ-90 metabolite [A38681, A38693]. Both metabolites are considered inactive [FDA Label, A38693, A38693].",
+    "route_of_elimination": "Following systemic administration to rats, loteprednol etabonate is eliminated primarily via the biliary/faecal route, with most of the dose eliminated in the form of the metabolite, PJ-90 [F1467].",
+    "volume_of_distribution": "The only data available regarding the volume of distribution of loteprednol etabonate (LE) is the volume of distribution the agent demonstrated when administered to dogs - a value of 3.7 L/kg [A38682]. It has been shown, however, that the topical ocular administration of LE distributes preferentially into the cellular components of blood [F1467].",
+    "clearance": "Loteprednol etabonate was slowly hydrolyzed in liver at clearance rates of  0.21 +/- 0.04 and 2.41 +/- 0.13 ml/h/kg in the liver and plasma, respectively [A38681].",
+    "groups": [
+      "approved"
+    ],
+    "classification": {
+      "description": "This compound belongs to the class of organic compounds known as steroid esters. These are compounds containing a steroid moiety which bears a carboxylic acid ester group.",
+      "direct_parent": "Steroid esters",
+      "kingdom": "Organic compounds",
+      "superclass": "Lipids and lipid-like molecules",
+      "class": "Steroids and steroid derivatives",
+      "subclass": "Steroid esters",
+      "alternative_parents": [
+        "11-beta-hydroxysteroids",
+        "3-oxo delta-1,4-steroids",
+        "Alkyl chlorides",
+        "Androgens and derivatives",
+        "Carbonic acid diesters",
+        "Carboxylic acid esters",
+        "Cyclic alcohols and derivatives",
+        "Cyclic ketones",
+        "Delta-1,4-steroids",
+        "Hydrocarbon derivatives",
+        "Monocarboxylic acids and derivatives",
+        "Organic oxides",
+        "Organochlorides",
+        "Secondary alcohols"
+      ],
+      "substituents": [
+        "11-beta-hydroxysteroid",
+        "11-hydroxysteroid",
+        "3-oxo-delta-1,4-steroid",
+        "3-oxosteroid",
+        "Alcohol",
+        "Aliphatic homopolycyclic compound",
+        "Alkyl chloride",
+        "Alkyl halide",
+        "Androgen-skeleton",
+        "Androstane-skeleton",
+        "Carbonic acid derivative",
+        "Carbonic acid diester",
+        "Carbonyl group",
+        "Carboxylic acid derivative",
+        "Carboxylic acid ester",
+        "Cyclic alcohol",
+        "Cyclic ketone",
+        "Delta-1,4-steroid",
+        "Hydrocarbon derivative",
+        "Hydroxysteroid",
+        "Ketone",
+        "Monocarboxylic acid or derivatives",
+        "Organic oxide",
+        "Organic oxygen compound",
+        "Organochloride",
+        "Organohalogen compound",
+        "Organooxygen compound",
+        "Oxosteroid",
+        "Secondary alcohol",
+        "Steroid ester"
+      ]
+    },
+    "categories": [
+      "Adrenal Cortex Hormones",
+      "Androstadienes",
+      "Androstanes",
+      "Androstenes",
+      "Anti-Allergic Agents",
+      "Corticosteroids",
+      "Cytochrome P-450 CYP3A Substrates",
+      "Cytochrome P-450 CYP3A4 Substrates",
+      "Cytochrome P-450 Substrates",
+      "Fused-Ring Compounds",
+      "Immunosuppressive Agents",
+      "Steroids"
+    ],
+    "international_brands": [],
+    "food_interactions": [],
+    "atc_codes": [],
+    "dosages": [
+      {
+        "form": "Suspension",
+        "route": "Conjunctival",
+        "strength": "0.20 %w/v"
+      },
+      {
+        "form": "Suspension",
+        "route": "Ophthalmic",
+        "strength": "0.2 % w/v"
+      },
+      {
+        "form": "Suspension / drops",
+        "route": "Ophthalmic",
+        "strength": "2 mg/1mL"
+      },
+      {
+        "form": "Suspension",
+        "route": "Ophthalmic",
+        "strength": "5 mg"
+      },
+      {
+        "form": "Solution / drops",
+        "route": "Ophthalmic",
+        "strength": "0.5 %"
+      },
+      {
+        "form": "Suspension / drops",
+        "route": "Ophthalmic",
+        "strength": "2.5 mg/1mL"
+      },
+      {
+        "form": "Suspension",
+        "route": "Topical",
+        "strength": "10 mg/1mL"
+      },
+      {
+        "form": "Suspension",
+        "route": "Ophthalmic",
+        "strength": "0.5 %"
+      },
+      {
+        "form": "Gel",
+        "route": "Ophthalmic",
+        "strength": "5 mg/1g"
+      },
+      {
+        "form": "Ointment",
+        "route": "Ophthalmic",
+        "strength": "5 mg/1g"
+      },
+      {
+        "form": "Solution / drops",
+        "route": "Intraocular",
+        "strength": null
+      },
+      {
+        "form": "Suspension",
+        "route": "Ophthalmic",
+        "strength": "0.5 % w/v"
+      },
+      {
+        "form": "Suspension / drops",
+        "route": "Ophthalmic",
+        "strength": "5 mg/1mL"
+      },
+      {
+        "form": "Suspension / drops",
+        "route": "Ophthalmic",
+        "strength": "0.5 %"
+      },
+      {
+        "form": "Suspension / drops",
+        "route": "Ophthalmic",
+        "strength": "5 mg/ml"
+      },
+      {
+        "form": "Gel",
+        "route": "Ophthalmic",
+        "strength": "0.5 % w/w"
+      },
+      {
+        "form": "Ointment",
+        "route": "Ophthalmic",
+        "strength": "0.5 % w/w"
+      },
+      {
+        "form": "Gel",
+        "route": "Ophthalmic",
+        "strength": "3.8 mg/1g"
+      },
+      {
+        "form": "Suspension",
+        "route": "Ophthalmic",
+        "strength": null
+      },
+      {
+        "form": "Solution",
+        "route": "Ophthalmic",
+        "strength": "5 mg/ml"
+      },
+      {
+        "form": "Suspension",
+        "route": "Conjunctival; Ophthalmic",
+        "strength": null
+      },
+      {
+        "form": "Suspension",
+        "route": "Conjunctival; Ophthalmic",
+        "strength": "0.002 g"
+      },
+      {
+        "form": "Suspension",
+        "route": "Conjunctival; Ophthalmic",
+        "strength": "5 mg"
+      },
+      {
+        "form": "Suspension",
+        "route": "Ophthalmic",
+        "strength": "2 mg"
+      },
+      {
+        "form": "Suspension / drops",
+        "route": "Ophthalmic",
+        "strength": null
+      },
+      {
+        "form": "Suspension",
+        "route": "Ophthalmic",
+        "strength": null
+      }
+    ],
+    "patents": [
+      {
+        "number": "5540930",
+        "country": "United States",
+        "approved_date": "1996-07-30",
+        "expires_date": "2013-10-25",
+        "pediatric_extension": false
+      },
+      {
+        "number": "4996335",
+        "country": "United States",
+        "approved_date": "1991-02-26",
+        "expires_date": "2012-03-09",
+        "pediatric_extension": false
+      },
+      {
+        "number": "2174550",
+        "country": "Canada",
+        "approved_date": "2002-10-01",
+        "expires_date": "2014-10-21",
+        "pediatric_extension": false
+      },
+      {
+        "number": "5800807",
+        "country": "United States",
+        "approved_date": "1998-09-01",
+        "expires_date": "2017-01-29",
+        "pediatric_extension": false
+      },
+      {
+        "number": "9056057",
+        "country": "United States",
+        "approved_date": "2015-06-16",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "9532955",
+        "country": "United States",
+        "approved_date": "2017-01-03",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "9827191",
+        "country": "United States",
+        "approved_date": "2017-11-28",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10058511",
+        "country": "United States",
+        "approved_date": "2018-08-28",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "9737491",
+        "country": "United States",
+        "approved_date": "2017-08-22",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "9393213",
+        "country": "United States",
+        "approved_date": "2016-07-19",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10596107",
+        "country": "United States",
+        "approved_date": "2020-03-24",
+        "expires_date": "2036-12-23",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10646437",
+        "country": "United States",
+        "approved_date": "2020-05-12",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10688045",
+        "country": "United States",
+        "approved_date": "2020-06-23",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10857096",
+        "country": "United States",
+        "approved_date": "2020-12-08",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10864219",
+        "country": "United States",
+        "approved_date": "2020-12-15",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10646436",
+        "country": "United States",
+        "approved_date": "2020-05-12",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10945948",
+        "country": "United States",
+        "approved_date": "2021-03-16",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10940108",
+        "country": "United States",
+        "approved_date": "2021-03-09",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "10993908",
+        "country": "United States",
+        "approved_date": "2021-05-04",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "11219596",
+        "country": "United States",
+        "approved_date": "2013-05-03",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      },
+      {
+        "number": "11219597",
+        "country": "United States",
+        "approved_date": "2013-05-03",
+        "expires_date": "2033-05-03",
+        "pediatric_extension": false
+      }
+    ],
+    "targets": [
+      {
+        "id": "BE0000794",
+        "name": "Glucocorticoid receptor",
+        "organism": "Humans",
+        "actions": [
+          "agonist"
+        ],
+        "go_processes": []
+      }
+    ],
+    "drug_interactions": [],
+    "regulatory_links": [
+      {
+        "ref_id": "RxList",
+        "title": "RxList",
+        "url": "http://www.rxlist.com/cgi/generic2/lotemax.htm",
+        "category": null
+      },
+      {
+        "ref_id": "Drugs.com",
+        "title": "Drugs.com",
+        "url": "http://www.drugs.com/international/loteprednol.html",
+        "category": null
+      }
+    ],
+    "regulatory_approvals": [],
+    "products": [
+      {
+        "brand": "Alrex",
+        "marketing_authorisation_holder": "Physicians Total Care, Inc.",
+        "ndc_product_code": "54868-4277",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2002-10-17",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": "2 mg/1mL",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA020803",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Alrex",
+        "marketing_authorisation_holder": "Stat Rx USA",
+        "ndc_product_code": "16590-007",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "1998-03-09",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": "2 mg/1mL",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA020803",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Alrex",
+        "marketing_authorisation_holder": "Bausch & Lomb Incorporated",
+        "ndc_product_code": "24208-353",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "1998-03-09",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": "2 mg/1mL",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA020803",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Alrex",
+        "marketing_authorisation_holder": "Bausch & Lomb Inc",
+        "ndc_product_code": null,
+        "dpd_id": "02320924",
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2009-06-24",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension",
+        "strength": "0.2 % w/v",
+        "route": "Ophthalmic",
+        "fda_application_number": null,
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "Canada",
+        "regulatory_source": "DPD"
+      },
+      {
+        "brand": "Eysuvis",
+        "marketing_authorisation_holder": "ALCON LABORATORIES, INC.",
+        "ndc_product_code": "71571-333",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2020-11-18",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": "2.5 mg/1mL",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA210933",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Inveltys",
+        "marketing_authorisation_holder": "ALCON LABORATORIES, INC.",
+        "ndc_product_code": "71571-121",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2018-08-22",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension",
+        "strength": "10 mg/1mL",
+        "route": "Topical",
+        "fda_application_number": "NDA210565",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Lotemax",
+        "marketing_authorisation_holder": "Physicians Total Care, Inc.",
+        "ndc_product_code": "54868-4278",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2002-10-17",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": "5 mg/1mL",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA020583",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Lotemax",
+        "marketing_authorisation_holder": "Bausch & Lomb Incorporated",
+        "ndc_product_code": "24208-503",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2012-10-12",
+        "ended_marketing_on": null,
+        "dosage_form": "Gel",
+        "strength": "5 mg/1g",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA202872",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Lotemax",
+        "marketing_authorisation_holder": "Bausch & Lomb Incorporated",
+        "ndc_product_code": "24208-443",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2011-04-15",
+        "ended_marketing_on": null,
+        "dosage_form": "Ointment",
+        "strength": "5 mg/1g",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA200738",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Lotemax",
+        "marketing_authorisation_holder": "Bausch & Lomb Incorporated",
+        "ndc_product_code": "24208-299",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "1998-03-09",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": "5 mg/1mL",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA020583",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Lotemax",
+        "marketing_authorisation_holder": "Bausch & Lomb Inc",
+        "ndc_product_code": null,
+        "dpd_id": "02321114",
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2009-06-24",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension",
+        "strength": "0.5 % w/v",
+        "route": "Ophthalmic",
+        "fda_application_number": null,
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "Canada",
+        "regulatory_source": "DPD"
+      },
+      {
+        "brand": "Lotemax Gel",
+        "marketing_authorisation_holder": "Bausch & Lomb Inc",
+        "ndc_product_code": null,
+        "dpd_id": "02435853",
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2015-06-25",
+        "ended_marketing_on": null,
+        "dosage_form": "Gel",
+        "strength": "0.5 % w/w",
+        "route": "Ophthalmic",
+        "fda_application_number": null,
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "Canada",
+        "regulatory_source": "DPD"
+      },
+      {
+        "brand": "Lotemax Ointment",
+        "marketing_authorisation_holder": "Bausch & Lomb Inc",
+        "ndc_product_code": null,
+        "dpd_id": "02421941",
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2014-10-29",
+        "ended_marketing_on": null,
+        "dosage_form": "Ointment",
+        "strength": "0.5 % w/w",
+        "route": "Ophthalmic",
+        "fda_application_number": null,
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "Canada",
+        "regulatory_source": "DPD"
+      },
+      {
+        "brand": "Lotemax SM",
+        "marketing_authorisation_holder": "Bausch & Lomb Incorporated",
+        "ndc_product_code": "24208-507",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2019-02-25",
+        "ended_marketing_on": null,
+        "dosage_form": "Gel",
+        "strength": "3.8 mg/1g",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA208219",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Loteprednol Etabonate",
+        "marketing_authorisation_holder": "Oceanside Pharmaceuticals",
+        "ndc_product_code": "68682-299",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2019-07-01",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": "5 mg/1mL",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA020583",
+        "generic": true,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Loteprednol Etabonate",
+        "marketing_authorisation_holder": "Akorn",
+        "ndc_product_code": "50383-265",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2019-04-18",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": "5 mg/1mL",
+        "route": "Ophthalmic",
+        "fda_application_number": "ANDA207609",
+        "generic": true,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Loteprednol Etabonate",
+        "marketing_authorisation_holder": "Akorn",
+        "ndc_product_code": "17478-830",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2021-02-10",
+        "ended_marketing_on": null,
+        "dosage_form": "Gel",
+        "strength": "5 mg/1g",
+        "route": "Ophthalmic",
+        "fda_application_number": "ANDA212080",
+        "generic": true,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Loteprednol Etabonate",
+        "marketing_authorisation_holder": "Bausch & Lomb Incorporated",
+        "ndc_product_code": "24208-508",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2021-02-17",
+        "ended_marketing_on": null,
+        "dosage_form": "Gel",
+        "strength": "5 mg/1g",
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA202872",
+        "generic": true,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Loteprednol Etabonate",
+        "marketing_authorisation_holder": "Sun Pharmaceutical Industries, Inc.",
+        "ndc_product_code": "62756-232",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2021-05-01",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": "5 mg/1mL",
+        "route": "Ophthalmic",
+        "fda_application_number": "ANDA212450",
+        "generic": true,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      },
+      {
+        "brand": "Zylet",
+        "marketing_authorisation_holder": "Bausch & Lomb Incorporated",
+        "ndc_product_code": "24208-358",
+        "dpd_id": null,
+        "ema_product_code": null,
+        "ema_ma_number": null,
+        "started_marketing_on": "2004-12-14",
+        "ended_marketing_on": null,
+        "dosage_form": "Suspension / drops",
+        "strength": null,
+        "route": "Ophthalmic",
+        "fda_application_number": "NDA050804",
+        "generic": false,
+        "over_the_counter": false,
+        "approved": true,
+        "country": "US",
+        "regulatory_source": "FDA NDC"
+      }
+    ],
+    "synthesis_reference": null,
+    "scientific_articles": [
+      {
+        "ref_id": "A1312",
+        "pubmed_id": "18245274",
+        "citation": "Pavesio CE, Decory HH: Treatment of ocular inflammatory conditions with loteprednol etabonate. Br J Ophthalmol. 2008 Apr;92(4):455-9. doi: 10.1136/bjo.2007.132621. Epub 2008 Feb 1."
+      },
+      {
+        "ref_id": "A38681",
+        "pubmed_id": "28017774",
+        "citation": "Samir A, Bodor N, Imai T: Identification of esterase involved in the metabolism of two corticosteroid soft drugs. Biochem Pharmacol. 2017 Mar 1;127:82-89. doi: 10.1016/j.bcp.2016.12.010. Epub 2016 Dec 22."
+      },
+      {
+        "ref_id": "A38682",
+        "pubmed_id": "1491342",
+        "citation": "Hochhaus G, Chen LS, Ratka A, Druzgala P, Howes J, Bodor N, Derendorf H: Pharmacokinetic characterization and tissue distribution of the new glucocorticoid soft drug loteprednol etabonate in rats and dogs. J Pharm Sci. 1992 Dec;81(12):1210-5."
+      },
+      {
+        "ref_id": "A38693",
+        "pubmed_id": "1959381",
+        "citation": "Druzgala P, Wu WM, Bodor N: Ocular absorption and distribution of loteprednol etabonate, a soft steroid, in rabbit eyes. Curr Eye Res. 1991 Oct;10(10):933-7."
+      }
+    ],
+    "general_references": {
+      "links": [
+        {
+          "ref_id": "L4539",
+          "title": "Electronic Medicines Compendium: Loteprednol etabonate Monograph",
+          "url": "https://www.medicines.org.uk/emc/product/6212",
+          "category": null
+        },
+        {
+          "ref_id": "L4545",
+          "title": "Inveltys FDA Approval Press Release",
+          "url": "https://www.drugs.com/newdrugs/fda-approves-inveltys-loteprednol-etabonate-post-operative-inflammation-pain-following-ocular-4808.html?utm_source=ddc&utm_medium=email&utm_campaign=Today%27s+news+summary+-+August+24%2C+2018&utm_content=FDA+Approves+Inveltys+%28loteprednol+etabonate%29+for+Post-Operative+Inflammation+and+Pain+Following+Ocular+Surgery",
+          "category": null
+        },
+        {
+          "ref_id": "L19889",
+          "title": "FDA Approved Drug Products: Eysuvis (loteprednol etabonate) ophthalmic suspension",
+          "url": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2020/210933s000lbl.pdf",
+          "category": null
+        },
+        {
+          "ref_id": "F1467",
+          "title": "Australian Register of Therapeutic Goods: Loteprednol etabonate Product Information",
+          "url": "//s3-us-west-2.amazonaws.com/drugbank/cite_this/attachments/files/000/001/467/original/auspar-loteprednol-etabonate-140417-pi.docx?1536691506",
+          "category": null
+        }
+      ]
+    },
+    "packagers": [
+      "Alchymars SPA",
+      "Bausch & Lomb Inc.",
+      "Physicians Total Care Inc."
+    ],
+    "manufacturers": [
+      "Bausch and lomb inc",
+      "Pharmos corp"
+    ],
+    "external_identifiers": [
+      {
+        "resource": "Drugs Product Database (DPD)",
+        "identifier": "20429"
+      },
+      {
+        "resource": "ChEBI",
+        "identifier": "31784"
+      },
+      {
+        "resource": "PubChem Compound",
+        "identifier": "9865442"
+      },
+      {
+        "resource": "PubChem Substance",
+        "identifier": "46504713"
+      },
+      {
+        "resource": "KEGG Drug",
+        "identifier": "D01689"
+      },
+      {
+        "resource": "ChemSpider",
+        "identifier": "392049"
+      },
+      {
+        "resource": "PharmGKB",
+        "identifier": "PA164764569"
+      },
+      {
+        "resource": "Therapeutic Targets Database",
+        "identifier": "DAP001045"
+      },
+      {
+        "resource": "Wikipedia",
+        "identifier": "Loteprednol"
+      },
+      {
+        "resource": "ChEMBL",
+        "identifier": "CHEMBL1200865"
+      },
+      {
+        "resource": "ZINC",
+        "identifier": "ZINC000003920673"
+      }
+    ],
+    "raw_fields": {
+      "drugbank-id": [
+        "DB14596",
+        "DBSALT000930"
+      ],
+      "indication": "A number of prescription loteprednol etabonate ophthalmic products are specifically indicated for the treatment of post-operative inflammation and pain following ocular surgery [FDA Label].",
+      "pharmacodynamics": "Loteprednol etabonate (LE) belongs to a unique class of corticosteroids with potent anti-inflammatory effects designed to be active at the site of action [A1312, L4539]. Animal studies have shown that LE has a binding affinity to steroid receptors that is 4.3 times greater than dexamethasone [L4539]. This particular class of steroids consists of bioactive molecules whose in-vivo transformation to non-toxic substances can be predicted from their chemistry and knowledge of enzymatic pathways in the body [L4539]. Cortienic acid is an inactive metabolite of hydrocortisone and analogs of cortienic acid are also devoid of corticosteroid activity [L4539]. Specifically, LE is an ester derivative of one of these analogs, cortienic acid etabonate [L4539]. In particular, LE possesses a metabolically labile 17 beta-chloromethyl ester function which was designed in order to be hydrolyzed to an inactive carboxylic acid moiety [A1312]. This inactive metabolite is more hydrophilic and is thus readily eliminated from the body [A1312]. LE also exhibits good ocular permeation properties and good skin permeation properties [A1312].",
+      "mechanism-of-action": "Corticosteroids like loteprednol etabonate inhibit the inflammatory response to a variety of inciting agents and likely delay or slow healing [FDA Label, L4539, A1312]. They inhibit the edema, fibrin deposition, capillary dilation, leukocyte migration, capillary proliferation, fibroblast proliferation, deposition of collagen, and scar formation that are commonly associated with inflammation [FDA Label, A1312]. While glucocorticoids are known to bind to and activate the glucocorticoid receptor, the molecular mechanisms involved in glucocorticoid/glucocorticoid receptor-dependent modulation of inflammation are not clearly established [FDA Label, L4539, A1312]. Moreover, corticosteroids are thought to inhibit prostaglandin production through several independent mechanisms [FDA Label, A1312]. In particular, corticosteroids are thought to act by the induction of phospholipase A2 inhibitory proteins, collectively called lipocortins [F1467]. It is postulated that these proteins control the biosynthesis of potent mediators of inflammation such as prostaglandins and leukotrienes by inhibiting the release of their common precursor arachidonic acid [F1467]. Arachidonic acid is released from membrane phospholipids by phospholipase A2 [F1467].  \n\n\n\nThe use of LE subsequently treats post-operative inflammation and pain following ocular surgery by managing the prostaglandin release, recruitment and travel of neutrophils and macrophages, and production of other inflammatory mediators that are intrinsically associated with the physical trauma of surgery [A1312].",
+      "toxicity": "The most common adverse drug reactions reported during clinical trials for the medication were eye pain and posterior capsular opacification, both of which may also be the consequence of the very surgical procedures performed on the eye(s) [FDA Label].\n\n\n\nThe agent is not absorbed systemically following topical ophthalmic administration and maternal use is not expected to result in fetal exposure to the drug [FDA Label].\n\n\n\nThe medication is not absorbed systemically by the mother following topical ophthalmic administration, and breastfeeding is not expected to result in exposure of the child to the agent [FDA Label].\n\n\n\nLong-term animal studies have not been conducted to evaluate the carcinogenic potential of loteprednol etabonate. Loteprednol etabonate was not genotoxic in vitro in the Ames test, the mouse lymphoma thymidine kinase (tk) assay, or in a chromosome aberration test in human lymphocytes, or in vivo in the single dose mouse micronucleus assay [FDA Label].\n\n\n\nOverdose is not expected to be likely to occur after ocular administration [F1467].",
+      "metabolism": "Loteprednol etabonate (LE) is readily and extensively metabolized to two inactive metabolites, PJ-90 (Δ1-cortienic acid) and PJ-91 (Δ1-cortienic acid etabonate) [FDA Label, F1467].  Metabolism occurs locally in ocular tissues, and to the extent that loteprednol etabonate reaches the systemic circulation, likely the liver and other tissues into which it distributes [F1467].\n\n\n\nIn particular, studies have demonstrated that LE (chloromethyl 17alpha-ethoxycarbonyloxy-11beta-hydroxy-3-oxoandrosta-1,4-diene) is rapidly hydrolyzed at the location of its 17beta-chloromethyl ester function by paraoxonase 1 in human plasma at the site of administration at the level of the affected eye tissue to the 17beta-carboxylate PJ-91 metabolite and PJ-90 metabolite [A38681, A38693]. Both metabolites are considered inactive [FDA Label, A38693, A38693].",
+      "absorption": "Loteprednol etabonate (LE) demonstrates good ocular permeation properties as it is lipid soluble, allowing the agent to penetrate into cells with relative ease [FDA Label, A1312].\n\n\n\nResults from the ocular administration of loteprednol in normal, healthy volunteers have shown that there are low or undetectable concentrations of either unchanged material or its metabolite [L4539]. Following twice-daily unilateral topical ocular dosing of LE for 14 days in healthy subjects, the plasma concentrations of loteprednol etabonate were below the limit of quantitation (1 ng/mL) at all time points [FDA Label]. These finds suggest that limited, if any, systemic absorption of LE occurs [L4539].",
+      "half-life": "The terminal half-life of loteprednol etabonate as determined when administered intravenously at a dose of 5 mg/kg in the dog animal model is 2.8 hours [A38682].",
+      "protein-binding": "Strong protein binding of approximately 98% for loteprednol etabonate facilitates little pharmacodynamic action and/or adverse effects on the part of the agent in the systemic circulation [A38681].",
+      "route-of-elimination": "Following systemic administration to rats, loteprednol etabonate is eliminated primarily via the biliary/faecal route, with most of the dose eliminated in the form of the metabolite, PJ-90 [F1467].",
+      "volume-of-distribution": "The only data available regarding the volume of distribution of loteprednol etabonate (LE) is the volume of distribution the agent demonstrated when administered to dogs - a value of 3.7 L/kg [A38682]. It has been shown, however, that the topical ocular administration of LE distributes preferentially into the cellular components of blood [F1467].",
+      "clearance": "Loteprednol etabonate was slowly hydrolyzed in liver at clearance rates of  0.21 +/- 0.04 and 2.41 +/- 0.13 ml/h/kg in the liver and plasma, respectively [A38681].",
+      "synonyms": "Loteprednol etabonate",
+      "mixtures": "Zylet\n      Loteprednol etabonate + Tobramycin",
+      "affected-organisms": "Humans and other mammals",
+      "fda-label": "//s3-us-west-2.amazonaws.com/drugbank/fda_labels/DB14596.pdf?1536686810",
+      "msds": "//s3-us-west-2.amazonaws.com/drugbank/msds/DB14596.pdf?1536686810",
+      "experimental-properties": "Water Solubility\n      5 mg/mL\n      \n    \n    \n      Melting Point\n      220-224 °C\n      \n    \n    \n      logP\n      3.4",
+      "reactions": "1\n      \n        DB14596\n        Loteprednol etabonate\n      \n      \n        DBMET02133\n        Δ1-cortienic acid etabonate (PJ-91)\n      \n      \n        \n          BE0000930\n          Serum paraoxonase/arylesterase 1\n          P27169\n        \n      \n    \n    \n      2\n      \n        DBMET02133\n        Δ1-cortienic acid etabonate (PJ-91)\n      \n      \n        DBMET02134\n        Δ1-cortienic acid (PJ-90)\n      \n      \n        \n          BE0000930\n          Serum paraoxonase/arylesterase 1\n          P27169",
+      "enzymes": "BE0002638\n      Cytochrome P450 3A4\n      Humans\n      \n        substrate\n      \n      \n        \n        \n        \n          \n            L3850\n            NCI/NIH\n            https://ncit-stage.nci.nih.gov/ncitbrowser/pages/concept_details.jsf?dictionary=NCI_Thesaurus&version=18.06d&code=C72818&ns=ncit&type=relationship&key=null&b=1&n=0&vse=null\n          \n          \n            L4539\n            Electronic Medicines Compendium: Loteprednol etabonate Monograph\n            https://www.medicines.org.uk/emc/product/6212\n          \n        \n        \n      \n      unknown\n      \n        Cytochrome P450 3A4\n        Vitamin d3 25-hydroxylase activity\n        Cytochromes P450 are a group of heme-thiolate monooxygenases. In liver microsomes, this enzyme is involved in an NADPH-dependent electron transport pathway. It performs a variety of oxidation reactions (e.g. caffeine 8-oxidation, omeprazole sulphoxidation, midazolam 1'-hydroxylation and midazolam 4-hydroxylation) of structurally unrelated compounds, including steroids, fatty acids, and xenobiotics. Acts as a 1,8-cineole 2-exo-monooxygenase. The enzyme also hydroxylates etoposide (PubMed:11159812). Catalyzes 4-beta-hydroxylation of cholesterol. May catalyze 25-hydroxylation of cholesterol in vitro (PubMed:21576599).\n        CYP3A4\n        7q21.1\n        Endoplasmic reticulum membrane\n        2-22\n        \n        8.25\n        57342.67\n        7\n        Humans\n        \n          \n            HUGO Gene Nomenclature Committee (HGNC)\n            HGNC:2637\n          \n          \n            GenAtlas\n            CYP3A4\n          \n          \n            GenBank Gene Database\n            M18907\n          \n          \n            Guide to Pharmacology\n            1337\n          \n          \n            UniProtKB\n            P08684\n          \n          \n            UniProt Accession\n            CP3A4_HUMAN\n          \n        \n        \n          1,8-cineole 2-exo-monooxygenase\n          1.14.13.-\n          Albendazole monooxygenase\n          Albendazole sulfoxidase\n          Cholesterol 25-hydroxylase\n          CYP3A3\n          CYPIIIA3\n          CYPIIIA4\n          Cytochrome P450 3A3\n          Cytochrome P450 HLp\n          Cytochrome P450 NF-25\n          Cytochrome P450-PCN1\n          Nifedipine oxidase\n          Quinine 3-monooxygenase\n          Taurochenodeoxycholate 6-alpha-hydroxylase\n        \n        >lcl|BSEQ0021936|Cytochrome P450 3A4\nMALIPDLAMETWLLLAVSLVLLYLYGTHSHGLFKKLGIPGPTPLPFLGNILSYHKGFCMF\nDMECHKKYGKVWGFYDGQQPVLAITDPDMIKTVLVKECYSVFTNRRPFGPVGFMKSAISI\nAEDEEWKRLRSLLSPTFTSGKLKEMVPIIAQYGDVLVRNLRREAETGKPVTLKDVFGAYS\nMDVITSTSFGVNIDSLNNPQDPFVENTKKLLRFDFLDPFFLSITVFPFLIPILEVLNICV\nFPREVTNFLRKSVKRMKESRLEDTQKHRVDFLQLMIDSQNSKETESHKALSDLELVAQSI\nIFIFAGYETTSSVLSFIMYELATHPDVQQKLQEEIDAVLPNKAPPTYDTVLQMEYLDMVV\nNETLRLFPIAMRLERVCKKDVEINGMFIPKGVVVMIPSYALHRDPKYWTEPEKFLPERFS\nKKNKDNIDPYIYTPFGSGPRNCIGMRFALMNMKLALIRVLQNFSFKPCKETQIPLKLSLG\nGLLQPEKPVVLKVESRDGTVSGA\n        >lcl|BSEQ0021937|Cytochrome P450 3A4 (CYP3A4)\nATGGCTCTCATCCCAGACTTGGCCATGGAAACCTGGCTTCTCCTGGCTGTCAGCCTGGTG\nCTCCTCTATCTATATGGAACCCATTCACATGGACTTTTTAAGAAGCTTGGAATTCCAGGG\nCCCACACCTCTGCCTTTTTTGGGAAATATTTTGTCCTACCATAAGGGCTTTTGTATGTTT\nGACATGGAATGTCATAAAAAGTATGGAAAAGTGTGGGGCTTTTATGATGGTCAACAGCCT\nGTGCTGGCTATCACAGATCCTGACATGATCAAAACAGTGCTAGTGAAAGAATGTTATTCT\nGTCTTCACAAACCGGAGGCCTTTTGGTCCAGTGGGATTTATGAAAAGTGCCATCTCTATA\nGCTGAGGATGAAGAATGGAAGAGATTACGATCATTGCTGTCTCCAACCTTCACCAGTGGA\nAAACTCAAGGAGATGGTCCCTATCATTGCCCAGTATGGAGATGTGTTGGTGAGAAATCTG\nAGGCGGGAAGCAGAGACAGGCAAGCCTGTCACCTTGAAAGACGTCTTTGGGGCCTACAGC\nATGGATGTGATCACTAGCACATCATTTGGAGTGAACATCGACTCTCTCAACAATCCACAA\nGACCCCTTTGTGGAAAACACCAAGAAGCTTTTAAGATTTGATTTTTTGGATCCATTCTTT\nCTCTCAATAATCTTTCCATTCCTCATCCCAATTCTTGAAGTATTAAATATCTGTGTGTTT\nCCAAGAGAAGTTACAAATTTTTTAAGAAAATCTGTAAAAAGGATGAAAGAAAGTCGCCTC\nGAAGATACACAAAAGCACCGAGTGGATTTCCTTCAGCTGATGATTGACTCTCAGAATTCA\nAAAGAAACTGAGTCCCACAAAGCTCTGTCCGATCTGGAGCTCGTGGCCCAATCAATTATC\nTTTATTTTTGCTGGCTATGAAACCACGAGCAGTGTTCTCTCCTTCATTATGTATGAACTG\nGCCACTCACCCTGATGTCCAGCAGAAACTGCAGGAGGAAATTGATGCAGTTTTACCCAAT\nAAGGCACCACCCACCTATGATACTGTGCTACAGATGGAGTATCTTGACATGGTGGTGAAT\nGAAACGCTCAGATTATTCCCAATTGCTATGAGACTTGAGAGGGTCTGCAAAAAAGATGTT\nGAGATCAATGGGATGTTCATTCCCAAAGGGGTGGTGGTGATGATTCCAAGCTATGCTCTT\nCACCGTGACCCAAAGTACTGGACAGAGCCTGAGAAGTTCCTCCCTGAAAGATTCAGCAAG\nAAGAACAAGGACAACATAGATCCTTACATATACACACCCTTTGGAAGTGGACCCAGAAAC\nTGCATTGGCATGAGGTTTGCTCTCATGAACATGAAACTTGCTCTAATCAGAGTCCTTCAG\nAACTTCTCCTTCAAACCTTGTAAAGAAACACAGATCCCCCTGAAATTAAGCTTAGGAGGA\nCTTCTTCAACCAGAAAAACCCGTTGTTCTAAAGGTTGAGTCAAGGGATGGCACCGTAAGT\nGGAGCCTGA\n        \n          \n            PF00067\n            p450\n          \n        \n        \n          \n            component\n            cytoplasm\n          \n          \n            component\n            endoplasmic reticulum membrane\n          \n          \n            component\n            integral component of membrane\n          \n          \n            component\n            intracellular membrane-bounded organelle\n          \n          \n            function\n            albendazole monooxygenase activity\n          \n          \n            function\n            aromatase activity\n          \n          \n            function\n            caffeine oxidase activity\n          \n          \n            function\n            enzyme binding\n          \n          \n            function\n            heme binding\n          \n          \n            function\n            iron ion binding\n          \n          \n            function\n            monooxygenase activity\n          \n          \n            function\n            oxidoreductase activity\n          \n          \n            function\n            oxygen binding\n          \n          \n            function\n            quinine 3-monooxygenase activity\n          \n          \n            function\n            steroid binding\n          \n          \n            function\n            steroid hydroxylase activity\n          \n          \n            function\n            taurochenodeoxycholate 6alpha-hydroxylase activity\n          \n          \n            function\n            testosterone 6-beta-hydroxylase activity\n          \n          \n            function\n            vitamin D 24-hydroxylase activity\n          \n          \n            function\n            vitamin D3 25-hydroxylase activity\n          \n          \n            process\n            alkaloid catabolic process\n          \n          \n            process\n            androgen metabolic process\n          \n          \n            process\n            calcitriol biosynthetic process from calciol\n          \n          \n            process\n            drug catabolic process\n          \n          \n            process\n            drug metabolic process\n          \n          \n            process\n            exogenous drug catabolic process\n          \n          \n            process\n            heterocycle metabolic process\n          \n          \n            process\n            lipid metabolic process\n          \n          \n            process\n            monoterpenoid metabolic process\n          \n          \n            process\n            oxidation-reduction process\n          \n          \n            process\n            oxidative demethylation\n          \n          \n            process\n            small molecule metabolic process\n          \n          \n            process\n            steroid catabolic process\n          \n          \n            process\n            steroid metabolic process\n          \n          \n            process\n            vitamin D metabolic process\n          \n          \n            process\n            xenobiotic metabolic process\n          \n        \n      \n      \n      \n    \n    \n      BE0000930\n      Serum paraoxonase/arylesterase 1\n      Humans\n      \n        substrate\n      \n      \n        \n          \n            A38681\n            28017774\n            Samir A, Bodor N, Imai T: Identification of esterase involved in the metabolism of two corticosteroid soft drugs. Biochem Pharmacol. 2017 Mar 1;127:82-89. doi: 10.1016/j.bcp.2016.12.010. Epub 2016 Dec 22.\n          \n        \n        \n        \n        \n      \n      no\n      \n        Serum paraoxonase/arylesterase 1\n        Protein homodimerization activity\n        Hydrolyzes the toxic metabolites of a variety of organophosphorus insecticides. Capable of hydrolyzing a broad spectrum of organophosphate substrates and lactones, and a number of aromatic carboxylic acid esters. Mediates an enzymatic protection of low density lipoproteins against oxidative modification and the consequent series of events leading to atheroma formation.\n        PON1\n        7q21.3\n        Secreted\n        \n        2-\n        4.89\n        39730.99\n        7\n        Humans\n        \n          \n            HUGO Gene Nomenclature Committee (HGNC)\n            HGNC:9204\n          \n          \n            GenAtlas\n            PON1\n          \n          \n            GenBank Gene Database\n            M63012\n          \n          \n            GenBank Protein Database\n            190192\n          \n          \n            UniProtKB\n            P27169\n          \n          \n            UniProt Accession\n            PON1_HUMAN\n          \n        \n        \n          3.1.1.2\n          A-esterase 1\n          Aromatic esterase 1\n          K-45\n          PON\n          PON 1\n          Serum aryldialkylphosphatase 1\n        \n        >lcl|BSEQ0020496|Serum paraoxonase/arylesterase 1\nMAKLIALTLLGMGLALFRNHQSSYQTRLNALREVQPVELPNCNLVKGIETGSEDLEILPN\nGLAFISSGLKYPGIKSFNPNSPGKILLMDLNEEDPTVLELGITGSKFDVSSFNPHGISTF\nTDEDNAMYLLVVNHPDAKSTVELFKFQEEEKSLLHLKTIRHKLLPNLNDIVAVGPEHFYG\nTNDHYFLDPYLQSWEMYLGLAWSYVVYYSPSEVRVVAEGFDFANGINISPDGKYVYIAEL\nLAHKIHVYEKHANWTLTPLKSLDFNTLVDNISVDPETGDLWVGCHPNGMKIFFYDSENPP\nASEVLRIQNILTEEPKVTQVYAENGTVLQGSTVASVYKGKLLIGTVFHKALYCEL\n        >lcl|BSEQ0020497|Serum paraoxonase/arylesterase 1 (PON1)\nATGGCGAAGCTGATTGCGCTCACCCTCTTGGGGATGGGACTGGCACTCTTCAGGAACCAC\nCAGTCTTCTTACCAAACACGACTTAATGCTCTCCGAGAGGTACAACCCGTAGAACTTCCT\nAACTGTAATTTAGTTAAAGGAATCGAAACTGGCTCTGAAGACTTGGAGATACTGCCTAAT\nGGACTGGCTTTCATTAGCTCTGGATTAAAGTATCCTGGAATAAAGAGCTTCAACCCCAAC\nAGTCCTGGAAAAATACTTCTGATGGACCTGAATGAAGAAGATCCAACAGTGTTGGAATTG\nGGGATCACTGGAAGTAAATTTGATGTATCTTCATTTAACCCTCATGGGATTAGCACATTC\nACAGATGAAGATAATGCCATGTACCTCCTGGTGGTGAACCATCCAGATGCCAAGTCCACA\nGTGGAGTTGTTTAAATTTCAAGAAGAAGAAAAATCGCTTTTGCATCTAAAAACCATCAGA\nCATAAACTTCTGCCTAATTTGAATGATATTGTTGCTGTGGGACCTGAGCACTTTTATGGC\nACAAATGATCACTATTTTCTTGACCCCTACTTACAATCCTGGGAGATGTATTTGGGTTTA\nGCGTGGTCGTATGTTGTCTACTATAGTCCAAGTGAAGTTCGAGTGGTGGCAGAAGGATTT\nGATTTTGCTAATGGAATCAACATTTCACCCGATGGCAAGTATGTCTATATAGCTGAGTTG\nCTGGCTCATAAGATTCATGTGTATGAAAAGCATGCTAATTGGACTTTAACTCCATTGAAG\nTCCCTTGACTTTAATACCCTCGTGGATAACATATCTGTGGATCCTGAGACAGGAGACCTT\nTGGGTTGGATGCCATCCCAATGGCATGAAAATCTTCTTCTATGACTCAGAGAATCCTCCT\nGCATCAGAGGTGCTTCGAATCCAGAACATTCTAACAGAAGAACCTAAAGTGACACAGGTT\nTATGCAGAAAATGGCACAGTGTTGCAAGGCAGTACAGTTGCCTCTGTGTACAAAGGGAAA\nCTGCTGATTGGCACAGTGTTTCACAAAGCTCTTTACTGTGAGCTCTAA\n        \n          \n            PF01731\n            Arylesterase\n          \n        \n        \n          \n            component\n            blood microparticle\n          \n          \n            component\n            extracellular exosome\n          \n          \n            component\n            extracellular region\n          \n          \n            component\n            extracellular space\n          \n          \n            component\n            high-density lipoprotein particle\n          \n          \n            component\n            intracellular membrane-bounded organelle\n          \n          \n            component\n            spherical high-density lipoprotein particle\n          \n          \n            function\n            aryldialkylphosphatase activity\n          \n          \n            function\n            arylesterase activity\n          \n          \n            function\n            calcium ion binding\n          \n          \n            function\n            phospholipid binding\n          \n          \n            function\n            protein homodimerization activity\n          \n          \n            process\n            aromatic compound catabolic process\n          \n          \n            process\n            carboxylic acid catabolic process\n          \n          \n            process\n            dephosphorylation\n          \n          \n            process\n            organophosphate catabolic process\n          \n          \n            process\n            phosphatidylcholine metabolic process\n          \n          \n            process\n            positive regulation of binding\n          \n          \n            process\n            positive regulation of cholesterol efflux\n          \n          \n            process\n            positive regulation of transporter activity\n          \n          \n            process\n            response to external stimulus\n          \n          \n            process\n            response to fatty acid\n          \n          \n            process\n            response to fluoride\n          \n          \n            process\n            response to nutrient levels\n          \n          \n            process\n            response to toxic substance"
+    },
+    "drugbankId": "DB14596",
+    "casNumber": "82034-46-6",
+    "drugType": "small molecule",
+    "averageMass": 466.96,
+    "monoisotopicMass": 466.175831,
+    "molecularFormula": "C24H31ClO7",
+    "molecularWeight": 466.96,
+    "foodInteractions": [],
+    "drugInteractions": [],
+    "regulatoryLinks": [
+      {
+        "ref_id": "RxList",
+        "title": "RxList",
+        "url": "http://www.rxlist.com/cgi/generic2/lotemax.htm",
+        "category": null
+      },
+      {
+        "ref_id": "Drugs.com",
+        "title": "Drugs.com",
+        "url": "http://www.drugs.com/international/loteprednol.html",
+        "category": null
+      }
+    ],
+    "regulatoryApprovals": [],
+    "scientificArticles": [
+      {
+        "ref_id": "A1312",
+        "pubmed_id": "18245274",
+        "citation": "Pavesio CE, Decory HH: Treatment of ocular inflammatory conditions with loteprednol etabonate. Br J Ophthalmol. 2008 Apr;92(4):455-9. doi: 10.1136/bjo.2007.132621. Epub 2008 Feb 1."
+      },
+      {
+        "ref_id": "A38681",
+        "pubmed_id": "28017774",
+        "citation": "Samir A, Bodor N, Imai T: Identification of esterase involved in the metabolism of two corticosteroid soft drugs. Biochem Pharmacol. 2017 Mar 1;127:82-89. doi: 10.1016/j.bcp.2016.12.010. Epub 2016 Dec 22."
+      },
+      {
+        "ref_id": "A38682",
+        "pubmed_id": "1491342",
+        "citation": "Hochhaus G, Chen LS, Ratka A, Druzgala P, Howes J, Bodor N, Derendorf H: Pharmacokinetic characterization and tissue distribution of the new glucocorticoid soft drug loteprednol etabonate in rats and dogs. J Pharm Sci. 1992 Dec;81(12):1210-5."
+      },
+      {
+        "ref_id": "A38693",
+        "pubmed_id": "1959381",
+        "citation": "Druzgala P, Wu WM, Bodor N: Ocular absorption and distribution of loteprednol etabonate, a soft steroid, in rabbit eyes. Curr Eye Res. 1991 Oct;10(10):933-7."
+      }
+    ],
+    "generalReferences": {
+      "links": [
+        {
+          "ref_id": "L4539",
+          "title": "Electronic Medicines Compendium: Loteprednol etabonate Monograph",
+          "url": "https://www.medicines.org.uk/emc/product/6212",
+          "category": null
+        },
+        {
+          "ref_id": "L4545",
+          "title": "Inveltys FDA Approval Press Release",
+          "url": "https://www.drugs.com/newdrugs/fda-approves-inveltys-loteprednol-etabonate-post-operative-inflammation-pain-following-ocular-4808.html?utm_source=ddc&utm_medium=email&utm_campaign=Today%27s+news+summary+-+August+24%2C+2018&utm_content=FDA+Approves+Inveltys+%28loteprednol+etabonate%29+for+Post-Operative+Inflammation+and+Pain+Following+Ocular+Surgery",
+          "category": null
+        },
+        {
+          "ref_id": "L19889",
+          "title": "FDA Approved Drug Products: Eysuvis (loteprednol etabonate) ophthalmic suspension",
+          "url": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2020/210933s000lbl.pdf",
+          "category": null
+        },
+        {
+          "ref_id": "F1467",
+          "title": "Australian Register of Therapeutic Goods: Loteprednol etabonate Product Information",
+          "url": "//s3-us-west-2.amazonaws.com/drugbank/cite_this/attachments/files/000/001/467/original/auspar-loteprednol-etabonate-140417-pi.docx?1536691506",
+          "category": null
+        }
+      ]
+    },
+    "externalIdentifiers": [
+      {
+        "resource": "Drugs Product Database (DPD)",
+        "identifier": "20429"
+      },
+      {
+        "resource": "ChEBI",
+        "identifier": "31784"
+      },
+      {
+        "resource": "PubChem Compound",
+        "identifier": "9865442"
+      },
+      {
+        "resource": "PubChem Substance",
+        "identifier": "46504713"
+      },
+      {
+        "resource": "KEGG Drug",
+        "identifier": "D01689"
+      },
+      {
+        "resource": "ChemSpider",
+        "identifier": "392049"
+      },
+      {
+        "resource": "PharmGKB",
+        "identifier": "PA164764569"
+      },
+      {
+        "resource": "Therapeutic Targets Database",
+        "identifier": "DAP001045"
+      },
+      {
+        "resource": "Wikipedia",
+        "identifier": "Loteprednol"
+      },
+      {
+        "resource": "ChEMBL",
+        "identifier": "CHEMBL1200865"
+      },
+      {
+        "resource": "ZINC",
+        "identifier": "ZINC000003920673"
+      }
+    ],
+    "atcCodes": []
+  }
+}
