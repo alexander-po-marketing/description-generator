@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Callable
+from typing import Callable, Optional
 
 from openai import OpenAI
 
@@ -35,45 +35,66 @@ class OpenAIClient:
                 time.sleep(min(2 ** attempt, 10))
         raise RuntimeError("Failed to complete OpenAI request")
 
-    def generate_description(self, prompt: str) -> str:
-        def _call() -> str:
-            completion = self.client.chat.completions.create(
-                model=self.config.model,
-                max_completion_tokens=self.config.max_completion_tokens,
-                messages=[
-                    {
-                        "role": "developer",
-                        "content": (
-                            "You are an expert pharmaceutical scientist who writes precise, compliant API descriptions."
-                            " Use factual, concise language and never fabricate data."
-                        ),
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-            )
-            return completion.choices[0].message.content or ""
+    def _chat_completion(
+        self,
+        *,
+        model: str,
+        max_tokens: int,
+        developer_message: str,
+        user_message: str,
+    ) -> str:
+        completion = self.client.chat.completions.create(
+            model=model,
+            max_completion_tokens=max_tokens,
+            messages=[
+                {"role": "developer", "content": developer_message},
+                {"role": "user", "content": user_message},
+            ],
+        )
+        return completion.choices[0].message.content or ""
 
-        return self._retry(_call)
+    def generate_description(self, prompt: str) -> str:
+        return self._retry(
+            lambda: self._chat_completion(
+                model=self.config.model,
+                max_tokens=self.config.max_completion_tokens,
+                developer_message=(
+                    "You are an expert pharmaceutical scientist who writes precise, compliant API descriptions."
+                    " Use factual, concise language and never fabricate data."
+                ),
+                user_message=prompt,
+            )
+        )
 
     def generate_summary(self, prompt: str) -> str:
-        def _call() -> str:
-            completion = self.client.chat.completions.create(
+        return self._retry(
+            lambda: self._chat_completion(
                 model=self.config.summary_model,
-                max_completion_tokens=self.config.summary_max_completion_tokens,
-                messages=[
-                    {
-                        "role": "developer",
-                        "content": (
-                            "You condense pharmaceutical descriptions into succinct overviews for catalog cards."
-                            " Maintain accuracy, avoid marketing language, and keep to 1-2 sentences."
-                        ),
-                    },
-                    {"role": "user", "content": prompt},
-                ],
+                max_tokens=self.config.summary_max_completion_tokens,
+                developer_message=(
+                    "You condense pharmaceutical descriptions into succinct overviews for catalog cards."
+                    " Maintain accuracy, avoid marketing language, and keep to 1-2 sentences."
+                ),
+                user_message=prompt,
             )
-            return completion.choices[0].message.content or ""
+        )
 
-        return self._retry(_call)
+    def generate_text(
+        self,
+        prompt: str,
+        *,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        developer_message: str = "You generate concise, accurate pharmaceutical copy without marketing language.",
+    ) -> str:
+        return self._retry(
+            lambda: self._chat_completion(
+                model=model or self.config.summary_model,
+                max_tokens=max_tokens or self.config.summary_max_completion_tokens,
+                developer_message=developer_message,
+                user_message=prompt,
+            )
+        )
 
 
 def _require_env(key: str) -> str:

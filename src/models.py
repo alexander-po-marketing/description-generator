@@ -205,6 +205,7 @@ class DrugData:
 class GeneratedContent:
     description_html: str
     summary: str
+    summary_sentence: Optional[str] = None
 
 
 @dataclass
