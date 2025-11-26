@@ -89,7 +89,7 @@ def build_description_prompt(drug: DrugData) -> str:
     return dedent(
         f"""
         You are a senior pharmaceutical medical writer crafting authoritative product content for formulation scientists, sourcing managers, and regulatory affairs teams.
-        Write a 260-320 word description contained entirely within a single <p> tag.
+        Write a 260-320 word description in plain text (no HTML or Markdown) using short paragraphs separated by blank lines.
         The writing must be technically rigorous, globally relevant, and avoid promotional claims.
         Emphasize: clinical indication, pharmacology, mechanism of action, key ADME parameters, safety/toxicity considerations, and any notable brands or usage contexts.
         Close with a concise note on sourcing or quality considerations relevant to API procurement.
@@ -98,10 +98,9 @@ def build_description_prompt(drug: DrugData) -> str:
         {formatted}
 
         Output requirements:
-        - Produce clean HTML with no inline styles.
-        - Use short paragraphs separated by <br> elements inside the <p>.
-        - Avoid placeholder text; omit any unknown details rather than fabricating.
+        - Plain text only. Do NOT include HTML, Markdown, headings, or bullet symbols.
         - Keep language neutral and compliant.
+        - Avoid placeholder text; omit any unknown details rather than fabricating.
         """
     ).strip()
 

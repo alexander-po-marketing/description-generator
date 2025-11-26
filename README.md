@@ -1,6 +1,6 @@
 # DrugBank to Pharmaoffer Content Pipeline
 
-This project transforms DrugBank XML exports into structured JSON, XML, and HTML suitable for Pharmaoffer API product pages. The pipeline parses DrugBank data, generates expert pharmaceutical descriptions with OpenAI, renders clean HTML sections, and exports multiple machine-readable formats.
+This project transforms DrugBank XML exports into structured JSON ready for Pharmaoffer API product pages. The pipeline parses DrugBank data, generates expert pharmaceutical descriptions with OpenAI, builds UI-agnostic page models, and can optionally emit legacy HTML previews.
 
 ## Features
 
@@ -8,7 +8,8 @@ This project transforms DrugBank XML exports into structured JSON, XML, and HTML
 - **Configurable OpenAI usage:** models, completion token limits, retries, and credentials are driven by environment variables.
 - **Robust parsing:** pulls core DrugBank attributes, classifications, products, categories, and references with graceful handling of missing data.
 - **Enhanced prompting:** pharma-grade description and summary prompts with logged inputs for traceability.
-- **Clean HTML:** semantic sections for identification, pharmacology, taxonomy, and references.
+- **Structured page models:** JSON designed for flexible React/Vue rendering (no embedded HTML tags).
+- **Optional HTML previews:** renderable snippets remain available for debugging or legacy consumers.
 - **CLI and UI control:** run the pipeline via command line or through the browser-based controller.
 - **Logging and retries:** visibility into each pipeline stage and resilient OpenAI calls.
 
@@ -16,7 +17,7 @@ This project transforms DrugBank XML exports into structured JSON, XML, and HTML
 
 ```
 inputs/     # DrugBank XML and optional valid-ID files
-outputs/    # database.json, api_descriptions.json, api_descriptions.xml
+outputs/    # database.json, api_pages.json, optional legacy preview files
 logs/       # prompt logs and pipeline logs
 cache/      # scratch directory for experiments
 scripts/    # helpers including the interface HTTP server
@@ -41,13 +42,16 @@ src/        # core pipeline modules and CLI entrypoint
    python src/main.py \
      --xml-path inputs/drugbank.xml \
      --output-database-json outputs/database.json \
-     --output-descriptions-json outputs/api_descriptions.json \
-     --output-descriptions-xml outputs/api_descriptions.xml \
+     --output-page-models-json outputs/api_pages.json \
      --description-log logs/description_prompts.log \
      --summary-log logs/summary_prompts.log \
      --valid-drugs inputs/valid_ids.txt \
      --max-drugs 50 \
      --log-level INFO
+
+   # Optional legacy HTML/JSON exports (omit to skip)
+   # --output-descriptions-json outputs/api_descriptions_preview.json \
+   # --output-descriptions-xml outputs/api_descriptions_preview.xml \
    ```
 
    Supply `--valid-drugs` as a comma-separated list or a path to a text file (one DrugBank ID per line). Omit it to process all entries. Use `--max-drugs` to cap processing during tests.
@@ -88,9 +92,9 @@ Environment variables control OpenAI behavior and defaults:
 
 ## Outputs
 
-- `outputs/database.json` — structured parsed DrugBank data per DrugBank ID.
-- `outputs/api_descriptions.json` — generated HTML descriptions keyed by DrugBank ID.
-- `outputs/api_descriptions.xml` — XML wrapper containing `<drug><name/><cas-number/><description/></drug>` entries.
+- `outputs/database.json` — structured parsed DrugBank data per DrugBank ID (debug/secondary source).
+- `outputs/api_pages.json` — structured, HTML-free page models ready for UI rendering (primary output).
+- `outputs/api_descriptions_preview.json` / `.xml` — optional legacy HTML previews when requested via CLI flags.
 - `logs/description_prompts.log` and `logs/summary_prompts.log` — captured prompts for auditing and debugging.
 
 ## Testing and extension

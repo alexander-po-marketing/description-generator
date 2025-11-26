@@ -107,7 +107,10 @@ def render_references(drug: DrugData) -> str:
 
 
 def render_html(drug: DrugData, generated: GeneratedContent) -> str:
-    description = generated.description_html
+    description = html.escape(generated.description)
+    description = description.replace("\n\n", "</p><p>").replace("\n", "<br>")
+    if description:
+        description = f"<p>{description}</p>"
     identification = render_identification(drug, generated)
     pharmacology = render_pharmacology(drug)
     taxonomy = render_taxonomy(drug)

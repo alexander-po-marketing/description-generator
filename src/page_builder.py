@@ -26,7 +26,12 @@ from src.openai_client import OpenAIClient
 def _sanitize_text(text: Optional[str]) -> Optional[str]:
     if text is None:
         return None
-    return re.sub(r"\[.*?\]", "", text).strip()
+    cleaned = re.sub(r"<[^>]+>", " ", text)
+    cleaned = re.sub(r"\[.*?\]", "", cleaned)
+    cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = re.sub(r"[ \t]+", " ", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
 
 
 def _unique(items: Sequence[Optional[str]]) -> List[str]:
@@ -243,7 +248,7 @@ def _ensure_generated_fields(
         summary_sentence_text = client.generate_text(sentence_prompt)
 
     return GeneratedContent(
-        description_html=_sanitize_text(description_text) or "",
+        description=_sanitize_text(description_text) or "",
         summary=_sanitize_text(summary_text) or "",
         summary_sentence=_sanitize_text(summary_sentence_text),
     )
@@ -323,7 +328,7 @@ def build_page_model(
         },
         "overview": {
             "summary": generated.summary,
-            "description": generated.description_html,
+            "description": generated.description,
         },
         "identification": {
             "genericName": drug.name,
