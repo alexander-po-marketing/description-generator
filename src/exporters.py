@@ -19,13 +19,13 @@ def export_database(path: str, data: Dict[str, DrugData]) -> None:
 
 
 def export_descriptions_json(path: str, descriptions: Dict[str, str]) -> None:
-    logger.info("Writing generated descriptions to %s", path)
+    logger.info("Writing legacy HTML descriptions to %s", path)
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(descriptions, handle, ensure_ascii=False, indent=2)
 
 
 def export_descriptions_xml(path: str, drug_data: Dict[str, DrugData], descriptions: Dict[str, str]) -> None:
-    logger.info("Writing XML descriptions to %s", path)
+    logger.info("Writing legacy XML descriptions to %s", path)
     root = ET.Element("drugs")
     for drug_id, drug in drug_data.items():
         if drug_id not in descriptions:

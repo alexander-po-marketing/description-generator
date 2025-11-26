@@ -13,7 +13,7 @@ from typing import Dict, Iterable
 from src.config import OpenAIConfig, PipelineConfig, parse_valid_ids
 from src.drugbank_parser import parse_drugbank_xml
 from src.exporters import export_database, export_descriptions_json, export_descriptions_xml, export_page_models
-from src.generators import build_description_prompt, build_summary_prompt
+from src.generators import build_description_prompt, build_summary_prompt, build_summary_sentence_prompt
 from src.html_renderer import render_html
 from src.models import DrugData, GeneratedContent
 from src.page_builder import build_page_model
@@ -31,8 +31,14 @@ def setup_logging(level: str) -> None:
 
 
 def sanitize_text(text: str) -> str:
-    """Remove square-bracketed citations that sometimes appear in DrugBank content."""
-    return re.sub(r"\[.*?\]", "", text or "")
+    """Normalize model output to plain text without HTML or citation artifacts."""
+    cleaned = text or ""
+    cleaned = re.sub(r"<[^>]+>", " ", cleaned)
+    cleaned = re.sub(r"\[.*?\]", "", cleaned)
+    cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = re.sub(r"[ \t]+", " ", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
 
 
 def validate_drug(drug: DrugData) -> Iterable[str]:
@@ -57,18 +63,25 @@ def generate_for_drug(drug: DrugData, client: OpenAIClient, config: PipelineConf
     write_prompt_log(config.summary_prompts_log, summary_prompt)
     summary = client.generate_summary(summary_prompt)
 
+    summary_sentence_prompt = build_summary_sentence_prompt(drug)
+    write_prompt_log(config.summary_prompts_log, summary_sentence_prompt)
+    summary_sentence = client.generate_text(summary_sentence_prompt)
+
     description = sanitize_text(description)
     summary = sanitize_text(summary)
-    return GeneratedContent(description_html=description, summary=summary)
+    summary_sentence = sanitize_text(summary_sentence)
+    return GeneratedContent(description=description, summary=summary, summary_sentence=summary_sentence)
 
 
-def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, str]:
+def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, object]:
     client = OpenAIClient(ai_config)
     parsed = parse_drugbank_xml(config)
     export_database(config.database_json, parsed)
 
-    descriptions: Dict[str, str] = {}
     page_models: Dict[str, object] = {}
+    legacy_descriptions: Dict[str, str] | None = (
+        {} if config.descriptions_json or config.descriptions_xml else None
+    )
     for drug_id, drug in parsed.items():
         missing = list(validate_drug(drug))
         if missing:
@@ -76,23 +89,27 @@ def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, 
             continue
         try:
             generated = generate_for_drug(drug, client, config)
-            html = render_html(drug, generated)
-            descriptions[drug_id] = html
             page_models[drug_id] = build_page_model(
                 drug,
                 client,
                 summary=generated.summary,
-                description=generated.description_html,
+                description=generated.description,
                 summary_sentence=generated.summary_sentence,
             )
+            if legacy_descriptions is not None:
+                html = render_html(drug, generated)
+                legacy_descriptions[drug_id] = html
             logger.info("Generated content for %s", drug.name)
         except Exception as exc:  # pragma: no cover - integration layer
             logger.exception("Failed to generate content for %s: %s", drug_id, exc)
 
-    export_descriptions_json(config.descriptions_json, descriptions)
-    export_descriptions_xml(config.descriptions_xml, parsed, descriptions)
     export_page_models(config.page_models_json, page_models)
-    return descriptions
+    if legacy_descriptions is not None:
+        if config.descriptions_json:
+            export_descriptions_json(config.descriptions_json, legacy_descriptions)
+        if config.descriptions_xml:
+            export_descriptions_xml(config.descriptions_xml, parsed, legacy_descriptions)
+    return page_models
 
 
 def parse_args(argv: Iterable[str]) -> argparse.Namespace:
@@ -101,9 +118,21 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     )
     parser.add_argument("--xml-path", required=True, help="Path to DrugBank XML input")
     parser.add_argument("--output-database-json", default="outputs/database.json", help="Parsed database JSON output path")
-    parser.add_argument("--output-descriptions-json", default="outputs/api_descriptions.json", help="Generated descriptions JSON output path")
-    parser.add_argument("--output-descriptions-xml", default="outputs/api_descriptions.xml", help="Generated descriptions XML output path")
-    parser.add_argument("--output-page-models-json", default="outputs/page_models.json", help="Structured page models JSON output path")
+    parser.add_argument(
+        "--output-descriptions-json",
+        default=None,
+        help="Optional legacy HTML description JSON output path (omit to skip)",
+    )
+    parser.add_argument(
+        "--output-descriptions-xml",
+        default=None,
+        help="Optional legacy HTML description XML output path (omit to skip)",
+    )
+    parser.add_argument(
+        "--output-page-models-json",
+        default="outputs/api_pages.json",
+        help="Structured API page models JSON output path (primary output)",
+    )
     parser.add_argument("--description-log", default="logs/description_prompts.log", help="Where to write description prompts used during generation")
     parser.add_argument("--summary-log", default="logs/summary_prompts.log", help="Where to write summary prompts used during generation")
     parser.add_argument("--valid-drugs", help="Comma-separated list of DrugBank IDs or path to file with one ID per line")

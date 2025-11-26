@@ -33,9 +33,9 @@ class OpenAIConfig:
 class PipelineConfig:
     xml_path: str
     database_json: str
-    descriptions_json: str
-    descriptions_xml: str
-    page_models_json: str = "outputs/page_models.json"
+    descriptions_json: Optional[str]
+    descriptions_xml: Optional[str]
+    page_models_json: str = "outputs/api_pages.json"
     description_prompts_log: str = "logs/description_prompts.log"
     summary_prompts_log: str = "logs/summary_prompts.log"
     valid_drug_ids: Set[str] = field(default_factory=set)
@@ -92,8 +92,8 @@ class PipelineConfig:
         cls,
         xml_path: str,
         database_json: str,
-        descriptions_json: str,
-        descriptions_xml: str,
+        descriptions_json: Optional[str],
+        descriptions_xml: Optional[str],
         page_models_json: Optional[str] = None,
         *,
         valid_drug_ids: Optional[Iterable[str]] = None,
@@ -107,7 +107,7 @@ class PipelineConfig:
             database_json=database_json,
             descriptions_json=descriptions_json,
             descriptions_xml=descriptions_xml,
-            page_models_json=page_models_json or "outputs/page_models.json",
+            page_models_json=page_models_json or "outputs/api_pages.json",
             valid_drug_ids=set(valid_drug_ids or []),
             max_drugs=max_drugs,
             log_level=log_level or os.getenv("LOG_LEVEL", "INFO"),
