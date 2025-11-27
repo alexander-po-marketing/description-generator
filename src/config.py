@@ -20,7 +20,7 @@ def _parse_set(value: Optional[str]) -> Set[str]:
 @dataclass
 class OpenAIConfig:
     model: str = os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest")
-    summary_model: str = os.getenv("OPENAI_SUMMARY_MODEL", "gpt-4o-mini")
+    summary_model: str = os.getenv("OPENAI_SUMMARY_MODEL", "gpt-5.1-chat-latest")
     max_completion_tokens: int = int(os.getenv("OPENAI_MAX_COMPLETION_TOKENS", "700"))
     summary_max_completion_tokens: int = int(
         os.getenv("OPENAI_SUMMARY_MAX_COMPLETION_TOKENS", "200")
