@@ -57,32 +57,11 @@ def build_description_prompt(drug: DrugData) -> str:
     fields: Dict[str, str] = {
         "API Name": _format_optional(drug.name),
         "CAS Number": _format_optional(drug.cas_number),
-        "UNII": _format_optional(drug.unii),
         "Indication": _format_optional(drug.indication),
         "Pharmacodynamics": _format_optional(drug.pharmacodynamics),
         "Mechanism of Action": _format_optional(drug.mechanism_of_action),
-        "Absorption": _format_optional(drug.absorption),
-        "Distribution": _format_optional(drug.volume_of_distribution),
-        "Metabolism": _format_optional(drug.metabolism),
-        "Elimination": _format_optional(drug.route_of_elimination),
-        "Half-life": _format_optional(drug.half_life),
-        "Clearance": _format_optional(drug.clearance),
-        "Protein Binding": _format_optional(drug.protein_binding),
         "Groups/Approval": _format_optional(drug.groups),
         "Drug Categories": _format_optional(drug.categories),
-        "International Brands": _format_optional(drug.international_brands),
-        "Top Products": _format_optional(drug.products),
-        "Classification": _format_optional(drug.classification),
-        "Toxicity": _format_optional(drug.toxicity),
-        "Chemical Properties": _format_optional(
-            {
-                "Molecular Formula": drug.molecular_formula,
-                "Average Mass": drug.average_mass,
-                "LogP": drug.logp,
-                "Water Solubility": drug.water_solubility,
-                "SMILES": drug.smiles,
-            }
-        ),
     }
 
     formatted = "\n".join(f"- {key}: {value}" for key, value in fields.items())
@@ -277,8 +256,6 @@ def build_seo_description_context(drug: DrugData) -> Dict[str, object]:
     return {
         "Name": drug.name,
         "CAS": drug.cas_number or drug.raw_fields.get("casNumber") or drug.raw_fields.get("cas-number"),
-        "Primary indications": drug.indication,
-        "Markets": unique_countries_from_products(drug.products),
         "Therapeutic classes": drug.categories,
     }
 
