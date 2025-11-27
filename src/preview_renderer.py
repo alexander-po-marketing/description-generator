@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 
@@ -411,3 +412,19 @@ def generate_html_preview(api_pages: Dict[str, object]) -> str:
 
     body = "".join(page_sections)
     return f"<!DOCTYPE html><html><head><meta charset=\"utf-8\">{base_styles}</head><body>{body}</body></html>"
+
+
+def save_html_preview(api_pages: Dict[str, object], output_path: str) -> str:
+    """Generate the preview HTML and persist it to ``output_path``.
+
+    Args:
+        api_pages: Parsed JSON content from ``api_pages.json``.
+        output_path: Destination file path for the generated HTML preview.
+
+    Returns:
+        The generated HTML string for further reuse.
+    """
+
+    html_preview = generate_html_preview(api_pages)
+    Path(output_path).write_text(html_preview, encoding="utf-8")
+    return html_preview
