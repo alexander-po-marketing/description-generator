@@ -13,8 +13,8 @@
             <h1>DrugBank → Pharmaoffer description pipeline</h1>
             <p class="lede">
                 Configure OpenAI credentials, choose DrugBank XML sources, align output folders, and launch the generator without
-                memorizing command-line flags. The interface wraps the existing CLI, keeping outputs compatible with the
-                documented JSON and XML artifacts.
+                memorizing command-line flags. The interface wraps the existing CLI while focusing on the structured JSON page
+                models used downstream.
             </p>
             <div class="hero-actions">
                 <button type="button" id="refresh-files" class="ghost">Refresh file suggestions</button>
@@ -29,7 +29,7 @@
             <p>Suggested folders for interactive runs:</p>
             <ul class="pill-list">
                 <li><strong>inputs/</strong> – DrugBank XML, valid-drug ID lists</li>
-                <li><strong>outputs/</strong> – <code>database.json</code>, <code>api_descriptions.json</code>, <code>api_descriptions.xml</code></li>
+                <li><strong>outputs/</strong> – <code>database.json</code>, <code>api_pages.json</code>, <code>api_pages_preview.html</code></li>
                 <li><strong>logs/</strong> – prompt logs and pipeline logs</li>
                 <li><strong>cache/</strong> – any scratch data created by experiments</li>
                 <li><strong>scripts/</strong> – the local web server and helper utilities</li>
@@ -70,35 +70,18 @@
                     <label>DrugBank XML
                         <input type="text" id="xml-path" list="xml-suggestions" placeholder="drugbank.xml" value="drugbank.xml" />
                     </label>
-                    <label>Existing database JSON (continue runs)
+                    <label>Database JSON output
                         <input type="text" id="database-path" list="json-suggestions" placeholder="database.json" value="database.json" />
                     </label>
                 </div>
                 <div class="field-grid">
-                    <label>Descriptions JSON output
-                        <input type="text" id="descriptions-json" list="json-suggestions" placeholder="api_descriptions.json" value="api_descriptions.json" />
-                    </label>
-                    <label>Descriptions XML output
-                        <input type="text" id="descriptions-xml" list="xml-suggestions" placeholder="api_descriptions.xml" value="api_descriptions.xml" />
-                    </label>
-                </div>
-                <div class="field-grid">
-                    <label>Preview HTML output
-                        <input type="text" id="preview-html" list="html-suggestions" placeholder="api_pages_preview.html" value="outputs/api_pages_preview.html" />
-                    </label>
-                </div>
-                <div class="field-grid">
-                    <label>Description prompt log
-                        <input type="text" id="description-log" list="log-suggestions" placeholder="description_prompts.log" value="description_prompts.log" />
-                    </label>
-                    <label>Summary prompt log
-                        <input type="text" id="summary-log" list="log-suggestions" placeholder="summary_prompts.log" value="summary_prompts.log" />
+                    <label>Page models JSON output
+                        <input type="text" id="page-models-json" list="json-suggestions" placeholder="api_pages.json" value="api_pages.json" />
                     </label>
                 </div>
                 <datalist id="xml-suggestions"></datalist>
                 <datalist id="json-suggestions"></datalist>
-                <datalist id="log-suggestions"></datalist>
-                <datalist id="html-suggestions"></datalist>
+                <p class="hint">Preview HTML and prompt logs are written to their default locations automatically.</p>
             </form>
         </section>
 

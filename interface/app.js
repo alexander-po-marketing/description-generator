@@ -5,9 +5,8 @@ const openPreviewButton = document.getElementById("open-preview");
 
 const xmlSuggestions = document.getElementById("xml-suggestions");
 const jsonSuggestions = document.getElementById("json-suggestions");
-const logSuggestions = document.getElementById("log-suggestions");
 const textSuggestions = document.getElementById("text-suggestions");
-const htmlSuggestions = document.getElementById("html-suggestions");
+const DEFAULT_PREVIEW_PATH = "outputs/api_pages_preview.html";
 
 function setStatus(message, header = "Status", append = false) {
     if (!append) {
@@ -30,11 +29,7 @@ function buildPayload() {
         summaryModel: document.getElementById("summary-model").value.trim(),
         xmlPath: document.getElementById("xml-path").value.trim(),
         databasePath: document.getElementById("database-path").value.trim(),
-        descriptionsJson: document.getElementById("descriptions-json").value.trim(),
-        descriptionsXml: document.getElementById("descriptions-xml").value.trim(),
-        previewHtml: document.getElementById("preview-html").value.trim(),
-        descriptionLog: document.getElementById("description-log").value.trim(),
-        summaryLog: document.getElementById("summary-log").value.trim(),
+        pageModelsJson: document.getElementById("page-models-json").value.trim(),
         validIds: document.getElementById("valid-ids").value.trim(),
         validIdsFile: document.getElementById("valid-ids-file").value.trim(),
         maxDrugs: document.getElementById("max-drugs").value,
@@ -46,14 +41,12 @@ function buildPayload() {
 
 async function fetchSuggestions() {
     try {
-        const res = await fetch("/api/files?ext=xml,json,log,txt,html");
+        const res = await fetch("/api/files?ext=xml,json,txt");
         if (!res.ok) throw new Error(`File suggestion request failed with ${res.status}`);
         const data = await res.json();
         renderSuggestions(xmlSuggestions, data.xml || []);
         renderSuggestions(jsonSuggestions, data.json || []);
-        renderSuggestions(logSuggestions, data.log || []);
         renderSuggestions(textSuggestions, data.txt || []);
-        renderSuggestions(htmlSuggestions, data.html || []);
         setStatus("Updated file suggestions.");
     } catch (error) {
         setStatus(`Unable to refresh file suggestions: ${error.message}. Ensure the interface server is running.`);
@@ -110,12 +103,7 @@ async function runPipeline() {
 runButton.addEventListener("click", runPipeline);
 refreshButton.addEventListener("click", fetchSuggestions);
 openPreviewButton.addEventListener("click", () => {
-    const previewPath = document.getElementById("preview-html").value.trim();
-    if (!previewPath) {
-        setStatus("Provide a preview HTML path before opening the preview tab.");
-        return;
-    }
-
+    const previewPath = DEFAULT_PREVIEW_PATH;
     const url = new URL("/api/preview", window.location.origin);
     url.searchParams.set("path", previewPath);
     window.open(url.toString(), "_blank");
