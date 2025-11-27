@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DrugBank Description Generator Controller</title>
+    <title>Description Generator Controller</title>
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -12,13 +12,10 @@
             <p class="eyebrow">Interactive control panel</p>
             <h1>DrugBank → Pharmaoffer description pipeline</h1>
             <p class="lede">
-                Configure OpenAI credentials, choose DrugBank XML sources, align output folders, and launch the generator without
-                memorizing command-line flags. The interface wraps the existing CLI while focusing on the structured JSON page
-                models used downstream.
+                Configure OpenAI credentials, choose DrugBank XML sources, align output folders, and launch the generator.
             </p>
             <div class="hero-actions">
                 <button type="button" id="refresh-files" class="ghost">Refresh file suggestions</button>
-                <span class="hint">Serve this page with <code>python scripts/interface_server.py</code>.</span>
             </div>
         </div>
     </header>
@@ -35,7 +32,6 @@
                 <li><strong>scripts/</strong> – the local web server and helper utilities</li>
                 <li><strong>interface/</strong> – this UI and its assets</li>
             </ul>
-            <p class="hint">File pickers below suggest paths from these folders and the repository root.</p>
         </section>
 
         <section class="card">
@@ -90,10 +86,10 @@
             <form id="options-form" class="stack">
                 <div class="field-grid">
                     <label>Valid DrugBank IDs (comma-separated)
-                        <input type="text" id="valid-ids" placeholder="DB0001, DB0002" value="DB14596"/>
+                        <input type="text" id="valid-ids" placeholder="DB0001, DB0002"/>
                     </label>
                     <label>Valid IDs file
-                        <input type="text" id="valid-ids-file" list="text-suggestions" placeholder="valid_ids.txt" />
+                        <input type="text" id="valid-ids-file" list="text-suggestions" placeholder="valid_ids.txt" value="valid_ids.txt" />
                     </label>
                     <label>Max drugs
                         <input type="number" id="max-drugs" min="1" placeholder="Optional" />
