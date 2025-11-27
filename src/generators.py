@@ -252,22 +252,59 @@ def build_safety_highlights_prompt(drug: DrugData) -> str:
     ).strip()
 
 
+SEO_DESCRIPTION_SYSTEM_MESSAGE = dedent(
+    """
+    You are an SEO assistant for Pharmaoffer, a global B2B marketplace for sourcing Active Pharmaceutical Ingredients (APIs).
+
+    You generate SEO meta descriptions for API product pages that:
+    - Match real pharma buyer search intent (suppliers, manufacturers, price, sourcing).
+    - Clearly express Pharmaoffer’s value: verified GMP suppliers, regulatory data, sourcing service (delegated RFQs) and market / price insights.
+    - Follow modern Google guidelines: people-first, specific, non-spammy, not just a keyword list.
+    """
+).strip()
+
+
 def build_seo_description_context(drug: DrugData) -> Dict[str, object]:
     return {
-        "Name": drug.name,
-        "CAS": drug.cas_number or drug.raw_fields.get("casNumber") or drug.raw_fields.get("cas-number"),
-        "Therapeutic classes": drug.categories,
+        "API name": drug.name,
+        "CAS number": drug.cas_number or drug.raw_fields.get("casNumber") or drug.raw_fields.get("cas-number"),
+        "Therapeutic class": ", ".join(drug.categories) if drug.categories else None,
     }
 
 
 def build_seo_description_prompt(drug: DrugData) -> str:
     context = build_seo_description_context(drug)
+    cas_number = context.get("CAS number") or "Not provided"
+    therapeutic_class = context.get("Therapeutic class") or "Not provided"
     return dedent(
         f"""
-        Write one SEO meta description (max 155 characters) for a B2B API sourcing platform. Include the API name, CAS number, its main therapeutic use, and mention that buyers can compare qualified suppliers and regulatory information.
-        Do not mention brand names or give clinical advice.
+        Generate an SEO meta description for this API product page.
 
-        { _context_lines(context) or 'No context provided' }
+        API data:
+        - API name: {context.get('API name') or 'Not provided'}
+        - CAS number: {cas_number}
+        - Therapeutic class: {therapeutic_class}
+
+        Buyer intents to cover:
+        - Find API suppliers / manufacturers.
+        - Verify GMP and regulatory status.
+        - Request and compare quotes.
+        - Optionally delegate sourcing to Pharmaoffer’s sourcing service.
+        - Access API market prices and trade insights.
+
+        Style and constraints:
+        - Target audience: pharma procurement, sourcing and supply chain professionals.
+        - Use clear, direct language, suitable for B2B.
+        - Mention “GMP” and “quotes” somewhere.
+        - Mention Pharmaoffer.
+        - Start the description with:
+          "CAS: {cas_number} - {therapeutic_class}."
+        - Length guidance:
+          - Meta description: around 130–170 characters, can be slightly longer but should remain concise.
+        - Avoid:
+          - All caps (except API, GMP).
+          - Overuse of the exact same keyword.
+          - Vague wording without clear benefits.
 
         Meta description:
         """

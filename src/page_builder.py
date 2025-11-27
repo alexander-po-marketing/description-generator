@@ -8,6 +8,7 @@ from dataclasses import asdict, is_dataclass
 from typing import Dict, List, Optional, Sequence
 
 from src.generators import (
+    SEO_DESCRIPTION_SYSTEM_MESSAGE,
     build_description_prompt,
     build_buyer_cheatsheet_prompt,
     build_lifecycle_summary_prompt,
@@ -32,6 +33,16 @@ def _sanitize_text(text: Optional[str]) -> Optional[str]:
     cleaned = re.sub(r"[ \t]+", " ", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     return cleaned.strip()
+
+
+def _build_seo_title(drug_name: Optional[str]) -> Optional[str]:
+    if not drug_name:
+        return None
+
+    full_title = f"{drug_name} API manufacturers - Verified GMP suppliers and quotes"
+    if len(full_title) > 66:
+        return f"{drug_name} API manufacturers - Verified GMP suppliers"
+    return full_title
 
 
 def _unique(items: Sequence[Optional[str]]) -> List[str]:
@@ -321,7 +332,9 @@ def build_page_model(
 
     seo_meta_description = generated.summary or generated.summary_sentence
     seo_prompt = build_seo_description_prompt(drug)
-    seo_meta_description = _sanitize_text(client.generate_text(seo_prompt)) or seo_meta_description
+    seo_meta_description = _sanitize_text(
+        client.generate_text(seo_prompt, developer_message=SEO_DESCRIPTION_SYSTEM_MESSAGE)
+    ) or seo_meta_description
 
     approval_status = None
     if drug.groups:
@@ -417,7 +430,7 @@ def build_page_model(
             "otherLinks": _serialize_list(getattr(drug.general_references, "links", [])),
         },
         "seo": {
-            "title": f"{drug.name} API suppliers, regulatory and technical information" if drug.name else None,
+            "title": _build_seo_title(drug.name),
             "metaDescription": seo_meta_description,
             "keywords": _unique(
                 [
