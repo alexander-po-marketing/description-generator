@@ -192,6 +192,12 @@ button:hover {
     margin-bottom: 1rem;
 }
 
+.toolbar-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .status {
     background: var(--surface);
     border: 1px solid var(--border);

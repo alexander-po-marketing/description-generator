@@ -1,11 +1,13 @@
 const statusEl = document.getElementById("status");
 const runButton = document.getElementById("run-button");
 const refreshButton = document.getElementById("refresh-files");
+const openPreviewButton = document.getElementById("open-preview");
 
 const xmlSuggestions = document.getElementById("xml-suggestions");
 const jsonSuggestions = document.getElementById("json-suggestions");
 const logSuggestions = document.getElementById("log-suggestions");
 const textSuggestions = document.getElementById("text-suggestions");
+const htmlSuggestions = document.getElementById("html-suggestions");
 
 function setStatus(message, header = "Status", append = false) {
     if (!append) {
@@ -30,6 +32,7 @@ function buildPayload() {
         databasePath: document.getElementById("database-path").value.trim(),
         descriptionsJson: document.getElementById("descriptions-json").value.trim(),
         descriptionsXml: document.getElementById("descriptions-xml").value.trim(),
+        previewHtml: document.getElementById("preview-html").value.trim(),
         descriptionLog: document.getElementById("description-log").value.trim(),
         summaryLog: document.getElementById("summary-log").value.trim(),
         validIds: document.getElementById("valid-ids").value.trim(),
@@ -43,13 +46,14 @@ function buildPayload() {
 
 async function fetchSuggestions() {
     try {
-        const res = await fetch("/api/files?ext=xml,json,log,txt");
+        const res = await fetch("/api/files?ext=xml,json,log,txt,html");
         if (!res.ok) throw new Error(`File suggestion request failed with ${res.status}`);
         const data = await res.json();
         renderSuggestions(xmlSuggestions, data.xml || []);
         renderSuggestions(jsonSuggestions, data.json || []);
         renderSuggestions(logSuggestions, data.log || []);
         renderSuggestions(textSuggestions, data.txt || []);
+        renderSuggestions(htmlSuggestions, data.html || []);
         setStatus("Updated file suggestions.");
     } catch (error) {
         setStatus(`Unable to refresh file suggestions: ${error.message}. Ensure the interface server is running.`);
@@ -105,5 +109,16 @@ async function runPipeline() {
 
 runButton.addEventListener("click", runPipeline);
 refreshButton.addEventListener("click", fetchSuggestions);
+openPreviewButton.addEventListener("click", () => {
+    const previewPath = document.getElementById("preview-html").value.trim();
+    if (!previewPath) {
+        setStatus("Provide a preview HTML path before opening the preview tab.");
+        return;
+    }
+
+    const url = new URL("/api/preview", window.location.origin);
+    url.searchParams.set("path", previewPath);
+    window.open(url.toString(), "_blank");
+});
 
 document.addEventListener("DOMContentLoaded", fetchSuggestions);

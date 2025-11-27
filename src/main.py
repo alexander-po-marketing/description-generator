@@ -17,6 +17,7 @@ from src.generators import build_description_prompt, build_summary_prompt, build
 from src.html_renderer import render_html
 from src.models import DrugData, GeneratedContent
 from src.page_builder import build_page_model
+from src.preview_renderer import save_html_preview
 from src.openai_client import OpenAIClient
 
 
@@ -104,6 +105,7 @@ def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, 
             logger.exception("Failed to generate content for %s: %s", drug_id, exc)
 
     export_page_models(config.page_models_json, page_models)
+    save_html_preview(page_models, config.preview_html)
     if legacy_descriptions is not None:
         if config.descriptions_json:
             export_descriptions_json(config.descriptions_json, legacy_descriptions)
@@ -133,6 +135,11 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         default="outputs/api_pages.json",
         help="Structured API page models JSON output path (primary output)",
     )
+    parser.add_argument(
+        "--output-preview-html",
+        default="outputs/api_pages_preview.html",
+        help="HTML preview file rendered from structured page models",
+    )
     parser.add_argument("--description-log", default="logs/description_prompts.log", help="Where to write description prompts used during generation")
     parser.add_argument("--summary-log", default="logs/summary_prompts.log", help="Where to write summary prompts used during generation")
     parser.add_argument("--valid-drugs", help="Comma-separated list of DrugBank IDs or path to file with one ID per line")
@@ -152,6 +159,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         descriptions_json=args.output_descriptions_json,
         descriptions_xml=args.output_descriptions_xml,
         page_models_json=args.output_page_models_json,
+        preview_html=args.output_preview_html,
         valid_drug_ids=valid_ids,
         max_drugs=args.max_drugs,
         log_level=args.log_level,
