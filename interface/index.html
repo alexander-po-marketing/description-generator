@@ -83,6 +83,11 @@
                     </label>
                 </div>
                 <div class="field-grid">
+                    <label>Preview HTML output
+                        <input type="text" id="preview-html" list="html-suggestions" placeholder="api_pages_preview.html" value="outputs/api_pages_preview.html" />
+                    </label>
+                </div>
+                <div class="field-grid">
                     <label>Description prompt log
                         <input type="text" id="description-log" list="log-suggestions" placeholder="description_prompts.log" value="description_prompts.log" />
                     </label>
@@ -93,6 +98,7 @@
                 <datalist id="xml-suggestions"></datalist>
                 <datalist id="json-suggestions"></datalist>
                 <datalist id="log-suggestions"></datalist>
+                <datalist id="html-suggestions"></datalist>
             </form>
         </section>
 
@@ -136,7 +142,10 @@
                     <h2>Run generator</h2>
                     <p class="hint">Settings above are serialized into a single request to the local server.</p>
                 </div>
-                <button id="run-button" class="primary">Run pipeline</button>
+                <div class="toolbar-actions">
+                    <button id="open-preview" type="button" class="ghost">Open preview HTML</button>
+                    <button id="run-button" class="primary">Run pipeline</button>
+                </div>
             </div>
             <pre id="status" class="status" aria-live="polite">Waiting to start…</pre>
         </section>

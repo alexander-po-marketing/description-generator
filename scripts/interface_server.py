@@ -93,8 +93,12 @@ def build_command(options: dict) -> list[str]:
         options.get("descriptionsXml") or "outputs/api_descriptions.xml",
         DIRECTORIES["outputs"],
     )
+    preview_html = resolve_path(
+        options.get("previewHtml") or "outputs/api_pages_preview.html",
+        DIRECTORIES["outputs"],
+    )
 
-    for path in (database_json, descriptions_json, descriptions_xml):
+    for path in (database_json, descriptions_json, descriptions_xml, preview_html):
         if path and path.exists() and not (options.get("overwrite") or options.get("continueExisting")):
             raise FileExistsError(f"Refusing to overwrite existing file: {path}")
 
@@ -109,6 +113,8 @@ def build_command(options: dict) -> list[str]:
         str(descriptions_json),
         "--output-descriptions-xml",
         str(descriptions_xml),
+        "--output-preview-html",
+        str(preview_html),
         "--log-level",
         options.get("logLevel", "INFO"),
     ]
@@ -166,6 +172,9 @@ class InterfaceRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
+        if self.path.startswith("/api/preview"):
+            self.handle_preview()
+            return
         if self.path.startswith("/api/files"):
             self.handle_file_suggestions()
             return
@@ -181,6 +190,27 @@ class InterfaceRequestHandler(SimpleHTTPRequestHandler):
         payload = discover_files(extensions)
         self._set_headers()
         self.wfile.write(json.dumps(payload).encode())
+
+    def handle_preview(self) -> None:
+        query = parse_qs(urlparse(self.path).query)
+        preview_path = (query.get("path") or [None])[0]
+        try:
+            resolved = resolve_path(preview_path, DIRECTORIES["outputs"])
+        except ValueError as exc:
+            self._set_headers(HTTPStatus.BAD_REQUEST)
+            self.wfile.write(json.dumps({"error": str(exc)}).encode())
+            return
+
+        if not resolved or not resolved.exists():
+            self._set_headers(HTTPStatus.NOT_FOUND)
+            self.wfile.write(json.dumps({"error": "Preview HTML not found"}).encode())
+            return
+
+        content = resolved.read_bytes()
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(content)
 
     def do_POST(self) -> None:
         if self.path == "/api/run":

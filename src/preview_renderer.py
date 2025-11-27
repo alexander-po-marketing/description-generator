@@ -426,5 +426,7 @@ def save_html_preview(api_pages: Dict[str, object], output_path: str) -> str:
     """
 
     html_preview = generate_html_preview(api_pages)
-    Path(output_path).write_text(html_preview, encoding="utf-8")
+    output_file = Path(output_path)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(html_preview, encoding="utf-8")
     return html_preview
