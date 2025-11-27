@@ -9,7 +9,7 @@ This project transforms DrugBank XML exports into structured JSON ready for Phar
 - **Robust parsing:** pulls core DrugBank attributes, classifications, products, categories, and references with graceful handling of missing data.
 - **Enhanced prompting:** pharma-grade description and summary prompts with logged inputs for traceability.
 - **Structured page models:** JSON designed for flexible React/Vue rendering (no embedded HTML tags).
-- **Optional HTML previews:** renderable snippets remain available for debugging or legacy consumers.
+- **Optional HTML previews:** renderable snippets remain available for debugging.
 - **CLI and UI control:** run the pipeline via command line or through the browser-based controller.
 - **Logging and retries:** visibility into each pipeline stage and resilient OpenAI calls.
 
@@ -43,15 +43,9 @@ src/        # core pipeline modules and CLI entrypoint
      --xml-path inputs/drugbank.xml \
      --output-database-json outputs/database.json \
      --output-page-models-json outputs/api_pages.json \
-     --description-log logs/description_prompts.log \
-     --summary-log logs/summary_prompts.log \
      --valid-drugs inputs/valid_ids.txt \
      --max-drugs 50 \
      --log-level INFO
-
-   # Optional legacy HTML/JSON exports (omit to skip)
-   # --output-descriptions-json outputs/api_descriptions_preview.json \
-   # --output-descriptions-xml outputs/api_descriptions_preview.xml \
    ```
 
    Supply `--valid-drugs` as a comma-separated list or a path to a text file (one DrugBank ID per line). Omit it to process all entries. Use `--max-drugs` to cap processing during tests.
@@ -94,8 +88,8 @@ Environment variables control OpenAI behavior and defaults:
 
 - `outputs/database.json` — structured parsed DrugBank data per DrugBank ID (debug/secondary source).
 - `outputs/api_pages.json` — structured, HTML-free page models ready for UI rendering (primary output).
-- `outputs/api_descriptions_preview.json` / `.xml` — optional legacy HTML previews when requested via CLI flags.
-- `logs/description_prompts.log` and `logs/summary_prompts.log` — captured prompts for auditing and debugging.
+- `outputs/api_pages_preview.html` — quick HTML preview of the structured models using the bundled template.
+- `logs/prompts.log` — captured prompts for auditing and debugging.
 
 ## Testing and extension
 

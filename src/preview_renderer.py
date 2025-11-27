@@ -26,6 +26,47 @@ def _unordered_list(items: Iterable[object]) -> str:
     return f"<ul>{''.join(entries)}</ul>" if entries else ""
 
 
+def _unordered_html_list(items: Iterable[str]) -> str:
+    entries = [f"<li>{item}</li>" for item in items if item]
+    return f"<ul>{''.join(entries)}</ul>" if entries else ""
+
+
+def _anchor(label: str, url: str) -> str:
+    if not label or not url:
+        return ""
+    return f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{_escape(label)}</a>'
+
+
+def _article_entry(article: Mapping[str, object]) -> str:
+    citation = article.get("citation") if isinstance(article, Mapping) else None
+    pubmed_id = None
+    ref_id = None
+    if isinstance(article, Mapping):
+        pubmed_id = article.get("pubmed_id") or article.get("pubmedId")
+        ref_id = article.get("ref_id") or article.get("refId")
+
+    label = citation or pubmed_id or ref_id
+    url: str | None = None
+    if pubmed_id:
+        url = f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/"
+    elif isinstance(ref_id, str) and ref_id.startswith("http"):
+        url = ref_id
+
+    if url and label:
+        return _anchor(str(label), url)
+    return _escape(label) if label else ""
+
+
+def _link_entry(link: Mapping[str, object] | object) -> str:
+    if not isinstance(link, Mapping):
+        return ""
+    label = link.get("title") or link.get("url")
+    url = link.get("url")
+    if url and label:
+        return _anchor(str(label), str(url))
+    return _escape(label) if label else ""
+
+
 def _subblock(title: str, body: str) -> str:
     if not body:
         return ""
@@ -75,8 +116,6 @@ def _build_summary_block(page: Mapping[str, object]) -> str:
     overview_rows = []
     if overview.get("summary"):
         overview_rows.append(("Key Takeaway", overview.get("summary")))
-    if overview.get("description"):
-        overview_rows.append(("Description", overview.get("description")))
     overview_table = _table_from_pairs(overview_rows)
 
     content_parts = [
@@ -92,6 +131,7 @@ def _build_specs_block(page: Mapping[str, object]) -> str:
     identification = page.get("identification", {}) if isinstance(page, Mapping) else {}
     chemistry = page.get("chemistry", {}) if isinstance(page, Mapping) else {}
     products = page.get("productsAndDosageForms", {}) if isinstance(page, Mapping) else {}
+    overview = page.get("overview", {}) if isinstance(page, Mapping) else {}
 
     identifiers = identification.get("identifiers", {}) if isinstance(identification, Mapping) else {}
     id_rows = []
@@ -112,6 +152,10 @@ def _build_specs_block(page: Mapping[str, object]) -> str:
     identity_table = _table_from_pairs(identity_rows)
 
     synonyms = _chip_list(identification.get("synonyms", []))
+
+    description_body = ""
+    if overview.get("description"):
+        description_body = f"<p>{_escape(overview.get('description'))}</p>"
 
     chemistry_rows = []
     if chemistry.get("formula"):
@@ -161,6 +205,7 @@ def _build_specs_block(page: Mapping[str, object]) -> str:
     brand_block = "".join(brand_lists)
 
     content_parts = [
+        _subblock("Description", description_body),
         _subblock("Identifiers", id_table),
         _subblock("Identity", identity_table + synonyms),
         _subblock("Chemistry", chemistry_table + experimental_table),
@@ -301,23 +346,13 @@ def _build_supplier_block(page: Mapping[str, object]) -> str:
     buyer_list = _unordered_list(buyer.get("bullets", []))
 
     articles = references.get("scientificArticles") or [] if isinstance(references, Mapping) else []
-    article_items = []
-    for article in articles:
-        citation = article.get("citation") if isinstance(article, Mapping) else None
-        if citation:
-            article_items.append(citation)
-    articles_list = _unordered_list(article_items)
+    article_items = [_article_entry(article) for article in articles]
+    articles_list = _unordered_html_list(article_items)
 
     links = references.get("regulatoryLinks") or [] if isinstance(references, Mapping) else []
     other_links = references.get("otherLinks") or [] if isinstance(references, Mapping) else []
-    link_entries = []
-    for link in [*links, *other_links]:
-        if not isinstance(link, Mapping):
-            continue
-        label = link.get("title") or link.get("url")
-        if label:
-            link_entries.append(label)
-    links_list = _unordered_list(link_entries)
+    link_entries = [_link_entry(link) for link in [*links, *other_links]]
+    links_list = _unordered_html_list(link_entries)
 
     content_parts = [
         _subblock("Buyer Cheatsheet", buyer_list),
