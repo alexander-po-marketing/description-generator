@@ -235,22 +235,34 @@ def _ensure_generated_fields(
     summary_text = summary
     summary_sentence_text = summary_sentence
 
-    if description_text is None:
+    if not description_text:
         desc_prompt = build_description_prompt(drug)
         description_text = client.generate_description(desc_prompt)
 
-    if summary_text is None:
+    if not summary_text:
         summary_prompt = build_summary_prompt(drug, description_text)
         summary_text = client.generate_summary(summary_prompt)
 
-    if summary_sentence_text is None:
+    if not summary_sentence_text:
         sentence_prompt = build_summary_sentence_prompt(drug)
         summary_sentence_text = client.generate_text(sentence_prompt)
 
+    description_clean = _sanitize_text(description_text) or ""
+    summary_clean = _sanitize_text(summary_text) or ""
+    summary_sentence_clean = _sanitize_text(summary_sentence_text)
+
+    if not summary_sentence_clean and summary_clean:
+        summary_sentences = _split_to_list(summary_clean, max_items=1)
+        summary_sentence_clean = summary_sentences[0] if summary_sentences else None
+
+    if not summary_sentence_clean and description_clean:
+        description_sentences = _split_to_list(description_clean, max_items=1)
+        summary_sentence_clean = description_sentences[0] if description_sentences else None
+
     return GeneratedContent(
-        description=_sanitize_text(description_text) or "",
-        summary=_sanitize_text(summary_text) or "",
-        summary_sentence=_sanitize_text(summary_sentence_text),
+        description=description_clean,
+        summary=summary_clean,
+        summary_sentence=summary_sentence_clean,
     )
 
 

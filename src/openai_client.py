@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from pathlib import Path
 from typing import Callable, Optional
 
 from openai import OpenAI
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIClient:
-    def __init__(self, config: OpenAIConfig):
+    def __init__(self, config: OpenAIConfig, *, prompt_log_path: str | None = None):
         api_key = _require_env("OPENAI_API_KEY")
         self.client = OpenAI(
             api_key=api_key,
@@ -23,6 +24,9 @@ class OpenAIClient:
             timeout=config.timeout_seconds,
         )
         self.config = config
+        self.prompt_log_path = Path(prompt_log_path) if prompt_log_path else None
+        if self.prompt_log_path:
+            self.prompt_log_path.parent.mkdir(parents=True, exist_ok=True)
 
     def _retry(self, func: Callable[[], str]) -> str:
         for attempt in range(1, self.config.max_retries + 1):
@@ -43,6 +47,7 @@ class OpenAIClient:
         developer_message: str,
         user_message: str,
     ) -> str:
+        self._log_prompt(model=model, developer_message=developer_message, user_message=user_message)
         completion = self.client.chat.completions.create(
             model=model,
             max_completion_tokens=max_tokens,
@@ -52,6 +57,18 @@ class OpenAIClient:
             ],
         )
         return completion.choices[0].message.content or ""
+
+    def _log_prompt(self, *, model: str, developer_message: str, user_message: str) -> None:
+        if not self.prompt_log_path:
+            return
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        entry = (
+            f"[{timestamp}] model={model}\n"
+            f"Developer: {developer_message}\n"
+            f"User: {user_message}\n\n"
+        )
+        with self.prompt_log_path.open("a", encoding="utf-8") as handle:
+            handle.write(entry)
 
     def generate_description(self, prompt: str) -> str:
         return self._retry(

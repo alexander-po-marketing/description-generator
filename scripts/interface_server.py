@@ -85,20 +85,10 @@ def build_command(options: dict) -> list[str]:
         raise FileNotFoundError("DrugBank XML path is missing or does not exist")
 
     database_json = resolve_path(options.get("databasePath") or "outputs/database.json", DIRECTORIES["outputs"])
-    descriptions_json = resolve_path(
-        options.get("descriptionsJson") or "outputs/api_descriptions.json",
-        DIRECTORIES["outputs"],
-    )
-    descriptions_xml = resolve_path(
-        options.get("descriptionsXml") or "outputs/api_descriptions.xml",
-        DIRECTORIES["outputs"],
-    )
-    preview_html = resolve_path(
-        options.get("previewHtml") or "outputs/api_pages_preview.html",
-        DIRECTORIES["outputs"],
-    )
+    page_models_json = resolve_path(options.get("pageModelsJson") or "outputs/api_pages.json", DIRECTORIES["outputs"])
+    preview_html = resolve_path("outputs/api_pages_preview.html", DIRECTORIES["outputs"])
 
-    for path in (database_json, descriptions_json, descriptions_xml, preview_html):
+    for path in (database_json, page_models_json, preview_html):
         if path and path.exists() and not (options.get("overwrite") or options.get("continueExisting")):
             raise FileExistsError(f"Refusing to overwrite existing file: {path}")
 
@@ -109,12 +99,8 @@ def build_command(options: dict) -> list[str]:
         str(xml_path),
         "--output-database-json",
         str(database_json),
-        "--output-descriptions-json",
-        str(descriptions_json),
-        "--output-descriptions-xml",
-        str(descriptions_xml),
-        "--output-preview-html",
-        str(preview_html),
+        "--output-page-models-json",
+        str(page_models_json),
         "--log-level",
         options.get("logLevel", "INFO"),
     ]
@@ -126,14 +112,6 @@ def build_command(options: dict) -> list[str]:
 
     if options.get("maxDrugs"):
         command.extend(["--max-drugs", str(options["maxDrugs"])])
-
-    if options.get("descriptionLog"):
-        desc_log = resolve_path(options["descriptionLog"], DIRECTORIES["logs"])
-        command.extend(["--description-log", str(desc_log)])
-
-    if options.get("summaryLog"):
-        sum_log = resolve_path(options["summaryLog"], DIRECTORIES["logs"])
-        command.extend(["--summary-log", str(sum_log)])
 
     return command
 
