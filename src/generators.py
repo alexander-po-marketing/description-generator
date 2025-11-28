@@ -140,12 +140,12 @@ def build_formulation_notes_prompt(drug: DrugData) -> str:
     context = build_formulation_notes_context(drug)
     return dedent(
         f"""
-        You are writing technical notes for formulation scientists and API buyers. Based on the data below, write 2–3 concise bullet points about formulation and handling considerations for this API.
+        You are writing technical notes for formulation scientists and API buyers. Based on the data below, write 2–3 concise sentences separated by new lines (no bullet symbols or numbering) about formulation and handling considerations for this API.
         Mention only high-level aspects such as: injectable vs oral use, peptide/biologic nature, sensitivity to food, stability/handling (if relevant). Do not provide dosing advice.
 
         { _context_lines(context) or 'Name: Unknown' }
 
-        Bullet points:
+        Sentences (each on a new line, no bullet characters):
         """
     ).strip()
 
@@ -326,11 +326,11 @@ def build_buyer_cheatsheet_prompt(drug: DrugData) -> str:
     context = build_buyer_cheatsheet_context(drug)
     return dedent(
         f"""
-        You are writing a quick cheatsheet for API buyers. Based on the data below, write exactly 3 bullet points that cover: (1) formulation type (e.g. injectable peptide or oral small molecule), (2) main therapeutic use(s), and (3) key regulatory markets or approval status (e.g. FDA/EMA approved).
+        You are writing a quick cheatsheet for API buyers. Based on the data below, write exactly 3 plain-text sentences (one per line, no bullet symbols or numbering) that cover: (1) formulation type (e.g. injectable peptide or oral small molecule), (2) main therapeutic use(s), and (3) key regulatory markets or approval status (e.g. FDA/EMA approved).
         Use non-clinical, B2B language. Do not give dosing or treatment recommendations.
 
         { _context_lines(context) or 'No product data provided' }
 
-        3 bullet points:
+        3 sentences (one per line, no bullet characters):
         """
     ).strip()

@@ -429,6 +429,8 @@ def generate_html_preview(api_pages: Dict[str, object]) -> str:
 
     page_sections: List[str] = []
     for page_key, page in page_entries:
+        if isinstance(page, Mapping) and "raw" in page:
+            page = page.get("raw", {})
         if not isinstance(page, Mapping):
             continue
         page_name = page.get("hero", {}).get("title") or str(page_key)

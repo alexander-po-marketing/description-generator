@@ -74,6 +74,9 @@
                     <label>Page models JSON output
                         <input type="text" id="page-models-json" list="json-suggestions" placeholder="api_pages.json" value="api_pages.json" />
                     </label>
+                    <label>Import-ready JSON output
+                        <input type="text" id="import-json" list="json-suggestions" placeholder="api_pages_import.json" value="api_pages_import.json" />
+                    </label>
                 </div>
                 <datalist id="xml-suggestions"></datalist>
                 <datalist id="json-suggestions"></datalist>
@@ -113,6 +116,26 @@
                 </div>
                 <datalist id="text-suggestions"></datalist>
             </form>
+        </section>
+
+        <section class="card wide">
+            <div class="toolbar">
+                <div>
+                    <h2>Visual template builder</h2>
+                    <p class="hint">
+                        Toggle blocks, rename headings, control array limits, and reorder sections before they are written to
+                        <code>api_pages.json</code>.
+                    </p>
+                </div>
+                <div class="toolbar-actions">
+                    <button id="reset-template" type="button" class="ghost">Reset to default template</button>
+                </div>
+            </div>
+            <div class="template-builder" id="template-builder" aria-live="polite"></div>
+            <details class="template-preview" open>
+                <summary>Template definition JSON</summary>
+                <pre id="template-preview"></pre>
+            </details>
         </section>
 
         <section class="card wide">

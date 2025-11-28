@@ -21,9 +21,9 @@ def _parse_set(value: Optional[str]) -> Set[str]:
 class OpenAIConfig:
     model: str = os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest")
     summary_model: str = os.getenv("OPENAI_SUMMARY_MODEL", "gpt-5.1-chat-latest")
-    max_completion_tokens: int = int(os.getenv("OPENAI_MAX_COMPLETION_TOKENS", "700"))
+    max_completion_tokens: int = int(os.getenv("OPENAI_MAX_COMPLETION_TOKENS", "1000"))
     summary_max_completion_tokens: int = int(
-        os.getenv("OPENAI_SUMMARY_MAX_COMPLETION_TOKENS", "200")
+        os.getenv("OPENAI_SUMMARY_MAX_COMPLETION_TOKENS", "400")
     )
     max_retries: int = int(os.getenv("OPENAI_MAX_RETRIES", "3"))
     timeout_seconds: int = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "30"))
@@ -35,6 +35,8 @@ class PipelineConfig:
     database_json: str
     preview_html: str = "outputs/api_pages_preview.html"
     page_models_json: str = "outputs/api_pages.json"
+    import_json: str = "outputs/api_pages_import.json"
+    template_definition: Optional[str] = None
     prompt_log: str = "logs/prompts.log"
     valid_drug_ids: Set[str] = field(default_factory=set)
     max_drugs: Optional[int] = None
@@ -91,8 +93,10 @@ class PipelineConfig:
         xml_path: str,
         database_json: str,
         page_models_json: Optional[str] = None,
+        import_json: Optional[str] = None,
         preview_html: Optional[str] = None,
         prompt_log: Optional[str] = None,
+        template_definition: Optional[str] = None,
         *,
         valid_drug_ids: Optional[Iterable[str]] = None,
         max_drugs: Optional[int] = None,
@@ -102,8 +106,10 @@ class PipelineConfig:
             xml_path=xml_path,
             database_json=database_json,
             page_models_json=page_models_json or "outputs/api_pages.json",
+            import_json=import_json or "outputs/api_pages_import.json",
             preview_html=preview_html or "outputs/api_pages_preview.html",
             prompt_log=prompt_log or "logs/prompts.log",
+            template_definition=template_definition,
             valid_drug_ids=set(valid_drug_ids or []),
             max_drugs=max_drugs,
             log_level=log_level or os.getenv("LOG_LEVEL", "INFO"),
