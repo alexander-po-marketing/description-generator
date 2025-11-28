@@ -41,6 +41,7 @@ function buildPayload() {
         xmlPath: document.getElementById("xml-path").value.trim(),
         databasePath: document.getElementById("database-path").value.trim(),
         pageModelsJson: document.getElementById("page-models-json").value.trim(),
+        importJson: document.getElementById("import-json").value.trim(),
         validIds: document.getElementById("valid-ids").value.trim(),
         validIdsFile: document.getElementById("valid-ids-file").value.trim(),
         maxDrugs: document.getElementById("max-drugs").value,
@@ -180,6 +181,21 @@ function renderNode(node, siblings, index, depth = 0) {
 
     const controls = document.createElement("div");
     controls.className = "node-controls";
+
+    if (node.generationId) {
+        const generationLabel = document.createElement("label");
+        generationLabel.className = "checkbox inline";
+        const generationToggle = document.createElement("input");
+        generationToggle.type = "checkbox";
+        generationToggle.checked = node.generationEnabled !== false;
+        generationToggle.addEventListener("change", () => {
+            node.generationEnabled = generationToggle.checked;
+            persistTemplateState();
+        });
+        generationLabel.appendChild(generationToggle);
+        generationLabel.appendChild(document.createTextNode("Generate content"));
+        controls.appendChild(generationLabel);
+    }
 
     if (node.type === "array") {
         const limitLabel = document.createElement("label");

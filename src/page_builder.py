@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from dataclasses import asdict, is_dataclass
-from typing import Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Optional, Sequence
 
 from src.generators import (
     SEO_DESCRIPTION_SYSTEM_MESSAGE,
@@ -62,8 +62,26 @@ def _split_to_list(value: Optional[str], max_items: int = 4) -> List[str]:
     if not value:
         return []
     parts = re.split(r"[;\.\n]", value)
-    cleaned = [part.strip() for part in parts if part and part.strip()]
-    return cleaned[:max_items]
+
+    def _normalize_fragment(fragment: str) -> Optional[str]:
+        cleaned = fragment or ""
+        cleaned = re.sub(r"^[\s\-•*\u2022\u2023\uf0b7]+", "", cleaned)
+        cleaned = re.sub(r"^\d+[\.)]\s*", "", cleaned)
+        cleaned = cleaned.strip(" \t-–—")
+        if not cleaned:
+            return None
+        if cleaned[0].isalpha():
+            cleaned = cleaned[0].upper() + cleaned[1:]
+        return cleaned
+
+    cleaned = []
+    for part in parts:
+        normalized = _normalize_fragment(part)
+        if normalized:
+            cleaned.append(normalized)
+        if len(cleaned) >= max_items:
+            break
+    return cleaned
 
 
 def _synonym_list(drug: DrugData) -> List[str]:
@@ -242,20 +260,21 @@ def _ensure_generated_fields(
     summary: Optional[str] = None,
     description: Optional[str] = None,
     summary_sentence: Optional[str] = None,
+    generation_enabled: Callable[[str], bool],
 ) -> GeneratedContent:
     description_text = description
     summary_text = summary
     summary_sentence_text = summary_sentence
 
-    if not description_text:
+    if not description_text and generation_enabled("description"):
         desc_prompt = build_description_prompt(drug)
         description_text = client.generate_description(desc_prompt)
 
-    if not summary_text:
-        summary_prompt = build_summary_prompt(drug, description_text)
+    if not summary_text and generation_enabled("summary"):
+        summary_prompt = build_summary_prompt(drug, description_text or "")
         summary_text = client.generate_summary(summary_prompt)
 
-    if not summary_sentence_text:
+    if not summary_sentence_text and generation_enabled("summary_sentence"):
         sentence_prompt = build_summary_sentence_prompt(drug)
         summary_sentence_text = client.generate_text(sentence_prompt)
 
@@ -263,11 +282,11 @@ def _ensure_generated_fields(
     summary_clean = _sanitize_text(summary_text) or ""
     summary_sentence_clean = _sanitize_text(summary_sentence_text)
 
-    if not summary_sentence_clean and summary_clean:
+    if not summary_sentence_clean and summary_clean and generation_enabled("summary_sentence"):
         summary_sentences = _split_to_list(summary_clean, max_items=1)
         summary_sentence_clean = summary_sentences[0] if summary_sentences else None
 
-    if not summary_sentence_clean and description_clean:
+    if not summary_sentence_clean and description_clean and generation_enabled("summary_sentence"):
         description_sentences = _split_to_list(description_clean, max_items=1)
         summary_sentence_clean = description_sentences[0] if description_sentences else None
 
@@ -317,12 +336,22 @@ def build_page_model(
     summary_sentence: Optional[str] = None,
     template: Optional[TemplateDefinition] = None,
 ) -> Dict[str, object]:
+    template_definition = template or DEFAULT_TEMPLATE
+    enabled_generations = template_definition.enabled_generations()
+    has_generation_controls = template_definition.has_generation_controls()
+
+    def generation_enabled(key: str) -> bool:
+        if not has_generation_controls:
+            return True
+        return key in enabled_generations
+
     generated = _ensure_generated_fields(
         drug,
         client,
         summary=summary,
         description=description,
         summary_sentence=summary_sentence,
+        generation_enabled=generation_enabled,
     )
 
     primary_use_cases = _split_to_list(drug.indication, max_items=4)
@@ -332,41 +361,46 @@ def build_page_model(
     patents_table = _patent_rows(drug.patents)
 
     lifecycle_summary: Optional[str] = None
-    if patents_table or markets:
+    if generation_enabled("lifecycle_summary") and (patents_table or markets):
         lifecycle_prompt = build_lifecycle_summary_prompt(drug, drug.patents, markets)
         lifecycle_summary = _sanitize_text(client.generate_text(lifecycle_prompt))
 
     pharmacology_summary: Optional[str] = None
-    if drug.mechanism_of_action or drug.pharmacodynamics:
+    if generation_enabled("pharmacology_summary") and (drug.mechanism_of_action or drug.pharmacodynamics):
         pharmacology_prompt = build_pharmacology_summary_prompt(drug)
         pharmacology_summary = _sanitize_text(client.generate_text(pharmacology_prompt))
 
     safety_highlights: List[str] = []
-    if drug.toxicity:
+    if generation_enabled("safety_highlights") and drug.toxicity:
         safety_prompt = build_safety_highlights_prompt(drug)
         highlights = _sanitize_text(client.generate_text(safety_prompt))
         safety_highlights = _split_to_list(highlights, max_items=3)
 
     formulation_notes: List[str] = []
-    formulation_prompt = build_formulation_notes_prompt(drug)
-    formulation_output = _sanitize_text(client.generate_text(formulation_prompt))
-    formulation_notes = _split_to_list(formulation_output, max_items=3)
+    if generation_enabled("formulation_notes"):
+        formulation_prompt = build_formulation_notes_prompt(drug)
+        formulation_output = _sanitize_text(client.generate_text(formulation_prompt))
+        formulation_notes = _split_to_list(formulation_output, max_items=3)
 
     supply_chain_summary: Optional[str] = None
-    if drug.manufacturers or drug.packagers or drug.products or drug.patents:
+    if generation_enabled("supply_chain_summary") and (
+        drug.manufacturers or drug.packagers or drug.products or drug.patents
+    ):
         supply_prompt = build_supply_chain_prompt(drug)
         supply_chain_summary = _sanitize_text(client.generate_text(supply_prompt))
 
     buyer_cheatsheet: List[str] = []
-    cheatsheet_prompt = build_buyer_cheatsheet_prompt(drug)
-    cheatsheet_output = _sanitize_text(client.generate_text(cheatsheet_prompt))
-    buyer_cheatsheet = _split_to_list(cheatsheet_output, max_items=3)
+    if generation_enabled("buyer_cheatsheet"):
+        cheatsheet_prompt = build_buyer_cheatsheet_prompt(drug)
+        cheatsheet_output = _sanitize_text(client.generate_text(cheatsheet_prompt))
+        buyer_cheatsheet = _split_to_list(cheatsheet_output, max_items=3)
 
     seo_meta_description = generated.summary or generated.summary_sentence
-    seo_prompt = build_seo_description_prompt(drug)
-    seo_meta_description = _sanitize_text(
-        client.generate_text(seo_prompt, developer_message=SEO_DESCRIPTION_SYSTEM_MESSAGE)
-    ) or seo_meta_description
+    if generation_enabled("seo_description"):
+        seo_prompt = build_seo_description_prompt(drug)
+        seo_meta_description = _sanitize_text(
+            client.generate_text(seo_prompt, developer_message=SEO_DESCRIPTION_SYSTEM_MESSAGE)
+        ) or seo_meta_description
 
     approval_status = None
     if drug.groups:
@@ -486,7 +520,6 @@ def build_page_model(
     }
 
     openapi_snapshot = _build_openapi_snapshot(drug, page)
-    template_definition = template or DEFAULT_TEMPLATE
     rendered_blocks = template_definition.render({**page, "openapi": openapi_snapshot}, openapi_snapshot)
 
     return {

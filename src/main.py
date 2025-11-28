@@ -11,7 +11,7 @@ from typing import Dict, Iterable
 
 from src.config import OpenAIConfig, PipelineConfig, parse_valid_ids
 from src.drugbank_parser import parse_drugbank_xml
-from src.exporters import export_database, export_page_models
+from src.exporters import export_clean_import, export_database, export_page_models
 from src.generators import build_description_prompt, build_summary_prompt, build_summary_sentence_prompt
 from src.models import DrugData, GeneratedContent
 from src.openai_client import OpenAIClient
@@ -91,6 +91,7 @@ def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, 
             logger.exception("Failed to generate content for %s: %s", drug_id, exc)
 
     export_page_models(config.page_models_json, page_models)
+    export_clean_import(config.import_json, page_models)
     save_html_preview(page_models, config.preview_html)
     return page_models
 
@@ -105,6 +106,11 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         "--output-page-models-json",
         default="outputs/api_pages.json",
         help="Structured API page models JSON output path (primary output)",
+    )
+    parser.add_argument(
+        "--output-import-json",
+        default="outputs/api_pages_import.json",
+        help="Clean import JSON without template metadata",
     )
     parser.add_argument(
         "--template-definition",
@@ -125,6 +131,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         xml_path=args.xml_path,
         database_json=args.output_database_json,
         page_models_json=args.output_page_models_json,
+        import_json=args.output_import_json,
         template_definition=args.template_definition,
         valid_drug_ids=valid_ids,
         max_drugs=args.max_drugs,

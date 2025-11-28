@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Set
 
 
 @dataclass
@@ -32,6 +32,8 @@ class TemplateNode:
     visible: bool = True
     limit: Optional[int] = None
     data_source: str = "data"  # data | openapi
+    generation_id: Optional[str] = None
+    generation_enabled: bool = True
     children: List["TemplateNode"] = field(default_factory=list)
 
     @classmethod
@@ -44,6 +46,10 @@ class TemplateNode:
             visible=bool(payload.get("visible", True)),
             limit=payload.get("limit"),
             data_source=str(payload.get("data_source") or payload.get("dataSource") or "data"),
+            generation_id=payload.get("generation_id")
+            or payload.get("generationId")
+            or payload.get("generationID"),
+            generation_enabled=bool(payload.get("generation_enabled", payload.get("generationEnabled", True))),
             children=[cls.from_dict(child) for child in payload.get("children", [])],
         )
 
@@ -56,8 +62,25 @@ class TemplateNode:
             "visible": self.visible,
             "limit": self.limit,
             "dataSource": self.data_source,
+            "generationId": self.generation_id,
+            "generationEnabled": self.generation_enabled,
             "children": [child.to_dict() for child in self.children],
         }
+
+    def has_generation_controls(self, visible_ancestor: bool = True) -> bool:
+        current_visible = visible_ancestor and self.visible
+        if current_visible and self.generation_id is not None:
+            return True
+        return any(child.has_generation_controls(current_visible) for child in self.children)
+
+    def enabled_generations(self, visible_ancestor: bool = True) -> Set[str]:
+        current_visible = visible_ancestor and self.visible
+        enabled: Set[str] = set()
+        if current_visible and self.generation_id and self.generation_enabled:
+            enabled.add(self.generation_id)
+        for child in self.children:
+            enabled.update(child.enabled_generations(current_visible))
+        return enabled
 
     def _resolve_context(self, context: Any, openapi_data: Any) -> Any:
         if self.data_source == "openapi":
@@ -131,6 +154,15 @@ class TemplateDefinition:
     def to_dict(self) -> Dict[str, Any]:
         return {"name": self.name, "blocks": [block.to_dict() for block in self.blocks]}
 
+    def has_generation_controls(self) -> bool:
+        return any(block.has_generation_controls() for block in self.blocks)
+
+    def enabled_generations(self) -> Set[str]:
+        enabled: Set[str] = set()
+        for block in self.blocks:
+            enabled.update(block.enabled_generations())
+        return enabled
+
     def render(self, page_data: Mapping[str, Any], openapi_data: Any = None) -> List[Dict[str, Any]]:
         rendered: List[Dict[str, Any]] = []
         for block in self.blocks:
@@ -149,7 +181,13 @@ DEFAULT_TEMPLATE = TemplateDefinition(
             path=["hero"],
             children=[
                 TemplateNode(id="hero-title", label="Title", path=["title"], type="field"),
-                TemplateNode(id="hero-summary", label="Summary sentence", path=["summarySentence"], type="field"),
+                TemplateNode(
+                    id="hero-summary",
+                    label="Summary sentence",
+                    path=["summarySentence"],
+                    type="field",
+                    generation_id="summary_sentence",
+                ),
                 TemplateNode(id="hero-tags", label="Tags", path=["tags"], type="array", limit=6),
                 TemplateNode(id="hero-use-cases", label="Primary use cases", path=["primaryUseCases"], type="array", limit=6),
             ],
@@ -159,8 +197,20 @@ DEFAULT_TEMPLATE = TemplateDefinition(
             label="Overview",
             path=["overview"],
             children=[
-                TemplateNode(id="overview-summary", label="Key takeaway", path=["summary"], type="field"),
-                TemplateNode(id="overview-description", label="Description", path=["description"], type="field"),
+                TemplateNode(
+                    id="overview-summary",
+                    label="Key takeaway",
+                    path=["summary"],
+                    type="field",
+                    generation_id="summary",
+                ),
+                TemplateNode(
+                    id="overview-description",
+                    label="Description",
+                    path=["description"],
+                    type="field",
+                    generation_id="description",
+                ),
             ],
         ),
         TemplateNode(
@@ -229,7 +279,13 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                         TemplateNode(id="patent-pediatric", label="Pediatric extension", path=["pediatricExtension"], type="field"),
                     ],
                 ),
-                TemplateNode(id="regulatory-lifecycle", label="Lifecycle summary", path=["lifecycleSummary"], type="field"),
+                TemplateNode(
+                    id="regulatory-lifecycle",
+                    label="Lifecycle summary",
+                    path=["lifecycleSummary"],
+                    type="field",
+                    generation_id="lifecycle_summary",
+                ),
                 TemplateNode(id="regulatory-label-highlights", label="Label highlights", path=["labelHighlights"], type="array", limit=6),
             ],
         ),
@@ -237,7 +293,16 @@ DEFAULT_TEMPLATE = TemplateDefinition(
             id="formulation-notes",
             label="Formulation notes",
             path=["formulationNotes"],
-            children=[TemplateNode(id="formulation-bullets", label="Bullets", path=["bullets"], type="array", limit=6)],
+            children=[
+                TemplateNode(
+                    id="formulation-bullets",
+                    label="Bullets",
+                    path=["bullets"],
+                    type="array",
+                    limit=6,
+                    generation_id="formulation_notes",
+                )
+            ],
         ),
         TemplateNode(
             id="taxonomy",
@@ -279,7 +344,13 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                         TemplateNode(id="target-go-processes", label="GO processes", path=["goProcesses"], type="array", limit=8),
                     ],
                 ),
-                TemplateNode(id="pharmacology-summary", label="High level summary", path=["highLevelSummary"], type="field"),
+                TemplateNode(
+                    id="pharmacology-summary",
+                    label="High level summary",
+                    path=["highLevelSummary"],
+                    type="field",
+                    generation_id="pharmacology_summary",
+                ),
             ],
         ),
         TemplateNode(
@@ -341,7 +412,13 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                 TemplateNode(id="supply-packagers", label="Packagers", path=["packagers"], type="array", limit=20),
                 TemplateNode(id="supply-notes", label="External manufacturing notes", path=["externalManufacturingNotes"], type="field"),
                 TemplateNode(id="supply-pharmaoffer", label="Pharmaoffer suppliers", path=["pharmaofferSuppliers"], type="array", limit=20),
-                TemplateNode(id="supply-summary", label="Supply chain summary", path=["supplyChainSummary"], type="field"),
+                TemplateNode(
+                    id="supply-summary",
+                    label="Supply chain summary",
+                    path=["supplyChainSummary"],
+                    type="field",
+                    generation_id="supply_chain_summary",
+                ),
             ],
         ),
         TemplateNode(
@@ -350,7 +427,14 @@ DEFAULT_TEMPLATE = TemplateDefinition(
             path=["safety"],
             children=[
                 TemplateNode(id="safety-toxicity", label="Toxicity", path=["toxicity"], type="field"),
-                TemplateNode(id="safety-warnings", label="High level warnings", path=["highLevelWarnings"], type="array", limit=6),
+                TemplateNode(
+                    id="safety-warnings",
+                    label="High level warnings",
+                    path=["highLevelWarnings"],
+                    type="array",
+                    limit=6,
+                    generation_id="safety_highlights",
+                ),
             ],
         ),
         TemplateNode(
@@ -375,7 +459,13 @@ DEFAULT_TEMPLATE = TemplateDefinition(
             path=["seo"],
             children=[
                 TemplateNode(id="seo-title", label="Title", path=["title"], type="field"),
-                TemplateNode(id="seo-meta", label="Meta description", path=["metaDescription"], type="field"),
+                TemplateNode(
+                    id="seo-meta",
+                    label="Meta description",
+                    path=["metaDescription"],
+                    type="field",
+                    generation_id="seo_description",
+                ),
                 TemplateNode(id="seo-keywords", label="Keywords", path=["keywords"], type="array", limit=25),
             ],
         ),
@@ -383,7 +473,16 @@ DEFAULT_TEMPLATE = TemplateDefinition(
             id="buyer-cheatsheet",
             label="Buyer cheatsheet",
             path=["buyerCheatsheet"],
-            children=[TemplateNode(id="buyer-bullets", label="Bullets", path=["bullets"], type="array", limit=6)],
+            children=[
+                TemplateNode(
+                    id="buyer-bullets",
+                    label="Bullets",
+                    path=["bullets"],
+                    type="array",
+                    limit=6,
+                    generation_id="buyer_cheatsheet",
+                )
+            ],
         ),
         TemplateNode(
             id="metadata",
