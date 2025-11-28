@@ -238,3 +238,112 @@ code {
     border: 1px solid var(--border);
     color: var(--text);
 }
+
+.template-builder {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0.5rem 0 1rem;
+}
+
+.template-node {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.node-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.node-header input[type='text'] {
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.node-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.node-actions button {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 0.2rem 0.4rem;
+    cursor: pointer;
+}
+
+.node-actions button:hover {
+    border-color: var(--accent);
+}
+
+.badge {
+    background: rgba(91, 141, 239, 0.2);
+    color: #dbeafe;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    border: 1px solid rgba(91, 141, 239, 0.35);
+}
+
+.badge.secondary {
+    background: rgba(52, 211, 153, 0.15);
+    color: #bbf7d0;
+    border-color: rgba(52, 211, 153, 0.3);
+}
+
+.path-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.node-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.node-controls input[type='number'] {
+    width: 72px;
+    padding: 0.3rem 0.4rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.node-children {
+    margin-top: 0.4rem;
+    border-left: 2px solid var(--border);
+    padding-left: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.template-preview {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.template-preview pre {
+    max-height: 300px;
+    overflow: auto;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+}

@@ -14,9 +14,10 @@ from src.drugbank_parser import parse_drugbank_xml
 from src.exporters import export_database, export_page_models
 from src.generators import build_description_prompt, build_summary_prompt, build_summary_sentence_prompt
 from src.models import DrugData, GeneratedContent
+from src.openai_client import OpenAIClient
 from src.page_builder import build_page_model
 from src.preview_renderer import save_html_preview
-from src.openai_client import OpenAIClient
+from src.template_engine import load_template_definition
 
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,7 @@ def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, 
     parsed = parse_drugbank_xml(config)
     export_database(config.database_json, parsed)
 
+    template_definition = load_template_definition(config.template_definition)
     page_models: Dict[str, object] = {}
     for drug_id, drug in parsed.items():
         missing = list(validate_drug(drug))
@@ -82,6 +84,7 @@ def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, 
                 summary=generated.summary,
                 description=generated.description,
                 summary_sentence=generated.summary_sentence,
+                template=template_definition,
             )
             logger.info("Generated content for %s", drug.name)
         except Exception as exc:  # pragma: no cover - integration layer
@@ -103,6 +106,10 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         default="outputs/api_pages.json",
         help="Structured API page models JSON output path (primary output)",
     )
+    parser.add_argument(
+        "--template-definition",
+        help="Path to a JSON template definition emitted by the visual builder",
+    )
     parser.add_argument("--valid-drugs", help="Comma-separated list of DrugBank IDs or path to file with one ID per line")
     parser.add_argument("--max-drugs", type=int, help="Limit number of drugs processed")
     parser.add_argument("--log-level", default=os.getenv("LOG_LEVEL", "INFO"), help="Logging level (DEBUG, INFO, WARNING, ERROR)")
@@ -118,6 +125,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         xml_path=args.xml_path,
         database_json=args.output_database_json,
         page_models_json=args.output_page_models_json,
+        template_definition=args.template_definition,
         valid_drug_ids=valid_ids,
         max_drugs=args.max_drugs,
         log_level=args.log_level,

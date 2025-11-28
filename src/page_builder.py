@@ -22,6 +22,7 @@ from src.generators import (
 )
 from src.models import DrugData, ExternalIdentifier, GeneratedContent, Patent, Target
 from src.openai_client import OpenAIClient
+from src.template_engine import DEFAULT_TEMPLATE, TemplateDefinition
 
 
 def _sanitize_text(text: Optional[str]) -> Optional[str]:
@@ -277,6 +278,36 @@ def _ensure_generated_fields(
     )
 
 
+def _build_openapi_snapshot(drug: DrugData, page_model: Dict[str, object]) -> Dict[str, object]:
+    return {
+        "openapi": "3.1.0",
+        "info": {
+            "title": f"{drug.name} reference" if drug.name else "API reference",
+            "version": "1.0.0",
+            "summary": page_model.get("overview", {}).get("summary"),
+            "description": page_model.get("overview", {}).get("description"),
+        },
+        "paths": {
+            "/pageModel": {
+                "get": {
+                    "summary": "Retrieve the generated API page model",
+                    "responses": {
+                        "200": {
+                            "description": "Structured API page output",
+                            "content": {"application/json": {"schema": {"type": "object"}}},
+                        }
+                    },
+                }
+            }
+        },
+        "components": {
+            "schemas": {
+                "pageModel": {"type": "object", "description": "Raw structured API page", "example": page_model}
+            }
+        },
+    }
+
+
 def build_page_model(
     drug: DrugData,
     client: OpenAIClient,
@@ -284,6 +315,7 @@ def build_page_model(
     summary: Optional[str] = None,
     description: Optional[str] = None,
     summary_sentence: Optional[str] = None,
+    template: Optional[TemplateDefinition] = None,
 ) -> Dict[str, object]:
     generated = _ensure_generated_fields(
         drug,
@@ -453,4 +485,12 @@ def build_page_model(
         },
     }
 
-    return page
+    openapi_snapshot = _build_openapi_snapshot(drug, page)
+    template_definition = template or DEFAULT_TEMPLATE
+    rendered_blocks = template_definition.render({**page, "openapi": openapi_snapshot}, openapi_snapshot)
+
+    return {
+        "template": template_definition.to_dict(),
+        "blocks": rendered_blocks,
+        "raw": {**page, "openapi": openapi_snapshot},
+    }

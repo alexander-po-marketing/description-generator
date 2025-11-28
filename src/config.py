@@ -35,6 +35,7 @@ class PipelineConfig:
     database_json: str
     preview_html: str = "outputs/api_pages_preview.html"
     page_models_json: str = "outputs/api_pages.json"
+    template_definition: Optional[str] = None
     prompt_log: str = "logs/prompts.log"
     valid_drug_ids: Set[str] = field(default_factory=set)
     max_drugs: Optional[int] = None
@@ -93,6 +94,7 @@ class PipelineConfig:
         page_models_json: Optional[str] = None,
         preview_html: Optional[str] = None,
         prompt_log: Optional[str] = None,
+        template_definition: Optional[str] = None,
         *,
         valid_drug_ids: Optional[Iterable[str]] = None,
         max_drugs: Optional[int] = None,
@@ -104,6 +106,7 @@ class PipelineConfig:
             page_models_json=page_models_json or "outputs/api_pages.json",
             preview_html=preview_html or "outputs/api_pages_preview.html",
             prompt_log=prompt_log or "logs/prompts.log",
+            template_definition=template_definition,
             valid_drug_ids=set(valid_drug_ids or []),
             max_drugs=max_drugs,
             log_level=log_level or os.getenv("LOG_LEVEL", "INFO"),

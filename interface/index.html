@@ -118,6 +118,26 @@
         <section class="card wide">
             <div class="toolbar">
                 <div>
+                    <h2>Visual template builder</h2>
+                    <p class="hint">
+                        Toggle blocks, rename headings, control array limits, and reorder sections before they are written to
+                        <code>api_pages.json</code>.
+                    </p>
+                </div>
+                <div class="toolbar-actions">
+                    <button id="reset-template" type="button" class="ghost">Reset to default template</button>
+                </div>
+            </div>
+            <div class="template-builder" id="template-builder" aria-live="polite"></div>
+            <details class="template-preview" open>
+                <summary>Template definition JSON</summary>
+                <pre id="template-preview"></pre>
+            </details>
+        </section>
+
+        <section class="card wide">
+            <div class="toolbar">
+                <div>
                     <h2>Run generator</h2>
                     <p class="hint">Settings above are serialized into a single request to the local server.</p>
                 </div>

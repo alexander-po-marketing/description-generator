@@ -77,7 +77,7 @@ def resolve_path(value: str | None, default_dir: Path | None = None) -> Path | N
     return candidate
 
 
-def build_command(options: dict) -> list[str]:
+def build_command(options: dict, template_path: Path | None = None) -> list[str]:
     """Assemble the CLI command from UI-provided options."""
 
     xml_path = resolve_path(options.get("xmlPath"), DIRECTORIES["inputs"])
@@ -113,7 +113,19 @@ def build_command(options: dict) -> list[str]:
     if options.get("maxDrugs"):
         command.extend(["--max-drugs", str(options["maxDrugs"])])
 
+    if template_path:
+        command.extend(["--template-definition", str(template_path)])
+
     return command
+
+
+def persist_template_definition(payload: dict | None) -> Path | None:
+    if not payload:
+        return None
+    destination = DIRECTORIES["cache"] / "template_definition.json"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return destination
 
 
 def build_env(options: dict) -> dict:
@@ -199,8 +211,9 @@ class InterfaceRequestHandler(SimpleHTTPRequestHandler):
     def handle_run(self) -> None:
         length = int(self.headers.get("Content-Length", 0))
         payload = json.loads(self.rfile.read(length) or b"{}")
+        template_path = persist_template_definition(payload.get("templateDefinition"))
         try:
-            command = build_command(payload)
+            command = build_command(payload, template_path=template_path)
             env = build_env(payload)
         except (FileNotFoundError, FileExistsError, ValueError) as exc:
             self._set_headers(HTTPStatus.BAD_REQUEST)
