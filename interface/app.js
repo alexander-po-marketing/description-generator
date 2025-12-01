@@ -2,9 +2,12 @@ const statusEl = document.getElementById("status");
 const runButton = document.getElementById("run-button");
 const refreshButton = document.getElementById("refresh-files");
 const openPreviewButton = document.getElementById("open-preview");
+const openTemplateModalButton = document.getElementById("open-template-modal");
+const closeTemplateModalButton = document.getElementById("close-template-modal");
 const templateContainer = document.getElementById("template-builder");
 const templatePreview = document.getElementById("template-preview");
 const resetTemplateButton = document.getElementById("reset-template");
+const templateModal = document.getElementById("template-modal");
 
 const xmlSuggestions = document.getElementById("xml-suggestions");
 const jsonSuggestions = document.getElementById("json-suggestions");
@@ -115,6 +118,18 @@ function pathLabel(path) {
     return Array.isArray(path) ? path.join(" › ") : "";
 }
 
+function applyVisibility(node, visible) {
+    node.visible = visible;
+    if (Array.isArray(node.children)) {
+        node.children.forEach((child) => {
+            applyVisibility(child, visible);
+            if (child.generationId && !visible) {
+                child.generationEnabled = false;
+            }
+        });
+    }
+}
+
 function moveNode(siblings, index, delta) {
     const newIndex = index + delta;
     if (newIndex < 0 || newIndex >= siblings.length) return;
@@ -136,8 +151,9 @@ function renderNode(node, siblings, index, depth = 0) {
     visibility.type = "checkbox";
     visibility.checked = node.visible !== false;
     visibility.addEventListener("change", () => {
-        node.visible = visibility.checked;
+        applyVisibility(node, visibility.checked);
         persistTemplateState();
+        renderTemplateBuilder();
     });
 
     const nameInput = document.createElement("input");
@@ -252,6 +268,17 @@ function syncTemplatePreview() {
     templatePreview.textContent = JSON.stringify(data, null, 2);
 }
 
+function setTemplateModal(open) {
+    if (!templateModal) return;
+    if (open) {
+        templateModal.classList.add("open");
+        templateModal.setAttribute("aria-hidden", "false");
+    } else {
+        templateModal.classList.remove("open");
+        templateModal.setAttribute("aria-hidden", "true");
+    }
+}
+
 async function bootstrapTemplateBuilder() {
     const fallbackTemplate = await loadDefaultTemplate();
     templateState = loadStoredTemplate(fallbackTemplate);
@@ -261,6 +288,19 @@ async function bootstrapTemplateBuilder() {
             templateState = deepClone(fallbackTemplate);
             persistTemplateState();
             renderTemplateBuilder();
+        });
+    }
+    if (openTemplateModalButton) {
+        openTemplateModalButton.addEventListener("click", () => setTemplateModal(true));
+    }
+    if (closeTemplateModalButton) {
+        closeTemplateModalButton.addEventListener("click", () => setTemplateModal(false));
+    }
+    if (templateModal) {
+        templateModal.addEventListener("click", (event) => {
+            if (event.target === templateModal) {
+                setTemplateModal(false);
+            }
         });
     }
 }

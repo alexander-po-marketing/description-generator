@@ -337,13 +337,13 @@ def build_page_model(
     template: Optional[TemplateDefinition] = None,
 ) -> Dict[str, object]:
     template_definition = template or DEFAULT_TEMPLATE
-    enabled_generations = template_definition.enabled_generations()
-    has_generation_controls = template_definition.has_generation_controls()
+    generation_flags = template_definition.generation_flags()
+    has_generation_controls = template_definition.has_generation_ids()
 
     def generation_enabled(key: str) -> bool:
         if not has_generation_controls:
             return True
-        return key in enabled_generations
+        return generation_flags.get(key, False)
 
     generated = _ensure_generated_fields(
         drug,

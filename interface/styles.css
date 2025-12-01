@@ -352,3 +352,44 @@ code {
     border: none;
     color: var(--muted);
 }
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 3vh 1rem;
+    z-index: 20;
+}
+
+.modal.open {
+    display: flex;
+}
+
+.modal-surface {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: min(1200px, 100%);
+    max-height: 94vh;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.modal-body {
+    padding: 1rem 1.25rem 1.5rem;
+    max-height: 80vh;
+    overflow: auto;
+}

@@ -73,6 +73,20 @@ class TemplateNode:
             return True
         return any(child.has_generation_controls(current_visible) for child in self.children)
 
+    def has_generation_id(self) -> bool:
+        if self.generation_id is not None:
+            return True
+        return any(child.has_generation_id() for child in self.children)
+
+    def generation_flags(self, visible_ancestor: bool = True) -> Dict[str, bool]:
+        current_visible = visible_ancestor and self.visible
+        flags: Dict[str, bool] = {}
+        if self.generation_id:
+            flags[self.generation_id] = bool(current_visible and self.generation_enabled)
+        for child in self.children:
+            flags.update(child.generation_flags(current_visible))
+        return flags
+
     def enabled_generations(self, visible_ancestor: bool = True) -> Set[str]:
         current_visible = visible_ancestor and self.visible
         enabled: Set[str] = set()
@@ -157,11 +171,20 @@ class TemplateDefinition:
     def has_generation_controls(self) -> bool:
         return any(block.has_generation_controls() for block in self.blocks)
 
+    def has_generation_ids(self) -> bool:
+        return any(block.has_generation_id() for block in self.blocks)
+
     def enabled_generations(self) -> Set[str]:
         enabled: Set[str] = set()
         for block in self.blocks:
             enabled.update(block.enabled_generations())
         return enabled
+
+    def generation_flags(self) -> Dict[str, bool]:
+        flags: Dict[str, bool] = {}
+        for block in self.blocks:
+            flags.update(block.generation_flags())
+        return flags
 
     def render(self, page_data: Mapping[str, Any], openapi_data: Any = None) -> List[Dict[str, Any]]:
         rendered: List[Dict[str, Any]] = []

@@ -128,14 +128,11 @@
                     </p>
                 </div>
                 <div class="toolbar-actions">
+                    <button id="open-template-modal" type="button" class="primary">Edit template</button>
                     <button id="reset-template" type="button" class="ghost">Reset to default template</button>
                 </div>
             </div>
-            <div class="template-builder" id="template-builder" aria-live="polite"></div>
-            <details class="template-preview" open>
-                <summary>Template definition JSON</summary>
-                <pre id="template-preview"></pre>
-            </details>
+            <p class="hint">The template editor opens in a modal so it stays out of the way until needed.</p>
         </section>
 
         <section class="card wide">
@@ -159,6 +156,25 @@
             <pre class="status-body"></pre>
         </div>
     </template>
+
+    <div id="template-modal" class="modal" aria-hidden="true" role="dialog" aria-label="Template editor">
+        <div class="modal-surface">
+            <div class="modal-header">
+                <div>
+                    <p class="eyebrow">Template editor</p>
+                    <h3>Configure API page blocks</h3>
+                </div>
+                <button type="button" id="close-template-modal" class="ghost">Close</button>
+            </div>
+            <div class="modal-body">
+                <div class="template-builder" id="template-builder" aria-live="polite"></div>
+                <details class="template-preview">
+                    <summary>Template definition JSON</summary>
+                    <pre id="template-preview"></pre>
+                </details>
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
