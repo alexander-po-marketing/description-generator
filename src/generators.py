@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
 from textwrap import dedent
-from typing import Dict, Iterable, List, Sequence
+from typing import Dict, Iterable, List, Optional, Sequence
 
 from src.models import DrugData, Patent, Product
 
@@ -270,79 +270,78 @@ def build_safety_highlights_prompt(drug: DrugData) -> str:
     ).strip()
 
 
-SEO_DESCRIPTION_SYSTEM_MESSAGE = dedent(
-    """
-    You are an SEO assistant for Pharmaoffer, a global B2B marketplace for sourcing Active Pharmaceutical Ingredients (APIs).
+def _select_main_functional_class(
+    therapeutic_class: Optional[Sequence[str]], classification_description: Optional[str]
+) -> Optional[str]:
+    if therapeutic_class:
+        for entry in therapeutic_class:
+            if entry and str(entry).strip():
+                return str(entry).strip()
 
-    You generate SEO meta descriptions for API product pages that:
-    - Match real pharma buyer (sourcing manager) search intent (finding suppliers, manufacturers, prices, quotes and sourcing options).
-    - Focus on what buyers can do and find on the product page: supplier listings, GMP status, regulatory data, documentation, pricing signals, and RFQ/sourcing tools.
-    - Clearly express Pharmaoffer’s value: verified GMP suppliers, regulatory transparency, sourcing service (delegated RFQs), and market / price insights.
-    - Follow modern Google guidelines: people-first, specific, non-spammy, not just a keyword list.
-    - Do NOT describe the pharmacology, indication, or clinical use of the API; keep the focus on marketplace features and page content.
-    """
-).strip()
+    if classification_description:
+        cleaned = " ".join(classification_description.split()).strip()
+        if not cleaned:
+            return None
+
+        for delimiter in (".", ";", ",", "|"):
+            if delimiter in cleaned:
+                cleaned = cleaned.split(delimiter)[0]
+                break
+
+        if len(cleaned) > 80:
+            cleaned = cleaned[:80].rsplit(" ", 1)[0] or cleaned[:80]
+
+        return cleaned.strip()
+
+    return None
 
 
-def build_seo_description_context(drug: DrugData) -> Dict[str, object]:
-    return {
-        "API name": drug.name,
-        "CAS number": drug.cas_number or drug.raw_fields.get("casNumber") or drug.raw_fields.get("cas-number"),
-        "Therapeutic class": ", ".join(drug.categories) if drug.categories else None,
-        "Drug type": drug.drug_type or drug.type,
-        "Classification description": classification_description,
-        "State": drug.state,
-    }
+def _normalize_spacing(text: str) -> str:
+    return " ".join(text.split())
 
 
-def build_seo_description_prompt(drug: DrugData) -> str:
-    context = build_seo_description_context(drug)
-    cas_number = context.get("CAS number") or ""
-    therapeutic_class = context.get("Therapeutic class") or ""
-    drug_type = context.get("Drug type") or ""
-    classification_description = context.get("Classification description") or ""
-    state = context.get("State") or ""
-    
-    return dedent(
-        f"""
-        Generate an SEO meta description for a Pharmaoffer B2B API product page.
+def build_meta_description(
+    api_name: str,
+    cas_number: str,
+    drug_type: str,
+    state: str,
+    therapeutic_class: Sequence[str] | None,
+    classification_description: Optional[str],
+    max_length: int = 155,
+) -> str:
+    main_class = _select_main_functional_class(therapeutic_class, classification_description)
 
-        The goal is to describe what pharma buyers can do and find on THIS PAGE, not to explain the drug's medical use or mechanism.
+    tech_parts = []
+    if main_class:
+        tech_parts.append(main_class)
+    if drug_type:
+        tech_parts.append(drug_type)
+    if state:
+        tech_parts.append(state)
+    tech_parts.append("API")
 
-        API data:
-        - API name: {api_name}
-        - CAS number: {cas_number}
-        - Drug type: {state} {drug_type} API
-        - Description: {classification_description}
-        - Therapeutic class: {therapeutic_class}
+    tech_phrase = " ".join(part.strip() for part in tech_parts if part and str(part).strip())
 
-        Buyer intents to reflect:
-        - Browse and compare API suppliers / manufacturers for {api_name}.
-        - Check GMP and regulatory information and documentation (e.g. CEP, DMF, CoA if available).
-        - Request and compare quotes from multiple suppliers.
-        - Optionally delegate sourcing via Pharmaoffer’s sourcing service.
-        - Get a sense of API market prices and trade / availability insights.
+    safe_api = api_name or ""
+    safe_cas = cas_number or ""
+    safe_type = drug_type or ""
+    safe_state = state or ""
 
-        Style and constraints:
-        - Target audience: pharma procurement, sourcing and supply chain professionals.
-        - Use clear, direct B2B language focused on page content and available actions.
-        - Do NOT describe pharmacology, indication, patients, dosing, or clinical benefits.
-        - Mention “GMP” and “quotes” somewhere.
-        - Mention Pharmaoffer.
-        - Choose and pick a main functional class from: {therapeutic_class}
-        - Start the description with:
-          "CAS: {cas_number} | {api_name} {state} {drug_type} API | {Main functional class} |"
-        - Length guidance:
-          - Meta description: around 130–170 characters, can be slightly longer but should remain concise.
-        - Avoid:
-          - All caps (except API, GMP).
-          - Overuse of the exact same keyword.
-          - Vague wording without clear benefits.
-          - Any clinical or therapeutic claims.
+    candidates = [
+        f"CAS: {safe_cas} | {tech_phrase} | Find GMP {safe_api} API manufacturers. Review supplier docs, certifications and request quotes",
+        f"CAS: {safe_cas} | Find GMP {safe_api} {safe_type} {safe_state} API manufacturers. Review supplier docs, certifications and request quotes",
+        f"CAS: {safe_cas} | Find GMP {safe_api} {safe_type} API manufacturers. Review supplier docs, certifications and request quotes",
+        f"CAS: {safe_cas} | Find {safe_api} {safe_type} API manufacturers. Review supplier docs and request quotes",
+        f"Find {safe_api} {safe_type} API manufacturers. Review supplier docs and request quotes",
+    ]
 
-        Meta description:
-        """
-    ).strip()
+    cleaned_candidates = [_normalize_spacing(candidate).strip(" |") for candidate in candidates]
+
+    for candidate in cleaned_candidates:
+        if len(candidate) <= max_length:
+            return candidate
+
+    return cleaned_candidates[-1]
 
 
 def build_buyer_cheatsheet_context(drug: DrugData) -> Dict[str, object]:

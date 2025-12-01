@@ -8,14 +8,13 @@ from dataclasses import asdict, is_dataclass
 from typing import Callable, Dict, List, Optional, Sequence
 
 from src.generators import (
-    SEO_DESCRIPTION_SYSTEM_MESSAGE,
     build_description_prompt,
     build_buyer_cheatsheet_prompt,
     build_lifecycle_summary_prompt,
     build_formulation_notes_prompt,
+    build_meta_description,
     build_pharmacology_summary_prompt,
     build_safety_highlights_prompt,
-    build_seo_description_prompt,
     build_supply_chain_prompt,
     build_summary_prompt,
     build_summary_sentence_prompt,
@@ -44,6 +43,15 @@ def _build_seo_title(drug_name: Optional[str]) -> Optional[str]:
     if len(full_title) > 66:
         return f"{drug_name} API manufacturers - Verified GMP suppliers"
     return full_title
+
+
+def _classification_description_text(drug: DrugData) -> Optional[str]:
+    classification = getattr(drug, "classification", None)
+    if isinstance(classification, dict):
+        return classification.get("description")
+    if hasattr(classification, "description"):
+        return getattr(classification, "description")
+    return None
 
 
 def _unique(items: Sequence[Optional[str]]) -> List[str]:
@@ -395,12 +403,15 @@ def build_page_model(
         cheatsheet_output = _sanitize_text(client.generate_text(cheatsheet_prompt))
         buyer_cheatsheet = _split_to_list(cheatsheet_output, max_items=3)
 
-    seo_meta_description = generated.summary or generated.summary_sentence
-    if generation_enabled("seo_description"):
-        seo_prompt = build_seo_description_prompt(drug)
-        seo_meta_description = _sanitize_text(
-            client.generate_text(seo_prompt, developer_message=SEO_DESCRIPTION_SYSTEM_MESSAGE)
-        ) or seo_meta_description
+    cas_number = drug.cas_number or drug.raw_fields.get("casNumber") or drug.raw_fields.get("cas-number")
+    seo_meta_description = build_meta_description(
+        api_name=drug.name or "",
+        cas_number=cas_number or "",
+        drug_type=drug.drug_type or drug.type or "",
+        state=drug.state or "",
+        therapeutic_class=drug.categories,
+        classification_description=_classification_description_text(drug),
+    )
 
     approval_status = None
     if drug.groups:
