@@ -119,7 +119,7 @@ def build_summary_sentence_context(drug: DrugData) -> Dict[str, object]:
     }
 
 
-def build_summary_sentence_prompt(drug: DrugData) -> str:
+def build_summary_sentence_prompt(drug: DrugData, description: str) -> str:
     context = build_summary_sentence_context(drug)
     return dedent(
         f"""
@@ -137,6 +137,7 @@ def build_summary_sentence_prompt(drug: DrugData) -> str:
 
 def build_formulation_notes_context(drug: DrugData) -> Dict[str, object]:
     routes = sorted({dosage.route for dosage in drug.dosages if getattr(dosage, "route", None)})
+    classification_description = _classification_description(drug)
     return {
         "Name": drug.name,
         "Drug type": drug.drug_type or drug.type,
