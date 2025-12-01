@@ -55,7 +55,7 @@ def generate_for_drug(drug: DrugData, client: OpenAIClient, config: PipelineConf
     summary_prompt = build_summary_prompt(drug, description)
     summary = client.generate_summary(summary_prompt)
 
-    summary_sentence_prompt = build_summary_sentence_prompt(drug)
+    summary_sentence_prompt = build_summary_sentence_prompt(drug, description_text)
     summary_sentence = client.generate_text(summary_sentence_prompt)
 
     description = sanitize_text(description)
