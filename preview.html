@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Semaglutide API – Technical profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+      color: #111827;
+      background-color: #f9fafb;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+    }
+
+    .api-profile {
+      max-width: 1080px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px 24px 32px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      border: 1px solid #e5e7eb;
+    }
+
+    .api-profile__label {
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .api-profile__title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      color: #111827;
+    }
+
+    .api-profile__subtitle {
+      font-size: 14px;
+      color: #4b5563;
+      margin-bottom: 16px;
+    }
+
+    .api-profile__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px 24px;
+      margin-bottom: 16px;
+    }
+
+    .fact {
+      font-size: 13px;
+    }
+
+    .fact__label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+      margin-bottom: 2px;
+    }
+
+    .fact__value {
+      font-weight: 500;
+      color: #111827;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0 16px;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+
+    .pill-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    .bullet-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13px;
+      color: #111827;
+    }
+
+    .bullet-list li {
+      margin-bottom: 4px;
+    }
+
+    .api-sections {
+      margin-top: 24px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 8px;
+    }
+
+    .api-section {
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      margin-top: 12px;
+      overflow: hidden;
+      background: #f9fafb;
+    }
+
+    .api-section__header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #f3f4f6;
+      border: none;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .api-section__title {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    .api-section__title h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .api-section__hint {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .api-section__icon {
+      font-size: 18px;
+      color: #9ca3af;
+      transition: transform 0.15s ease;
+    }
+
+    .api-section--open .api-section__icon {
+      transform: rotate(90deg);
+    }
+
+    .api-section__body {
+      display: none;
+      padding: 12px 14px 14px;
+    }
+
+    .api-section--open .api-section__body {
+      display: block;
+    }
+
+    .api-section__summary {
+      font-size: 13px;
+      color: #374151;
+      margin: 0 0 8px;
+    }
+
+    .api-section__details p {
+      font-size: 13px;
+      color: #111827;
+      margin: 0 0 8px;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 8px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 12px;
+      min-width: 420px;
+    }
+
+    th,
+    td {
+      border: 1px solid #e5e7eb;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f3f4f6;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 12px;
+      }
+
+      .api-profile {
+        padding: 16px 14px 20px;
+      }
+
+      .api-profile__title {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="api-profile" id="api-technical-profile">
+    <!-- KEY FACTS (always visible) -->
+    <div class="api-profile__label">API technical profile</div>
+    <h2 class="api-profile__title">
+      Semaglutide | CAS No: 910463-68-2 | GMP-certified suppliers
+    </h2>
+    <p class="api-profile__subtitle">
+      GLP-1 receptor agonist used for type 2 diabetes management and chronic weight control in eligible patients.
+    </p>
+
+    <div class="api-profile__grid">
+      <div class="fact">
+        <div class="fact__label">Generic name</div>
+        <div class="fact__value">Semaglutide</div>
+      </div>
+      <div class="fact">
+        <div class="fact__label">Molecule type</div>
+        <div class="fact__value">Small molecule (peptide-like)</div>
+      </div>
+      <div class="fact">
+        <div class="fact__label">CAS</div>
+        <div class="fact__value">910463-68-2</div>
+      </div>
+      <div class="fact">
+        <div class="fact__label">DrugBank ID</div>
+        <div class="fact__value">DB13928</div>
+      </div>
+      <div class="fact">
+        <div class="fact__label">Approval status</div>
+        <div class="fact__value">Approved drug, investigational</div>
+      </div>
+      <div class="fact">
+        <div class="fact__label">ATC</div>
+        <div class="fact__value">A10BJ06 – GLP-1 analogues</div>
+      </div>
+    </div>
+
+    <div class="pill-section">
+      <div class="pill-section-title">Therapeutic categories</div>
+      <div class="tag-list">
+        <span class="tag">Drugs used in diabetes</span>
+        <span class="tag">GLP-1 receptor agonist</span>
+        <span class="tag">Blood glucose lowering agents</span>
+        <span class="tag">Gastrointestinal hormones</span>
+      </div>
+
+      <div class="pill-section-title">Primary indications (high level)</div>
+      <ul class="bullet-list">
+        <li>Improvement of glycemic control in adults with type 2 diabetes as an adjunct to diet and exercise.</li>
+        <li>Chronic weight management in adults with obesity or overweight with weight-related comorbidities.</li>
+        <li>Use is not intended for type 1 diabetes or diabetic ketoacidosis.</li>
+      </ul>
+    </div>
+
+    <!-- COLLAPSIBLE SECTIONS -->
+    <div class="api-sections">
+      <!-- 1. Clinical overview & indications -->
+      <article class="api-section api-section--open">
+        <button class="api-section__header" type="button" data-section-toggle>
+          <div class="api-section__title">
+            <h3>Clinical overview & indications</h3>
+            <span class="api-section__hint">What this API is used for and key clinical context</span>
+          </div>
+          <span class="api-section__icon">▶</span>
+        </button>
+        <div class="api-section__body">
+          <p class="api-section__summary">
+            Semaglutide is a long-acting GLP-1 receptor agonist developed for once-weekly
+            subcutaneous administration and once-daily oral dosing, targeting glycemic control and
+            weight reduction in type 2 diabetes and obesity populations.
+          </p>
+          <div class="api-section__details">
+            <p>
+              Semaglutide is indicated to improve glycemic control in adults with type 2 diabetes mellitus
+              as an adjunct to diet and exercise. It is not used in type 1 diabetes, diabetic ketoacidosis,
+              or as initial therapy when lifestyle modification alone may suffice. The molecule also carries
+              regulatory approvals for chronic weight management in adults with obesity or overweight with at
+              least one weight-related comorbidity, and in defined pediatric populations.
+            </p>
+            <p>
+              Clinically, semaglutide has demonstrated robust reductions in HbA1c, fasting plasma glucose,
+              body weight and selected cardiovascular risk markers across multiple phase 3 trial programs.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2. Identification & classification -->
+      <article class="api-section">
+        <button class="api-section__header" type="button" data-section-toggle>
+          <div class="api-section__title">
+            <h3>Identification & classification</h3>
+            <span class="api-section__hint">How the molecule is named, coded and classified</span>
+          </div>
+          <span class="api-section__icon">▶</span>
+        </button>
+        <div class="api-section__body">
+          <p class="api-section__summary">
+            Semaglutide is a polypeptide-based GLP-1 analogue classified under A10BJ06 and
+            belongs to the broader class of organic polypeptides used in diabetes management.
+          </p>
+          <div class="api-section__details">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th colspan="2">Identification</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Generic name</td>
+                    <td>Semaglutide</td>
+                  </tr>
+                  <tr>
+                    <td>Synonyms</td>
+                    <td>Semaglutide; Sémaglutide</td>
+                  </tr>
+                  <tr>
+                    <td>Molecule type</td>
+                    <td>Small molecule (peptidic)</td>
+                  </tr>
+                  <tr>
+                    <td>Groups</td>
+                    <td>Approved; Investigational</td>
+                  </tr>
+                  <tr>
+                    <td>CAS</td>
+                    <td>910463-68-2</td>
+                  </tr>
+                  <tr>
+                    <td>UNII</td>
+                    <td>53AXN4NNHX</td>
+                  </tr>
+                  <tr>
+                    <td>DrugBank ID</td>
+                    <td>DB13928</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-wrapper" style="margin-top: 12px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th colspan="2">Regulatory classification (ATC)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>ATC code</td>
+                    <td>A10BJ06 – Glucagon-like peptide-1 (GLP-1) analogues</td>
+                  </tr>
+                  <tr>
+                    <td>Higher levels</td>
+                    <td>
+                      A10BJ – GLP-1 analogues<br />
+                      A10B – Blood glucose lowering drugs, excl. insulins<br />
+                      A10 – Drugs used in diabetes<br />
+                      A – Alimentary tract and metabolism
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Chemical class</td>
+                    <td>
+                      Kingdom: Organic compounds<br />
+                      Superclass: Organic polymers<br />
+                      Class: Polypeptides<br />
+                      Direct parent: Polypeptides
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3. Pharmacology & targets -->
+      <article class="api-section">
+        <button class="api-section__header" type="button" data-section-toggle>
+          <div class="api-section__title">
+            <h3>Pharmacology & targets</h3>
+            <span class="api-section__hint">Mechanism of action, pharmacodynamics and key targets</span>
+          </div>
+          <span class="api-section__icon">▶</span>
+        </button>
+        <div class="api-section__body">
+          <p class="api-section__summary">
+            Semaglutide is a GLP-1 receptor agonist that enhances glucose-dependent insulin
+            secretion, suppresses glucagon, slows gastric emptying and modulates appetite,
+            contributing to glycemic control, weight reduction and cardiometabolic benefits.
+          </p>
+          <div class="api-section__details">
+            <h4 style="font-size:13px; margin: 4px 0 4px;">Mechanism of action</h4>
+            <p>
+              GLP-1 is a physiological hormone that promotes glycemic control via increased insulin
+              secretion, slowed gastric emptying and reduced postprandial glucagon secretion.
+              Semaglutide shares high sequence homology with native GLP-1 and selectively activates
+              the GLP-1 receptor, stimulating pancreatic islet cells to increase insulin synthesis
+              and reduce inappropriate glucagon release in a glucose-dependent fashion.
+            </p>
+
+            <h4 style="font-size:13px; margin: 8px 0 4px;">Pharmacodynamics</h4>
+            <p>
+              Treatment with semaglutide lowers HbA1c, fasting and postprandial plasma glucose,
+              reduces body weight and modestly improves triglycerides and VLDL cholesterol.
+              Safety-relevant pharmacodynamic effects include delayed gastric emptying,
+              which may influence the absorption of concomitantly administered oral drugs.
+            </p>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Target</th>
+                    <th>Organism</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Glucagon-like peptide 1 receptor (GLP-1R)</td>
+                    <td>Human</td>
+                    <td>Agonist</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4. ADME / PK -->
+      <article class="api-section">
+        <button class="api-section__header" type="button" data-section-toggle>
+          <div class="api-section__title">
+            <h3>ADME / PK profile</h3>
+            <span class="api-section__hint">Absorption, distribution, metabolism and elimination</span>
+          </div>
+          <span class="api-section__icon">▶</span>
+        </button>
+        <div class="api-section__body">
+          <p class="api-section__summary">
+            Long half-life (~168 h) driven by strong albumin binding allows once-weekly
+            dosing of injectable semaglutide and supports sustained plasma exposure.
+          </p>
+          <div class="api-section__details">
+            <ul class="bullet-list">
+              <li>Oral bioavailability is low but enhanced through specialized formulations.</li>
+              <li>More than 99% bound to plasma albumin, leading to low clearance.</li>
+              <li>Half-life around 168 h enables once-weekly subcutaneous dosing.</li>
+              <li>Eliminated primarily via renal excretion, with contributions from fecal routes.</li>
+            </ul>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Absorption</td>
+                    <td>
+                      Cmax ≈ 10.9 nmol/L, AUC ≈ 3123 nmol·h/L, Tmax ≈ 56 h (1–3 days).
+                      Oral steady-state is reached in 4–5 weeks; absolute bioavailability
+                      reported around 89% for the injectable formulation.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Distribution</td>
+                    <td>
+                      Volume of distribution 8–9.4 L. More than 99% bound to albumin,
+                      limiting tissue distribution and renal clearance.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Metabolism</td>
+                    <td>
+                      Slowly metabolized via backbone cleavage and β-oxidation of the fatty
+                      acid chain. Degradation involves DPP-4 and neutral endopeptidase with
+                      multiple circulating metabolites identified.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Half-life</td>
+                    <td>Approximately 168 h (≈7 days), enabling once-weekly administration.</td>
+                  </tr>
+                  <tr>
+                    <td>Clearance</td>
+                    <td>
+                      Clearance around 0.039–0.05 L/h in patients with type 2 diabetes,
+                      with limited impact of hepatic impairment on overall exposure.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Elimination</td>
+                    <td>
+                      Predominantly renal excretion (≈53% of a radiolabeled dose in urine),
+                      with additional elimination via feces and minor exhaled fraction.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 5. Formulation & handling -->
+      <article class="api-section">
+        <button class="api-section__header" type="button" data-section-toggle>
+          <div class="api-section__title">
+            <h3>Formulation & handling notes</h3>
+            <span class="api-section__hint">Technical points for drug product development</span>
+          </div>
+          <span class="api-section__icon">▶</span>
+        </button>
+        <div class="api-section__body">
+          <p class="api-section__summary">
+            High-molecular-weight peptide requiring careful control of temperature,
+            agitation and gastric conditions depending on route of administration.
+          </p>
+          <div class="api-section__details">
+            <ul class="bullet-list">
+              <li>
+                Semaglutide is formulated primarily as a subcutaneous aqueous solution and
+                should be protected from elevated temperatures and excessive agitation to
+                preserve structural integrity.
+              </li>
+              <li>
+                Oral tablets rely on absorption enhancers and must be administered under
+                controlled gastric conditions (e.g., fasting state with limited water) to
+                secure reproducible exposure.
+              </li>
+              <li>
+                Extreme hydrophilicity and low permeability shift formulation priorities
+                towards maintaining peptide stability and minimizing degradation.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <!-- 6. Regulatory & market landscape -->
+      <article class="api-section">
+        <button class="api-section__header" type="button" data-section-toggle>
+          <div class="api-section__title">
+            <h3>Regulatory & market landscape</h3>
+            <span class="api-section__hint">Lifecycle stage, patents and availability</span>
+          </div>
+          <span class="api-section__icon">▶</span>
+        </button>
+        <div class="api-section__body">
+          <p class="api-section__summary">
+            Semaglutide is an approved GLP-1 analogue with a maturing patent landscape,
+            marketed across major regulated markets and moving from mid- to late-lifecycle.
+          </p>
+          <div class="api-section__details">
+            <p>
+              Most listed U.S. patents on semaglutide have expired, with remaining protection
+              extending into the late 2020s and at least one patent reaching into the early
+              2030s. This points to a product in transition from mid- to late-lifecycle,
+              with generic competition constrained by staggered IP expiry.
+            </p>
+            <p>
+              A single originator currently supplies the API and finished products in the US,
+              Canada and EU. Broader generic participation will depend on the timing and scope
+              of remaining patent and exclusivity protections, as well as complex peptide
+              manufacturing capabilities.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- 7. Safety & risk notes -->
+      <article class="api-section">
+        <button class="api-section__header" type="button" data-section-toggle>
+          <div class="api-section__title">
+            <h3>Safety & risk notes</h3>
+            <span class="api-section__hint">Core safety considerations at API level</span>
+          </div>
+          <span class="api-section__icon">▶</span>
+        </button>
+        <div class="api-section__body">
+          <p class="api-section__summary">
+            Key risks include potential pancreatitis, dehydration and theoretical thyroid
+            C-cell tumors, combined with a long elimination half-life requiring extended
+            monitoring in overdose scenarios.
+          </p>
+          <div class="api-section__details">
+            <ul class="bullet-list">
+              <li>Overdose exposures up to 4 mg mainly caused gastrointestinal events such as nausea.</li>
+              <li>No specific antidote is available; management is supportive.</li>
+              <li>Elimination half-life of about one week may require prolonged observation.</li>
+            </ul>
+            <p>
+              Product labels caution against use in patients with a personal or family history of
+              medullary thyroid carcinoma, and recommend immediate medical assessment for
+              signs of pancreatitis, such as persistent severe abdominal pain. Delayed gastric
+              emptying may alter the absorption profile of co-administered oral medicines.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- 8. Buyer cheatsheet -->
+      <article class="api-section">
+        <button class="api-section__header" type="button" data-section-toggle>
+          <div class="api-section__title">
+            <h3>Buyer cheatsheet</h3>
+            <span class="api-section__hint">Fast facts for sourcing & procurement</span>
+          </div>
+          <span class="api-section__icon">▶</span>
+        </button>
+        <div class="api-section__body">
+          <p class="api-section__summary">
+            Snapshot for sourcing teams evaluating semaglutide API suppliers.
+          </p>
+          <div class="api-section__details">
+            <ul class="bullet-list">
+              <li>Available as injectable peptide for subcutaneous use and as an oral peptide formulation.</li>
+              <li>Used for type 2 diabetes control and chronic weight management in adults and some adolescents.</li>
+              <li>Approved across major regulated markets (US, Canada, EU) with ongoing development in others.</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <script>
+    document.querySelectorAll("[data-section-toggle]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const section = btn.closest(".api-section");
+        section.classList.toggle("api-section--open");
+      });
+    });
+  </script>
+</body>
+</html>
