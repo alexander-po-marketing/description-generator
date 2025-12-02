@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import re
 from dataclasses import asdict, is_dataclass
 from typing import Callable, Dict, List, Mapping, Optional, Sequence
@@ -31,6 +32,10 @@ def _sanitize_text(text: Optional[str]) -> Optional[str]:
     cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
     cleaned = re.sub(r"[ \t]+", " ", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    cleaned = html.unescape(cleaned)
+    cleaned = cleaned.replace("\u00a0", " ")
+    cleaned = cleaned.replace("<", "\u2039").replace(">", "\u203a")
+    cleaned = re.sub(r"[\u2028\u2029]", " ", cleaned)
     return cleaned.strip()
 
 
@@ -388,11 +393,19 @@ def build_page_model(
         "logP": drug.logp,
     }
 
+    regulatory_classification = {
+        "groups": list(drug.groups),
+        "therapeuticClasses": _limited_therapeutic_classes(drug.categories),
+        "classification": _sanitize_classification(drug.classification),
+        "atcCodes": _atc_codes_to_dict(drug.atc_codes),
+    }
+
     regulatory_block = {
         "lifecycleSummary": lifecycle_summary,
         "approvalStatus": approval_status,
         "markets": markets,
         "labelHighlights": primary_use_cases,
+        "regulatoryClassification": regulatory_classification,
     }
 
     taxonomy_block = {
@@ -490,14 +503,6 @@ def build_page_model(
         "longDescription": generated.description,
         "identificationClassification": {
             "identification": identification_block,
-            "regulatoryClassification": {
-                "approvalStatus": approval_status,
-                "groups": list(drug.groups),
-                "classification": taxonomy_block.get("classification"),
-                "therapeuticClasses": taxonomy_block.get("therapeuticClasses"),
-                "atcCodes": taxonomy_block.get("atcCodes"),
-                "markets": markets,
-            },
             "chemistry": chemistry_block,
         },
         "pharmacologyTargets": {
@@ -515,6 +520,7 @@ def build_page_model(
             "approvalStatus": approval_status,
             "markets": markets,
             "labelHighlights": primary_use_cases,
+            "regulatoryClassification": regulatory_classification,
             "details": regulatory_block,
             "supplyChain": supply_block,
         },

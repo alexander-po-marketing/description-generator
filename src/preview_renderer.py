@@ -153,9 +153,6 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
         merged_rows.append(("Generic name", identification.get("genericName")))
     if identification.get("moleculeType"):
         merged_rows.append(("Molecule type", identification.get("moleculeType")))
-    groups = identification.get("groups", []) if isinstance(identification, Mapping) else []
-    if groups:
-        merged_rows.append(("Group", " • ".join([_clean_text(group) for group in groups if group])))
     synonyms = identification.get("synonyms", []) if isinstance(identification, Mapping) else []
     if synonyms:
         merged_rows.append(("Synonyms", ", ".join([_clean_text(s) for s in synonyms if s])))
@@ -178,20 +175,30 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
         if isinstance(chemistry, Mapping) and chemistry.get(key):
             merged_rows.append((label, chemistry.get(key)))
 
-    regulatory_class = id_section.get("regulatoryClassification") if isinstance(id_section, Mapping) else {}
-    taxonomy = page.get("categoriesAndTaxonomy", {}) if isinstance(page, Mapping) else {}
+    content_parts = [
+        _subblock("Identification & chemistry", _table_from_pairs(_merge_row_values(merged_rows))),
+    ]
+    return "".join(part for part in content_parts if part)
+
+
+def _regulatory_classification_rows(
+    regulatory_classification: Mapping[str, object] | None, taxonomy: Mapping[str, object]
+) -> List[Tuple[str, object]]:
     reg_rows: List[Tuple[str, object]] = []
-    if isinstance(regulatory_class, Mapping):
-        if regulatory_class.get("approvalStatus"):
-            reg_rows.append(("Approval status", regulatory_class.get("approvalStatus")))
-        if regulatory_class.get("markets"):
-            reg_rows.append(("Markets", ", ".join(regulatory_class.get("markets") or [])))
+
+    groups = regulatory_classification.get("groups", []) if isinstance(regulatory_classification, Mapping) else []
+    if groups:
+        reg_rows.append(("Groups", " • ".join([_clean_text(group) for group in groups if group])))
+
     therapeutic_classes = (taxonomy.get("therapeuticClasses") if isinstance(taxonomy, Mapping) else []) or []
+    if isinstance(regulatory_classification, Mapping) and regulatory_classification.get("therapeuticClasses"):
+        therapeutic_classes = regulatory_classification.get("therapeuticClasses") or therapeutic_classes
     if therapeutic_classes:
         reg_rows.append(("Therapeutic class", " • ".join(tc for tc in therapeutic_classes[:6] if tc)))
+
     classification = taxonomy.get("classification") if isinstance(taxonomy, Mapping) else None
-    if isinstance(regulatory_class, Mapping) and regulatory_class.get("classification"):
-        classification = regulatory_class.get("classification")
+    if isinstance(regulatory_classification, Mapping) and regulatory_classification.get("classification"):
+        classification = regulatory_classification.get("classification")
     if isinstance(classification, Mapping):
         for key, value in classification.items():
             normalized_key = key.lower().replace(" ", "_")
@@ -199,7 +206,10 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
                 continue
             if value:
                 reg_rows.append((key.replace("_", " ").title(), value))
+
     atc_codes = taxonomy.get("atcCodes") if isinstance(taxonomy, Mapping) else []
+    if isinstance(regulatory_classification, Mapping) and regulatory_classification.get("atcCodes"):
+        atc_codes = regulatory_classification.get("atcCodes") or atc_codes
     if atc_codes:
         reg_rows.append(
             (
@@ -210,11 +220,7 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
             )
         )
 
-    content_parts = [
-        _subblock("Identification & chemistry", _table_from_pairs(_merge_row_values(merged_rows))),
-        _subblock("Regulatory classification", _table_from_pairs(_merge_row_values(reg_rows))),
-    ]
-    return "".join(part for part in content_parts if part)
+    return _merge_row_values(reg_rows)
 
 
 def _build_pharmacology_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -330,8 +336,6 @@ def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str,
         regulatory = page.get("regulatoryAndMarket", {})
 
     reg_rows = []
-    if regulatory.get("approvalStatus"):
-        reg_rows.append(("Approval status", regulatory.get("approvalStatus")))
     if regulatory.get("summary"):
         reg_rows.append(("Lifecycle", regulatory.get("summary")))
     elif regulatory.get("lifecycleSummary"):
@@ -339,6 +343,11 @@ def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str,
     reg_table = _table_from_pairs(reg_rows)
 
     markets = _chip_list(regulatory.get("markets", []))
+    taxonomy = page.get("categoriesAndTaxonomy", {}) if isinstance(page, Mapping) else {}
+    classification_rows = _regulatory_classification_rows(
+        regulatory.get("regulatoryClassification") if isinstance(regulatory, Mapping) else {}, taxonomy
+    )
+    classification_table = _table_from_pairs(classification_rows)
     label_highlights = _unordered_list(regulatory.get("labelHighlights", []))
 
     supply = regulatory.get("supplyChain", {}) if isinstance(regulatory, Mapping) else {}
@@ -351,12 +360,12 @@ def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str,
         supply_rows.append(("External notes", supply.get("externalManufacturingNotes")))
     supply_table = _table_from_pairs(supply_rows)
     manufacturers = _chip_list(supply.get("manufacturers", []) if isinstance(supply, Mapping) else [])
-    packagers = _chip_list(supply.get("packagers", []) if isinstance(supply, Mapping) else [])
 
     content_parts = [
         _subblock("Regulatory status", reg_table + markets),
+        _subblock("Regulatory classification", classification_table),
         _subblock("Label highlights", label_highlights),
-        _subblock("Supply chain", supply_table + manufacturers + packagers),
+        _subblock("Supply chain", supply_table + manufacturers),
     ]
     return "".join(part for part in content_parts if part)
 
