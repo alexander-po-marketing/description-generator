@@ -53,47 +53,6 @@ def _unordered_list(items: Iterable[object]) -> str:
     return f"<ul>{''.join(entries)}</ul>" if entries else ""
 
 
-def _unordered_html_list(items: Iterable[str]) -> str:
-    entries = [f"<li>{item}</li>" for item in items if item]
-    return f"<ul>{''.join(entries)}</ul>" if entries else ""
-
-
-def _anchor(label: str, url: str) -> str:
-    if not label or not url:
-        return ""
-    return f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{_escape(label)}</a>'
-
-
-def _article_entry(article: Mapping[str, object] | object) -> str:
-    citation = article.get("citation") if isinstance(article, Mapping) else None
-    pubmed_id = None
-    ref_id = None
-    if isinstance(article, Mapping):
-        pubmed_id = article.get("pubmed_id") or article.get("pubmedId")
-        ref_id = article.get("ref_id") or article.get("refId")
-
-    label = citation or pubmed_id or ref_id
-    url: str | None = None
-    if pubmed_id:
-        url = f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/"
-    elif isinstance(ref_id, str) and ref_id.startswith("http"):
-        url = ref_id
-
-    if url and label:
-        return _anchor(str(label), url)
-    return _escape(label) if label else ""
-
-
-def _link_entry(link: Mapping[str, object] | object) -> str:
-    if not isinstance(link, Mapping):
-        return ""
-    label = link.get("title") or link.get("url")
-    url = link.get("url")
-    if url and label:
-        return _anchor(str(label), str(url))
-    return _escape(label) if label else ""
-
-
 def _subblock(title: str, body: str) -> str:
     if not body:
         return ""
@@ -158,10 +117,10 @@ def _build_hero_block(page: Mapping[str, object]) -> str:
     hero = page.get("hero", {}) if isinstance(page, Mapping) else {}
     title = hero.get("title") or "API overview"
     summary_sentence = hero.get("summarySentence") or hero.get("summary")
-    categories = hero.get("therapeuticCategories", [])
+    categories = (hero.get("therapeuticCategories", []) or [])[:6]
     taxonomy = page.get("categoriesAndTaxonomy", {}) if isinstance(page, Mapping) else {}
     if not categories and isinstance(taxonomy, Mapping):
-        categories = taxonomy.get("therapeuticClasses", []) or []
+        categories = (taxonomy.get("therapeuticClasses", []) or [])[:6]
     category_chips = _chip_list(categories)
 
     facts_source = hero.get("facts") or page.get("facts") or {}
@@ -180,36 +139,6 @@ def _build_hero_block(page: Mapping[str, object]) -> str:
     ]
     body = "".join(part for part in content_parts if part)
     return f"<div class=\"hero-block\">{body}</div>" if body else ""
-
-
-def _brands_block(products: Mapping[str, object]) -> str:
-    brands_by_market = products.get("brandsByMarket") if isinstance(products, Mapping) else None
-    brand_lists: List[str] = []
-    if isinstance(brands_by_market, Mapping):
-        for market, brands in brands_by_market.items():
-            if not brands:
-                continue
-            entries = []
-            for brand in brands:
-                if not isinstance(brand, Mapping):
-                    continue
-                brand_label = brand.get("brand") or brand.get("dosageForm") or "Brand"
-                details: List[str] = []
-                if brand.get("dosageForm"):
-                    details.append(str(brand.get("dosageForm")))
-                if brand.get("strength"):
-                    details.append(str(brand.get("strength")))
-                if brand.get("route"):
-                    details.append(str(brand.get("route")))
-                details_text = " • ".join(details)
-                entries.append(
-                    f"<li><strong>{_escape(brand_label)}</strong>{f' — {details_text}' if details_text else ''}</li>"
-                )
-            if entries:
-                brand_lists.append(
-                    f"<div class=\"market-group\"><div class=\"subblock-header\">{_escape(market)}</div><ul>{''.join(entries)}</ul></div>"
-                )
-    return "".join(brand_lists)
 
 
 def _build_identification_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -237,9 +166,6 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
         merged_rows.append(("UNII", identifiers.get("unii")))
     if identifiers.get("drugbankId"):
         merged_rows.append(("DrugBank ID", identifiers.get("drugbankId")))
-    if identifiers.get("external"):
-        merged_rows.append(("External", identifiers.get("external")))
-
     chemistry = id_section.get("chemistry") if isinstance(id_section, Mapping) else {}
     if not chemistry and isinstance(page, Mapping):
         chemistry = page.get("chemistry", {})
@@ -260,14 +186,17 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
             reg_rows.append(("Approval status", regulatory_class.get("approvalStatus")))
         if regulatory_class.get("markets"):
             reg_rows.append(("Markets", ", ".join(regulatory_class.get("markets") or [])))
-    therapeutic_classes = taxonomy.get("therapeuticClasses") if isinstance(taxonomy, Mapping) else []
+    therapeutic_classes = (taxonomy.get("therapeuticClasses") if isinstance(taxonomy, Mapping) else []) or []
     if therapeutic_classes:
-        reg_rows.append(("Therapeutic class", " • ".join(tc for tc in therapeutic_classes if tc)))
+        reg_rows.append(("Therapeutic class", " • ".join(tc for tc in therapeutic_classes[:6] if tc)))
     classification = taxonomy.get("classification") if isinstance(taxonomy, Mapping) else None
     if isinstance(regulatory_class, Mapping) and regulatory_class.get("classification"):
         classification = regulatory_class.get("classification")
     if isinstance(classification, Mapping):
         for key, value in classification.items():
+            normalized_key = key.lower().replace(" ", "_")
+            if normalized_key in {"alternative_parents", "substituents"}:
+                continue
             if value:
                 reg_rows.append((key.replace("_", " ").title(), value))
     atc_codes = taxonomy.get("atcCodes") if isinstance(taxonomy, Mapping) else []
@@ -281,27 +210,9 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
             )
         )
 
-    exp_props = chemistry.get("experimentalProperties") or [] if isinstance(chemistry, Mapping) else []
-    experimental_table = _table_from_dicts(
-        exp_props if isinstance(exp_props, list) else [],
-        [("Name", "name"), ("Value", "value")],
-    )
-
-    products = id_section.get("productsAndDosageForms") if isinstance(id_section, Mapping) else {}
-    if not products and isinstance(page, Mapping):
-        products = page.get("productsAndDosageForms", {})
-    dosage_forms = products.get("dosageForms") or [] if isinstance(products, Mapping) else []
-    dosage_table = _table_from_dicts(
-        dosage_forms if isinstance(dosage_forms, list) else [],
-        [("Form", "form"), ("Route", "route"), ("Strength", "strength")],
-    )
-    brand_block = _brands_block(products if isinstance(products, Mapping) else {})
-
     content_parts = [
         _subblock("Identification & chemistry", _table_from_pairs(_merge_row_values(merged_rows))),
         _subblock("Regulatory classification", _table_from_pairs(_merge_row_values(reg_rows))),
-        _subblock("Experimental properties", experimental_table),
-        _subblock("Products & dosage forms", dosage_table + brand_block),
     ]
     return "".join(part for part in content_parts if part)
 
@@ -335,10 +246,6 @@ def _build_pharmacology_section(clinical: Mapping[str, object], page: Mapping[st
         rows.append(("Mechanism", pharmacology.get("mechanismOfAction")))
     if pharmacology.get("pharmacodynamics"):
         rows.append(("Pharmacodynamics", pharmacology.get("pharmacodynamics")))
-    if pharmacology.get("details"):
-        for entry in pharmacology.get("details"):
-            if isinstance(entry, Mapping) and entry.get("value"):
-                rows.append((entry.get("label") or "Detail", entry.get("value")))
     summary_table = _table_from_pairs(_merge_row_values(rows))
 
     targets_source = None
@@ -434,18 +341,6 @@ def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str,
     markets = _chip_list(regulatory.get("markets", []))
     label_highlights = _unordered_list(regulatory.get("labelHighlights", []))
 
-    patents = regulatory.get("patents") or []
-    patents_table = _table_from_dicts(
-        patents if isinstance(patents, list) else [],
-        [
-            ("Number", "number"),
-            ("Country", "country"),
-            ("Approved", "approvedDate"),
-            ("Expires", "expiresDate"),
-            ("Pediatric Ext.", "pediatricExtension"),
-        ],
-    )
-
     supply = regulatory.get("supplyChain", {}) if isinstance(regulatory, Mapping) else {}
     if not supply and isinstance(page, Mapping):
         supply = page.get("suppliersAndManufacturing", {})
@@ -461,47 +356,9 @@ def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str,
     content_parts = [
         _subblock("Regulatory status", reg_table + markets),
         _subblock("Label highlights", label_highlights),
-        _subblock("Patents", patents_table),
         _subblock("Supply chain", supply_table + manufacturers + packagers),
     ]
     return "".join(part for part in content_parts if part)
-
-
-def _build_references_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
-    references = clinical.get("references", {}) if isinstance(clinical, Mapping) else {}
-    if not references and isinstance(page, Mapping):
-        references = page.get("references", {})
-
-    articles = references.get("scientificArticles") or [] if isinstance(references, Mapping) else []
-    article_items = [_article_entry(article) for article in articles]
-    articles_list = _unordered_html_list(article_items)
-
-    links = references.get("regulatoryLinks") or [] if isinstance(references, Mapping) else []
-    other_links = references.get("otherLinks") or [] if isinstance(references, Mapping) else []
-    link_entries = [_link_entry(link) for link in [*links, *other_links]]
-    links_list = _unordered_html_list(link_entries)
-
-    return "".join(
-        part
-        for part in [
-            _subblock("Key references", articles_list),
-            _subblock("Links", links_list),
-        ]
-        if part
-    )
-
-
-def _build_experimental_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
-    experimental = clinical.get("experimentalProperties", {}) if isinstance(clinical, Mapping) else {}
-    if not experimental and isinstance(page, Mapping):
-        experimental = page.get("experimentalProperties", {})
-
-    properties = experimental.get("properties") if isinstance(experimental, Mapping) else []
-    properties_table = _table_from_dicts(
-        properties if isinstance(properties, list) else [],
-        [("Property", "name"), ("Value", "value")],
-    )
-    return _subblock("Experimental properties", properties_table)
 
 
 def _build_clinical_overview_block(page: Mapping[str, object]) -> str:
@@ -558,16 +415,6 @@ def _build_regulatory_panel(clinical: Mapping[str, object], page: Mapping[str, o
 def _build_safety_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
     body = _build_safety_section(clinical, page)
     return _collapsible_panel("Safety & risks", "Toxicity and warnings", body)
-
-
-def _build_references_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
-    body = _build_references_section(clinical, page)
-    return _collapsible_panel("References", "Source articles and links", body)
-
-
-def _build_experimental_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
-    body = _build_experimental_section(clinical, page)
-    return _collapsible_panel("Experimental properties", "Assays and reported properties", body)
 
 
 def _build_seo_block(page: Mapping[str, object]) -> str:
@@ -662,8 +509,6 @@ def generate_html_preview(api_pages: Dict[str, object]) -> str:
             _build_formulation_panel(page.get("clinicalOverview", {}), page),
             _build_regulatory_panel(page.get("clinicalOverview", {}), page),
             _build_safety_panel(page.get("clinicalOverview", {}), page),
-            _build_references_panel(page.get("clinicalOverview", {}), page),
-            _build_experimental_panel(page.get("clinicalOverview", {}), page),
             _build_seo_block(page),
         ]
         content = "".join(block for block in blocks if block)

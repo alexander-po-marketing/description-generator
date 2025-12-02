@@ -217,7 +217,7 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                     label="Therapeutic categories",
                     path=["therapeuticCategories"],
                     type="array",
-                    limit=12,
+                    limit=6,
                 ),
                 TemplateNode(
                     id="hero-facts",
@@ -292,7 +292,6 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                                         TemplateNode(id="identifiers-cas", label="CAS", path=["casNumber"], type="field"),
                                         TemplateNode(id="identifiers-unii", label="UNII", path=["unii"], type="field"),
                                         TemplateNode(id="identifiers-drugbank", label="DrugBank ID", path=["drugbankId"], type="field"),
-                                        TemplateNode(id="identifiers-external", label="External", path=["external"], type="array", limit=12),
                                     ],
                                 ),
                             ],
@@ -305,7 +304,7 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                                 TemplateNode(id="reg-approval", label="Approval status", path=["approvalStatus"], type="field"),
                                 TemplateNode(id="reg-markets", label="Markets", path=["markets"], type="array", limit=20),
                                 TemplateNode(id="reg-groups", label="Groups", path=["groups"], type="array", limit=10),
-                                TemplateNode(id="reg-therapeutic", label="Therapeutic classes", path=["therapeuticClasses"], type="array", limit=12),
+                                TemplateNode(id="reg-therapeutic", label="Therapeutic classes", path=["therapeuticClasses"], type="array", limit=6),
                                 TemplateNode(id="reg-classification", label="Classification", path=["classification"], type="field"),
                                 TemplateNode(
                                     id="reg-atc",
@@ -326,37 +325,6 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                                 TemplateNode(id="chemistry-average-mw", label="Average molecular weight", path=["averageMolecularWeight"], type="field"),
                                 TemplateNode(id="chemistry-mono-mass", label="Monoisotopic mass", path=["monoisotopicMass"], type="field"),
                                 TemplateNode(id="chemistry-logp", label="logP", path=["logP"], type="field"),
-                                TemplateNode(
-                                    id="chemistry-properties",
-                                    label="Experimental properties",
-                                    path=["experimentalProperties"],
-                                    type="array",
-                                    limit=20,
-                                    children=[
-                                        TemplateNode(id="chemistry-property-name", label="Name", path=["name"], type="field"),
-                                        TemplateNode(id="chemistry-property-value", label="Value", path=["value"], type="field"),
-                                    ],
-                                ),
-                            ],
-                        ),
-                        TemplateNode(
-                            id="products",
-                            label="Products and dosage forms",
-                            path=["productsAndDosageForms"],
-                            children=[
-                                TemplateNode(
-                                    id="products-dosage",
-                                    label="Dosage forms",
-                                    path=["dosageForms"],
-                                    type="array",
-                                    limit=25,
-                                    children=[
-                                        TemplateNode(id="dosage-form", label="Form", path=["form"], type="field"),
-                                        TemplateNode(id="dosage-route", label="Route", path=["route"], type="field"),
-                                        TemplateNode(id="dosage-strength", label="Strength", path=["strength"], type="field"),
-                                    ],
-                                ),
-                                TemplateNode(id="products-by-market", label="Brands by market", path=["brandsByMarket"], type="field"),
                             ],
                         ),
                     ],
@@ -380,7 +348,6 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                             children=[
                                 TemplateNode(id="pharmacology-moa", label="Mechanism of action", path=["mechanismOfAction"], type="field"),
                                 TemplateNode(id="pharmacology-dynamics", label="Pharmacodynamics", path=["pharmacodynamics"], type="field"),
-                                TemplateNode(id="pharmacology-detail-list", label="Details", path=["details"], type="array", limit=10),
                             ],
                         ),
                         TemplateNode(
@@ -444,20 +411,6 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                         TemplateNode(id="regulatory-markets", label="Markets", path=["markets"], type="array", limit=20),
                         TemplateNode(id="regulatory-label-highlights", label="Label highlights", path=["labelHighlights"], type="array", limit=10),
                         TemplateNode(
-                            id="regulatory-patents",
-                            label="Patents",
-                            path=["patents"],
-                            type="array",
-                            limit=20,
-                            children=[
-                                TemplateNode(id="patent-number", label="Number", path=["number"], type="field"),
-                                TemplateNode(id="patent-country", label="Country", path=["country"], type="field"),
-                                TemplateNode(id="patent-approved", label="Approved", path=["approvedDate"], type="field"),
-                                TemplateNode(id="patent-expires", label="Expires", path=["expiresDate"], type="field"),
-                                TemplateNode(id="patent-pediatric", label="Pediatric extension", path=["pediatricExtension"], type="field"),
-                            ],
-                        ),
-                        TemplateNode(
                             id="regulatory-supply",
                             label="Supply chain",
                             path=["supplyChain"],
@@ -492,22 +445,6 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                             generation_id="safety_highlights",
                         ),
                     ],
-                ),
-                TemplateNode(
-                    id="references",
-                    label="References",
-                    path=["references"],
-                    children=[
-                        TemplateNode(id="references-articles", label="Scientific articles", path=["scientificArticles"], type="array", limit=20),
-                        TemplateNode(id="references-regulatory", label="Regulatory links", path=["regulatoryLinks"], type="array", limit=20),
-                        TemplateNode(id="references-other", label="Other links", path=["otherLinks"], type="array", limit=20),
-                    ],
-                ),
-                TemplateNode(
-                    id="experimental",
-                    label="Experimental properties",
-                    path=["experimentalProperties"],
-                    children=[TemplateNode(id="experimental-list", label="Properties", path=["properties"], type="array", limit=25)],
                 ),
             ],
         ),
