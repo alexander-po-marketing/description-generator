@@ -581,8 +581,9 @@ def build_page_model(
             "chemistry": chemistry_block,
             "productsAndDosageForms": products_block,
         },
-        "pharmacology": {
+        "pharmacologyTargets": {
             "summary": pharmacology_summary,
+            "pharmacology": pharmacology_block,
             "details": pharmacology_block.get("details"),
             "targets": pharmacology_block.get("targets"),
         },
@@ -590,7 +591,6 @@ def build_page_model(
             "table": {**adme_table, "pkSnapshot": adme_pk_block.get("pkSnapshot")},
             "pkSnapshot": adme_pk_block.get("pkSnapshot"),
         },
-        "safety": safety_block,
         "formulationHandling": {"notes": formulation_notes},
         "regulatoryMarket": {
             "summary": lifecycle_summary,
@@ -601,6 +601,8 @@ def build_page_model(
             "details": regulatory_block,
             "supplyChain": supply_block,
         },
+        "safetyRisks": safety_block,
+        "safety": safety_block,
         "references": references_block,
         "experimentalProperties": experimental_block,
     }
@@ -618,10 +620,12 @@ def build_page_model(
         "formulationNotes": {"bullets": formulation_notes},
         "categoriesAndTaxonomy": taxonomy_block,
         "pharmacology": pharmacology_block,
+        "pharmacologyTargets": clinical_overview.get("pharmacologyTargets"),
         "admePk": adme_pk_block,
         "productsAndDosageForms": products_block,
         "suppliersAndManufacturing": supply_block,
         "safety": safety_block,
+        "safetyRisks": safety_block,
         "experimentalProperties": experimental_block,
         "references": references_block,
         "seo": seo_block,

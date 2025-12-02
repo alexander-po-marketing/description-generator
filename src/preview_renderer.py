@@ -262,15 +262,30 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
 
 
 def _build_pharmacology_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
-    pharmacology = clinical.get("pharmacology", {}) if isinstance(clinical, Mapping) else {}
-    if not pharmacology and isinstance(page, Mapping):
-        pharmacology = page.get("pharmacology", {})
+    pharmacology_container: Mapping[str, object] | None = None
+    if isinstance(clinical, Mapping):
+        pharmacology_container = clinical.get("pharmacologyTargets") or clinical.get("pharmacology")
+    if not pharmacology_container and isinstance(page, Mapping):
+        pharmacology_container = page.get("pharmacologyTargets") or page.get("pharmacology")
+
+    pharmacology: Mapping[str, object] = {}
+    if isinstance(pharmacology_container, Mapping):
+        pharmacology = (
+            pharmacology_container.get("pharmacology")
+            if "pharmacology" in pharmacology_container
+            else pharmacology_container
+        )
 
     rows = []
+    summary_value = None
+    if isinstance(pharmacology_container, Mapping):
+        summary_value = pharmacology_container.get("summary") or pharmacology_container.get("highLevelSummary")
+    if not summary_value and pharmacology.get("highLevelSummary"):
+        summary_value = pharmacology.get("highLevelSummary")
     if pharmacology.get("summary"):
         rows.append(("Summary", pharmacology.get("summary")))
-    if pharmacology.get("highLevelSummary") and not pharmacology.get("summary"):
-        rows.append(("Summary", pharmacology.get("highLevelSummary")))
+    elif summary_value:
+        rows.append(("Summary", summary_value))
     if pharmacology.get("mechanismOfAction"):
         rows.append(("Mechanism", pharmacology.get("mechanismOfAction")))
     if pharmacology.get("pharmacodynamics"):
@@ -281,14 +296,20 @@ def _build_pharmacology_section(clinical: Mapping[str, object], page: Mapping[st
                 rows.append((entry.get("label") or "Detail", entry.get("value")))
     summary_table = _table_from_pairs(rows)
 
-    targets = pharmacology.get("targets") or []
+    targets_source = None
+    if isinstance(pharmacology_container, Mapping) and pharmacology_container.get("targets") is not None:
+        targets_source = pharmacology_container.get("targets")
+    elif pharmacology.get("targets") is not None:
+        targets_source = pharmacology.get("targets")
+    targets = targets_source or []
     targets_table = _table_from_dicts(
         targets if isinstance(targets, list) else [],
         [("Name", "name"), ("Organism", "organism"), ("Actions", "actions"), ("GO processes", "goProcesses")],
     )
 
     return "".join(
-        part for part in [
+        part
+        for part in [
             _subblock("Pharmacology", summary_table),
             _subblock("Targets", targets_table),
         ]
@@ -326,9 +347,11 @@ def _build_adme_section(clinical: Mapping[str, object], page: Mapping[str, objec
 
 
 def _build_safety_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
-    safety = clinical.get("safety", {}) if isinstance(clinical, Mapping) else {}
+    safety: Mapping[str, object] | None = {}
+    if isinstance(clinical, Mapping):
+        safety = clinical.get("safetyRisks") or clinical.get("safety") or {}
     if not safety and isinstance(page, Mapping):
-        safety = page.get("safety", {})
+        safety = page.get("safetyRisks") or page.get("safety") or {}
 
     safety_rows = []
     if safety.get("toxicity"):
@@ -448,21 +471,66 @@ def _build_clinical_overview_block(page: Mapping[str, object]) -> str:
     summary_text = clinical.get("summary") or overview.get("summary")
     description = clinical.get("longDescription") or overview.get("description")
 
-    content_parts = []
+    description_block = ""
+    if summary_text:
+        description_block += f"<p class=\"lead\">{_escape(summary_text)}</p>"
     if description:
-        content_parts.append(f"<div class=\"long-description\"><p>{_escape(description)}</p></div>")
+        description_block += f"<div class=\"long-description\"><p>{_escape(description)}</p></div>"
 
-    content_parts.append(_build_identification_section(clinical, page))
-    content_parts.append(_build_pharmacology_section(clinical, page))
-    content_parts.append(_build_adme_section(clinical, page))
-    content_parts.append(_build_safety_section(clinical, page))
-    content_parts.append(_build_formulation_section(clinical, page))
-    content_parts.append(_build_regulatory_section(clinical, page))
-    content_parts.append(_build_references_section(clinical, page))
-    content_parts.append(_build_experimental_section(clinical, page))
+    if not description_block:
+        return ""
 
-    body = "".join(part for part in content_parts if part)
-    return _collapsible_panel("Clinical overview", summary_text or "Clinical overview", body, open_default=False)
+    return _collapsible_panel("Clinical overview", summary_text or "Key takeaway", description_block, open_default=False)
+
+
+def _build_identification_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
+    body = _build_identification_section(clinical, page)
+    return _collapsible_panel(
+        "Identification & classification",
+        "Identity, classification, and formats",
+        body,
+    )
+
+
+def _build_pharmacology_targets_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
+    pharmacology_container = clinical.get("pharmacologyTargets", {}) if isinstance(clinical, Mapping) else {}
+    if not pharmacology_container and isinstance(page, Mapping):
+        pharmacology_container = page.get("pharmacologyTargets", {}) or page.get("pharmacology", {})
+    summary_text = None
+    if isinstance(pharmacology_container, Mapping):
+        summary_text = pharmacology_container.get("summary") or pharmacology_container.get("highLevelSummary")
+    body = _build_pharmacology_section(clinical, page)
+    return _collapsible_panel("Pharmacology & targets", summary_text or "Mechanism and targets", body)
+
+
+def _build_adme_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
+    body = _build_adme_section(clinical, page)
+    return _collapsible_panel("ADME & PK", "Absorption, distribution, metabolism, excretion", body)
+
+
+def _build_formulation_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
+    body = _build_formulation_section(clinical, page)
+    return _collapsible_panel("Formulation & handling", "Form factors and handling notes", body)
+
+
+def _build_regulatory_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
+    body = _build_regulatory_section(clinical, page)
+    return _collapsible_panel("Regulatory & market", "Lifecycle, approvals, and supply chain", body)
+
+
+def _build_safety_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
+    body = _build_safety_section(clinical, page)
+    return _collapsible_panel("Safety & risks", "Toxicity and warnings", body)
+
+
+def _build_references_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
+    body = _build_references_section(clinical, page)
+    return _collapsible_panel("References", "Source articles and links", body)
+
+
+def _build_experimental_panel(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
+    body = _build_experimental_section(clinical, page)
+    return _collapsible_panel("Experimental properties", "Assays and reported properties", body)
 
 
 def _build_seo_block(page: Mapping[str, object]) -> str:
@@ -546,6 +614,14 @@ def generate_html_preview(api_pages: Dict[str, object]) -> str:
         blocks = [
             _build_hero_block(page),
             _build_clinical_overview_block(page),
+            _build_identification_panel(page.get("clinicalOverview", {}), page),
+            _build_pharmacology_targets_panel(page.get("clinicalOverview", {}), page),
+            _build_adme_panel(page.get("clinicalOverview", {}), page),
+            _build_formulation_panel(page.get("clinicalOverview", {}), page),
+            _build_regulatory_panel(page.get("clinicalOverview", {}), page),
+            _build_safety_panel(page.get("clinicalOverview", {}), page),
+            _build_references_panel(page.get("clinicalOverview", {}), page),
+            _build_experimental_panel(page.get("clinicalOverview", {}), page),
             _build_seo_block(page),
         ]
         content = "".join(block for block in blocks if block)

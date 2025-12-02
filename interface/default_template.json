@@ -727,10 +727,10 @@
           ]
         },
         {
-          "id": "pharmacology",
-          "label": "Pharmacology",
+          "id": "pharmacology-targets",
+          "label": "Pharmacology and targets",
           "path": [
-            "pharmacology"
+            "pharmacologyTargets"
           ],
           "type": "group",
           "visible": true,
@@ -754,49 +754,64 @@
               "children": []
             },
             {
-              "id": "pharmacology-moa",
-              "label": "Mechanism of action",
-              "path": [
-                "mechanismOfAction"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "pharmacology-dynamics",
-              "label": "Pharmacodynamics",
-              "path": [
-                "pharmacodynamics"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
               "id": "pharmacology-details",
-              "label": "Details",
+              "label": "Pharmacology",
               "path": [
-                "details"
+                "pharmacology"
               ],
-              "type": "array",
+              "type": "group",
               "visible": true,
-              "limit": 10,
+              "limit": null,
               "dataSource": "data",
               "generationId": null,
               "generationEnabled": true,
-              "children": []
+              "children": [
+                {
+                  "id": "pharmacology-moa",
+                  "label": "Mechanism of action",
+                  "path": [
+                    "mechanismOfAction"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "pharmacology-dynamics",
+                  "label": "Pharmacodynamics",
+                  "path": [
+                    "pharmacodynamics"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "pharmacology-detail-list",
+                  "label": "Details",
+                  "path": [
+                    "details"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 10,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                }
+              ]
             },
             {
-              "id": "pharmacology-targets",
+              "id": "pharmacology-target-list",
               "label": "Targets",
               "path": [
                 "targets"
@@ -992,49 +1007,6 @@
               "limit": 10,
               "dataSource": "data",
               "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            }
-          ]
-        },
-        {
-          "id": "safety",
-          "label": "Safety",
-          "path": [
-            "safety"
-          ],
-          "type": "group",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": [
-            {
-              "id": "safety-toxicity",
-              "label": "Toxicity",
-              "path": [
-                "toxicity"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "safety-warnings",
-              "label": "High level warnings",
-              "path": [
-                "highLevelWarnings"
-              ],
-              "type": "array",
-              "visible": true,
-              "limit": 6,
-              "dataSource": "data",
-              "generationId": "safety_highlights",
               "generationEnabled": true,
               "children": []
             }
@@ -1307,6 +1279,49 @@
                   "children": []
                 }
               ]
+            }
+          ]
+        },
+        {
+          "id": "safety",
+          "label": "Safety and risks",
+          "path": [
+            "safetyRisks"
+          ],
+          "type": "group",
+          "visible": true,
+          "limit": null,
+          "dataSource": "data",
+          "generationId": null,
+          "generationEnabled": true,
+          "children": [
+            {
+              "id": "safety-toxicity",
+              "label": "Toxicity",
+              "path": [
+                "toxicity"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "safety-warnings",
+              "label": "High level warnings",
+              "path": [
+                "highLevelWarnings"
+              ],
+              "type": "array",
+              "visible": true,
+              "limit": 6,
+              "dataSource": "data",
+              "generationId": "safety_highlights",
+              "generationEnabled": true,
+              "children": []
             }
           ]
         },

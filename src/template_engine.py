@@ -362,9 +362,9 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                     ],
                 ),
                 TemplateNode(
-                    id="pharmacology",
-                    label="Pharmacology",
-                    path=["pharmacology"],
+                    id="pharmacology-targets",
+                    label="Pharmacology and targets",
+                    path=["pharmacologyTargets"],
                     children=[
                         TemplateNode(
                             id="pharmacology-summary",
@@ -373,11 +373,18 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                             type="field",
                             generation_id="pharmacology_summary",
                         ),
-                        TemplateNode(id="pharmacology-moa", label="Mechanism of action", path=["mechanismOfAction"], type="field"),
-                        TemplateNode(id="pharmacology-dynamics", label="Pharmacodynamics", path=["pharmacodynamics"], type="field"),
-                        TemplateNode(id="pharmacology-details", label="Details", path=["details"], type="array", limit=10),
                         TemplateNode(
-                            id="pharmacology-targets",
+                            id="pharmacology-details",
+                            label="Pharmacology",
+                            path=["pharmacology"],
+                            children=[
+                                TemplateNode(id="pharmacology-moa", label="Mechanism of action", path=["mechanismOfAction"], type="field"),
+                                TemplateNode(id="pharmacology-dynamics", label="Pharmacodynamics", path=["pharmacodynamics"], type="field"),
+                                TemplateNode(id="pharmacology-detail-list", label="Details", path=["details"], type="array", limit=10),
+                            ],
+                        ),
+                        TemplateNode(
+                            id="pharmacology-target-list",
                             label="Targets",
                             path=["targets"],
                             type="array",
@@ -404,22 +411,6 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                         TemplateNode(id="adme-volume", label="Volume of distribution", path=["volumeOfDistribution"], type="field"),
                         TemplateNode(id="adme-clearance", label="Clearance", path=["clearance"], type="field"),
                         TemplateNode(id="adme-pk-snapshot", label="PK snapshot", path=["pkSnapshot", "keyPoints"], type="array", limit=10),
-                    ],
-                ),
-                TemplateNode(
-                    id="safety",
-                    label="Safety",
-                    path=["safety"],
-                    children=[
-                        TemplateNode(id="safety-toxicity", label="Toxicity", path=["toxicity"], type="field"),
-                        TemplateNode(
-                            id="safety-warnings",
-                            label="High level warnings",
-                            path=["highLevelWarnings"],
-                            type="array",
-                            limit=6,
-                            generation_id="safety_highlights",
-                        ),
                     ],
                 ),
                 TemplateNode(
@@ -483,6 +474,22 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                                 TemplateNode(id="supply-notes", label="External manufacturing notes", path=["externalManufacturingNotes"], type="field"),
                                 TemplateNode(id="supply-pharmaoffer", label="Pharmaoffer suppliers", path=["pharmaofferSuppliers"], type="array", limit=20),
                             ],
+                        ),
+                    ],
+                ),
+                TemplateNode(
+                    id="safety",
+                    label="Safety and risks",
+                    path=["safetyRisks"],
+                    children=[
+                        TemplateNode(id="safety-toxicity", label="Toxicity", path=["toxicity"], type="field"),
+                        TemplateNode(
+                            id="safety-warnings",
+                            label="High level warnings",
+                            path=["highLevelWarnings"],
+                            type="array",
+                            limit=6,
+                            generation_id="safety_highlights",
                         ),
                     ],
                 ),
