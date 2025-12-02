@@ -420,10 +420,14 @@ def build_page_model(
             for group in drug.groups
             if group
         )
-
+    if drug.cas_number:
+        drug_title = f"{drug.name} | CAS No: {drug.cas_number} | GMP-certified suppliers"
+    else:
+        drug_title = f"{drug.name} | GMP-certified suppliers"
+        
     page = {
         "hero": {
-            "title": drug.name,
+            "title": drug_title,
             "summarySentence": generated.summary_sentence,
             "tags": tags,
             "primaryUseCases": primary_use_cases,
@@ -481,12 +485,8 @@ def build_page_model(
         "productsAndDosageForms": {
             "dosageForms": _dosage_forms(drug),
             "brandsByMarket": _brands_by_market(drug),
-            "marketPresenceSummary": None,
         },
-        "clinicalTrials": {
-            "trialsByPhase": {},
-            "hasClinicalTrialsData": False,
-        },
+
         "suppliersAndManufacturing": {
             "manufacturers": list(drug.manufacturers),
             "packagers": list(drug.packagers),
