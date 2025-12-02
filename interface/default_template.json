@@ -43,110 +43,10 @@
           "children": []
         },
         {
-          "id": "hero-tags",
-          "label": "Tags",
+          "id": "hero-therapeutic-categories",
+          "label": "Therapeutic categories",
           "path": [
-            "tags"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 6,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "hero-use-cases",
-          "label": "Primary use cases",
-          "path": [
-            "primaryUseCases"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 6,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "overview",
-      "label": "Overview",
-      "path": [
-        "overview"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "overview-summary",
-          "label": "Key takeaway",
-          "path": [
-            "summary"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": "summary",
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "overview-description",
-          "label": "Description",
-          "path": [
-            "description"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": "description",
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "identification",
-      "label": "Identification",
-      "path": [
-        "identification"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "identification-generic",
-          "label": "Generic name",
-          "path": [
-            "genericName"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "identification-brands",
-          "label": "Brand names",
-          "path": [
-            "brandNames"
+            "therapeuticCategories"
           ],
           "type": "array",
           "visible": true,
@@ -157,52 +57,10 @@
           "children": []
         },
         {
-          "id": "identification-synonyms",
-          "label": "Synonyms",
+          "id": "hero-facts",
+          "label": "Key facts",
           "path": [
-            "synonyms"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 12,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "identification-molecule-type",
-          "label": "Molecule type",
-          "path": [
-            "moleculeType"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "identification-groups",
-          "label": "Groups",
-          "path": [
-            "groups"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 8,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "identification-identifiers",
-          "label": "Identifiers",
-          "path": [
-            "identifiers"
+            "facts"
           ],
           "type": "group",
           "visible": true,
@@ -212,8 +70,36 @@
           "generationEnabled": true,
           "children": [
             {
-              "id": "identifiers-cas",
-              "label": "CAS",
+              "id": "fact-generic",
+              "label": "Generic name",
+              "path": [
+                "genericName"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "fact-molecule-type",
+              "label": "Molecule type",
+              "path": [
+                "moleculeType"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "fact-cas",
+              "label": "CAS number",
               "path": [
                 "casNumber"
               ],
@@ -226,21 +112,7 @@
               "children": []
             },
             {
-              "id": "identifiers-unii",
-              "label": "UNII",
-              "path": [
-                "unii"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "identifiers-drugbank",
+              "id": "fact-drugbank",
               "label": "DrugBank ID",
               "path": [
                 "drugbankId"
@@ -254,110 +126,10 @@
               "children": []
             },
             {
-              "id": "identifiers-external",
-              "label": "External",
+              "id": "fact-approval",
+              "label": "Approval status",
               "path": [
-                "external"
-              ],
-              "type": "array",
-              "visible": true,
-              "limit": 12,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "chemistry",
-      "label": "Chemistry",
-      "path": [
-        "chemistry"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "chemistry-formula",
-          "label": "Formula",
-          "path": [
-            "formula"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "chemistry-average-mw",
-          "label": "Average molecular weight",
-          "path": [
-            "averageMolecularWeight"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "chemistry-mono-mass",
-          "label": "Monoisotopic mass",
-          "path": [
-            "monoisotopicMass"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "chemistry-logp",
-          "label": "logP",
-          "path": [
-            "logP"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "chemistry-properties",
-          "label": "Experimental properties",
-          "path": [
-            "experimentalProperties"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": [
-            {
-              "id": "chemistry-property-name",
-              "label": "Name",
-              "path": [
-                "name"
+                "approvalStatus"
               ],
               "type": "field",
               "visible": true,
@@ -368,10 +140,10 @@
               "children": []
             },
             {
-              "id": "chemistry-property-value",
-              "label": "Value",
+              "id": "fact-atc",
+              "label": "ATC code",
               "path": [
-                "value"
+                "atcCode"
               ],
               "type": "field",
               "visible": true,
@@ -386,166 +158,24 @@
       ]
     },
     {
-      "id": "regulatory",
-      "label": "Regulatory and market",
+      "id": "primary-indications",
+      "label": "Primary indications",
       "path": [
-        "regulatoryAndMarket"
+        "primaryIndications"
       ],
-      "type": "group",
+      "type": "array",
       "visible": true,
-      "limit": null,
+      "limit": 6,
       "dataSource": "data",
       "generationId": null,
       "generationEnabled": true,
-      "children": [
-        {
-          "id": "regulatory-status",
-          "label": "Approval status",
-          "path": [
-            "approvalStatus"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "regulatory-markets",
-          "label": "Markets",
-          "path": [
-            "markets"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "regulatory-patents",
-          "label": "Patents",
-          "path": [
-            "patents"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": [
-            {
-              "id": "patent-number",
-              "label": "Number",
-              "path": [
-                "number"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "patent-country",
-              "label": "Country",
-              "path": [
-                "country"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "patent-approved",
-              "label": "Approved",
-              "path": [
-                "approvedDate"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "patent-expires",
-              "label": "Expires",
-              "path": [
-                "expiresDate"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "patent-pediatric",
-              "label": "Pediatric extension",
-              "path": [
-                "pediatricExtension"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            }
-          ]
-        },
-        {
-          "id": "regulatory-lifecycle",
-          "label": "Lifecycle summary",
-          "path": [
-            "lifecycleSummary"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": "lifecycle_summary",
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "regulatory-label-highlights",
-          "label": "Label highlights",
-          "path": [
-            "labelHighlights"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 6,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
+      "children": []
     },
     {
-      "id": "formulation-notes",
-      "label": "Formulation notes",
+      "id": "buyer-cheatsheet",
+      "label": "Buyer cheatsheet",
       "path": [
-        "formulationNotes"
+        "buyerCheatsheet"
       ],
       "type": "group",
       "visible": true,
@@ -555,7 +185,7 @@
       "generationEnabled": true,
       "children": [
         {
-          "id": "formulation-bullets",
+          "id": "buyer-bullets",
           "label": "Bullets",
           "path": [
             "bullets"
@@ -564,17 +194,17 @@
           "visible": true,
           "limit": 6,
           "dataSource": "data",
-          "generationId": "formulation_notes",
+          "generationId": "buyer_cheatsheet",
           "generationEnabled": true,
           "children": []
         }
       ]
     },
     {
-      "id": "taxonomy",
-      "label": "Categories and taxonomy",
+      "id": "clinical-overview",
+      "label": "Clinical overview",
       "path": [
-        "categoriesAndTaxonomy"
+        "clinicalOverview"
       ],
       "type": "group",
       "visible": true,
@@ -584,37 +214,694 @@
       "generationEnabled": true,
       "children": [
         {
-          "id": "taxonomy-classes",
-          "label": "Therapeutic classes",
+          "id": "clinical-summary",
+          "label": "Key takeaway",
           "path": [
-            "therapeuticClasses"
+            "summary"
           ],
-          "type": "array",
+          "type": "field",
           "visible": true,
-          "limit": 12,
+          "limit": null,
           "dataSource": "data",
-          "generationId": null,
+          "generationId": "summary",
           "generationEnabled": true,
           "children": []
         },
         {
-          "id": "taxonomy-atc",
-          "label": "ATC codes",
+          "id": "clinical-description",
+          "label": "Long description",
           "path": [
-            "atcCodes"
+            "longDescription"
           ],
-          "type": "array",
+          "type": "field",
           "visible": true,
-          "limit": 20,
+          "limit": null,
+          "dataSource": "data",
+          "generationId": "description",
+          "generationEnabled": true,
+          "children": []
+        },
+        {
+          "id": "identification-classification",
+          "label": "Identification and classification",
+          "path": [
+            "identificationClassification"
+          ],
+          "type": "group",
+          "visible": true,
+          "limit": null,
           "dataSource": "data",
           "generationId": null,
           "generationEnabled": true,
           "children": [
             {
-              "id": "atc-code",
-              "label": "Code",
+              "id": "identification",
+              "label": "Identification",
               "path": [
-                "code"
+                "identification"
+              ],
+              "type": "group",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": [
+                {
+                  "id": "identification-generic",
+                  "label": "Generic name",
+                  "path": [
+                    "genericName"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "identification-brands",
+                  "label": "Brand names",
+                  "path": [
+                    "brandNames"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 12,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "identification-synonyms",
+                  "label": "Synonyms",
+                  "path": [
+                    "synonyms"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 12,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "identification-molecule-type",
+                  "label": "Molecule type",
+                  "path": [
+                    "moleculeType"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "identification-groups",
+                  "label": "Groups",
+                  "path": [
+                    "groups"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 8,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "identification-identifiers",
+                  "label": "Identifiers",
+                  "path": [
+                    "identifiers"
+                  ],
+                  "type": "group",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": [
+                    {
+                      "id": "identifiers-cas",
+                      "label": "CAS",
+                      "path": [
+                        "casNumber"
+                      ],
+                      "type": "field",
+                      "visible": true,
+                      "limit": null,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    },
+                    {
+                      "id": "identifiers-unii",
+                      "label": "UNII",
+                      "path": [
+                        "unii"
+                      ],
+                      "type": "field",
+                      "visible": true,
+                      "limit": null,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    },
+                    {
+                      "id": "identifiers-drugbank",
+                      "label": "DrugBank ID",
+                      "path": [
+                        "drugbankId"
+                      ],
+                      "type": "field",
+                      "visible": true,
+                      "limit": null,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    },
+                    {
+                      "id": "identifiers-external",
+                      "label": "External",
+                      "path": [
+                        "external"
+                      ],
+                      "type": "array",
+                      "visible": true,
+                      "limit": 12,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "regulatory-classification",
+              "label": "Regulatory classification",
+              "path": [
+                "regulatoryClassification"
+              ],
+              "type": "group",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": [
+                {
+                  "id": "reg-approval",
+                  "label": "Approval status",
+                  "path": [
+                    "approvalStatus"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "reg-markets",
+                  "label": "Markets",
+                  "path": [
+                    "markets"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 20,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "reg-groups",
+                  "label": "Groups",
+                  "path": [
+                    "groups"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 10,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "reg-therapeutic",
+                  "label": "Therapeutic classes",
+                  "path": [
+                    "therapeuticClasses"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 12,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "reg-classification",
+                  "label": "Classification",
+                  "path": [
+                    "classification"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "reg-atc",
+                  "label": "ATC codes",
+                  "path": [
+                    "atcCodes"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 10,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": [
+                    {
+                      "id": "reg-atc-code",
+                      "label": "Code",
+                      "path": [
+                        "code"
+                      ],
+                      "type": "field",
+                      "visible": true,
+                      "limit": null,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "chemistry",
+              "label": "Chemistry",
+              "path": [
+                "chemistry"
+              ],
+              "type": "group",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": [
+                {
+                  "id": "chemistry-formula",
+                  "label": "Formula",
+                  "path": [
+                    "formula"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "chemistry-average-mw",
+                  "label": "Average molecular weight",
+                  "path": [
+                    "averageMolecularWeight"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "chemistry-mono-mass",
+                  "label": "Monoisotopic mass",
+                  "path": [
+                    "monoisotopicMass"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "chemistry-logp",
+                  "label": "logP",
+                  "path": [
+                    "logP"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "chemistry-properties",
+                  "label": "Experimental properties",
+                  "path": [
+                    "experimentalProperties"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 20,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": [
+                    {
+                      "id": "chemistry-property-name",
+                      "label": "Name",
+                      "path": [
+                        "name"
+                      ],
+                      "type": "field",
+                      "visible": true,
+                      "limit": null,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    },
+                    {
+                      "id": "chemistry-property-value",
+                      "label": "Value",
+                      "path": [
+                        "value"
+                      ],
+                      "type": "field",
+                      "visible": true,
+                      "limit": null,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "products",
+              "label": "Products and dosage forms",
+              "path": [
+                "productsAndDosageForms"
+              ],
+              "type": "group",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": [
+                {
+                  "id": "products-dosage",
+                  "label": "Dosage forms",
+                  "path": [
+                    "dosageForms"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 25,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": [
+                    {
+                      "id": "dosage-form",
+                      "label": "Form",
+                      "path": [
+                        "form"
+                      ],
+                      "type": "field",
+                      "visible": true,
+                      "limit": null,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    },
+                    {
+                      "id": "dosage-route",
+                      "label": "Route",
+                      "path": [
+                        "route"
+                      ],
+                      "type": "field",
+                      "visible": true,
+                      "limit": null,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    },
+                    {
+                      "id": "dosage-strength",
+                      "label": "Strength",
+                      "path": [
+                        "strength"
+                      ],
+                      "type": "field",
+                      "visible": true,
+                      "limit": null,
+                      "dataSource": "data",
+                      "generationId": null,
+                      "generationEnabled": true,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "products-by-market",
+                  "label": "Brands by market",
+                  "path": [
+                    "brandsByMarket"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pharmacology-targets",
+          "label": "Pharmacology and targets",
+          "path": [
+            "pharmacologyTargets"
+          ],
+          "type": "group",
+          "visible": true,
+          "limit": null,
+          "dataSource": "data",
+          "generationId": null,
+          "generationEnabled": true,
+          "children": [
+            {
+              "id": "pharmacology-summary",
+              "label": "Summary",
+              "path": [
+                "summary"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": "pharmacology_summary",
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "pharmacology-details",
+              "label": "Pharmacology",
+              "path": [
+                "pharmacology"
+              ],
+              "type": "group",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": [
+                {
+                  "id": "pharmacology-moa",
+                  "label": "Mechanism of action",
+                  "path": [
+                    "mechanismOfAction"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "pharmacology-dynamics",
+                  "label": "Pharmacodynamics",
+                  "path": [
+                    "pharmacodynamics"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "pharmacology-detail-list",
+                  "label": "Details",
+                  "path": [
+                    "details"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 10,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "pharmacology-target-list",
+              "label": "Targets",
+              "path": [
+                "targets"
+              ],
+              "type": "array",
+              "visible": true,
+              "limit": 20,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": [
+                {
+                  "id": "target-name",
+                  "label": "Name",
+                  "path": [
+                    "name"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "target-organism",
+                  "label": "Organism",
+                  "path": [
+                    "organism"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "target-actions",
+                  "label": "Actions",
+                  "path": [
+                    "actions"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 8,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "target-go-processes",
+                  "label": "GO processes",
+                  "path": [
+                    "goProcesses"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 8,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "adme",
+          "label": "ADME and PK",
+          "path": [
+            "admePk",
+            "table"
+          ],
+          "type": "group",
+          "visible": true,
+          "limit": null,
+          "dataSource": "data",
+          "generationId": null,
+          "generationEnabled": true,
+          "children": [
+            {
+              "id": "adme-absorption",
+              "label": "Absorption",
+              "path": [
+                "absorption"
               ],
               "type": "field",
               "visible": true,
@@ -625,10 +912,95 @@
               "children": []
             },
             {
-              "id": "atc-levels",
-              "label": "Levels",
+              "id": "adme-half-life",
+              "label": "Half-life",
               "path": [
-                "levels"
+                "halfLife"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "adme-protein-binding",
+              "label": "Protein binding",
+              "path": [
+                "proteinBinding"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "adme-metabolism",
+              "label": "Metabolism",
+              "path": [
+                "metabolism"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "adme-elimination",
+              "label": "Route of elimination",
+              "path": [
+                "routeOfElimination"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "adme-volume",
+              "label": "Volume of distribution",
+              "path": [
+                "volumeOfDistribution"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "adme-clearance",
+              "label": "Clearance",
+              "path": [
+                "clearance"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "adme-pk-snapshot",
+              "label": "PK snapshot",
+              "path": [
+                "pkSnapshot",
+                "keyPoints"
               ],
               "type": "array",
               "visible": true,
@@ -641,265 +1013,10 @@
           ]
         },
         {
-          "id": "taxonomy-classification",
-          "label": "Classification",
+          "id": "formulation-handling",
+          "label": "Formulation and handling",
           "path": [
-            "classification"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "pharmacology",
-      "label": "Pharmacology",
-      "path": [
-        "pharmacology"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "pharmacology-moa",
-          "label": "Mechanism of action",
-          "path": [
-            "mechanismOfAction"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "pharmacology-dynamics",
-          "label": "Pharmacodynamics",
-          "path": [
-            "pharmacodynamics"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "pharmacology-targets",
-          "label": "Targets",
-          "path": [
-            "targets"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": [
-            {
-              "id": "target-name",
-              "label": "Name",
-              "path": [
-                "name"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "target-organism",
-              "label": "Organism",
-              "path": [
-                "organism"
-              ],
-              "type": "field",
-              "visible": true,
-              "limit": null,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "target-actions",
-              "label": "Actions",
-              "path": [
-                "actions"
-              ],
-              "type": "array",
-              "visible": true,
-              "limit": 8,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            },
-            {
-              "id": "target-go-processes",
-              "label": "GO processes",
-              "path": [
-                "goProcesses"
-              ],
-              "type": "array",
-              "visible": true,
-              "limit": 8,
-              "dataSource": "data",
-              "generationId": null,
-              "generationEnabled": true,
-              "children": []
-            }
-          ]
-        },
-        {
-          "id": "pharmacology-summary",
-          "label": "High level summary",
-          "path": [
-            "highLevelSummary"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": "pharmacology_summary",
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "adme-pk",
-      "label": "ADME/PK",
-      "path": [
-        "admePk"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "adme-absorption",
-          "label": "Absorption",
-          "path": [
-            "absorption"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "adme-half-life",
-          "label": "Half-life",
-          "path": [
-            "halfLife"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "adme-binding",
-          "label": "Protein binding",
-          "path": [
-            "proteinBinding"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "adme-metabolism",
-          "label": "Metabolism",
-          "path": [
-            "metabolism"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "adme-elimination",
-          "label": "Route of elimination",
-          "path": [
-            "routeOfElimination"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "adme-volume",
-          "label": "Volume of distribution",
-          "path": [
-            "volumeOfDistribution"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "adme-clearance",
-          "label": "Clearance",
-          "path": [
-            "clearance"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "adme-pk-snapshot",
-          "label": "PK snapshot",
-          "path": [
-            "pkSnapshot"
+            "formulationHandling"
           ],
           "type": "group",
           "visible": true,
@@ -909,54 +1026,53 @@
           "generationEnabled": true,
           "children": [
             {
-              "id": "adme-pk-bullets",
-              "label": "Key points",
+              "id": "formulation-notes",
+              "label": "Notes",
               "path": [
-                "keyPoints"
+                "notes"
               ],
               "type": "array",
               "visible": true,
               "limit": 6,
               "dataSource": "data",
-              "generationId": null,
+              "generationId": "formulation_notes",
               "generationEnabled": true,
               "children": []
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": "products",
-      "label": "Products and dosage forms",
-      "path": [
-        "productsAndDosageForms"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
+        },
         {
-          "id": "products-dosage",
-          "label": "Dosage forms",
+          "id": "regulatory-market",
+          "label": "Regulatory and market",
           "path": [
-            "dosageForms"
+            "regulatoryMarket"
           ],
-          "type": "array",
+          "type": "group",
           "visible": true,
-          "limit": 25,
+          "limit": null,
           "dataSource": "data",
           "generationId": null,
           "generationEnabled": true,
           "children": [
             {
-              "id": "dosage-form",
-              "label": "Form",
+              "id": "regulatory-summary",
+              "label": "Lifecycle summary",
               "path": [
-                "form"
+                "summary"
+              ],
+              "type": "field",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": "lifecycle_summary",
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "regulatory-approval",
+              "label": "Approval status",
+              "path": [
+                "approvalStatus"
               ],
               "type": "field",
               "visible": true,
@@ -967,10 +1083,223 @@
               "children": []
             },
             {
-              "id": "dosage-route",
-              "label": "Route",
+              "id": "regulatory-markets",
+              "label": "Markets",
               "path": [
-                "route"
+                "markets"
+              ],
+              "type": "array",
+              "visible": true,
+              "limit": 20,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "regulatory-label-highlights",
+              "label": "Label highlights",
+              "path": [
+                "labelHighlights"
+              ],
+              "type": "array",
+              "visible": true,
+              "limit": 10,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "regulatory-patents",
+              "label": "Patents",
+              "path": [
+                "patents"
+              ],
+              "type": "array",
+              "visible": true,
+              "limit": 20,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": [
+                {
+                  "id": "patent-number",
+                  "label": "Number",
+                  "path": [
+                    "number"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "patent-country",
+                  "label": "Country",
+                  "path": [
+                    "country"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "patent-approved",
+                  "label": "Approved",
+                  "path": [
+                    "approvedDate"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "patent-expires",
+                  "label": "Expires",
+                  "path": [
+                    "expiresDate"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "patent-pediatric",
+                  "label": "Pediatric extension",
+                  "path": [
+                    "pediatricExtension"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "regulatory-supply",
+              "label": "Supply chain",
+              "path": [
+                "supplyChain"
+              ],
+              "type": "group",
+              "visible": true,
+              "limit": null,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": [
+                {
+                  "id": "supply-summary",
+                  "label": "Supply chain summary",
+                  "path": [
+                    "supplyChainSummary"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": "supply_chain_summary",
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "supply-manufacturers",
+                  "label": "Manufacturers",
+                  "path": [
+                    "manufacturers"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 20,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "supply-packagers",
+                  "label": "Packagers",
+                  "path": [
+                    "packagers"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 20,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "supply-notes",
+                  "label": "External manufacturing notes",
+                  "path": [
+                    "externalManufacturingNotes"
+                  ],
+                  "type": "field",
+                  "visible": true,
+                  "limit": null,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                },
+                {
+                  "id": "supply-pharmaoffer",
+                  "label": "Pharmaoffer suppliers",
+                  "path": [
+                    "pharmaofferSuppliers"
+                  ],
+                  "type": "array",
+                  "visible": true,
+                  "limit": 20,
+                  "dataSource": "data",
+                  "generationId": null,
+                  "generationEnabled": true,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "safety",
+          "label": "Safety and risks",
+          "path": [
+            "safetyRisks"
+          ],
+          "type": "group",
+          "visible": true,
+          "limit": null,
+          "dataSource": "data",
+          "generationId": null,
+          "generationEnabled": true,
+          "children": [
+            {
+              "id": "safety-toxicity",
+              "label": "Toxicity",
+              "path": [
+                "toxicity"
               ],
               "type": "field",
               "visible": true,
@@ -981,14 +1310,71 @@
               "children": []
             },
             {
-              "id": "dosage-strength",
-              "label": "Strength",
+              "id": "safety-warnings",
+              "label": "High level warnings",
               "path": [
-                "strength"
+                "highLevelWarnings"
               ],
-              "type": "field",
+              "type": "array",
               "visible": true,
-              "limit": null,
+              "limit": 6,
+              "dataSource": "data",
+              "generationId": "safety_highlights",
+              "generationEnabled": true,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "references",
+          "label": "References",
+          "path": [
+            "references"
+          ],
+          "type": "group",
+          "visible": true,
+          "limit": null,
+          "dataSource": "data",
+          "generationId": null,
+          "generationEnabled": true,
+          "children": [
+            {
+              "id": "references-articles",
+              "label": "Scientific articles",
+              "path": [
+                "scientificArticles"
+              ],
+              "type": "array",
+              "visible": true,
+              "limit": 20,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "references-regulatory",
+              "label": "Regulatory links",
+              "path": [
+                "regulatoryLinks"
+              ],
+              "type": "array",
+              "visible": true,
+              "limit": 20,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            },
+            {
+              "id": "references-other",
+              "label": "Other links",
+              "path": [
+                "otherLinks"
+              ],
+              "type": "array",
+              "visible": true,
+              "limit": 20,
               "dataSource": "data",
               "generationId": null,
               "generationEnabled": true,
@@ -997,289 +1383,33 @@
           ]
         },
         {
-          "id": "products-by-market",
-          "label": "Brands by market",
+          "id": "experimental",
+          "label": "Experimental properties",
           "path": [
-            "brandsByMarket"
+            "experimentalProperties"
           ],
-          "type": "field",
+          "type": "group",
           "visible": true,
           "limit": null,
           "dataSource": "data",
           "generationId": null,
           "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "products-market-summary",
-          "label": "Market presence summary",
-          "path": [
-            "marketPresenceSummary"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "clinical",
-      "label": "Clinical trials",
-      "path": [
-        "clinicalTrials"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "clinical-by-phase",
-          "label": "Trials by phase",
-          "path": [
-            "trialsByPhase"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "clinical-has-data",
-          "label": "Has data",
-          "path": [
-            "hasClinicalTrialsData"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "supply",
-      "label": "Suppliers and manufacturing",
-      "path": [
-        "suppliersAndManufacturing"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "supply-manufacturers",
-          "label": "Manufacturers",
-          "path": [
-            "manufacturers"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "supply-packagers",
-          "label": "Packagers",
-          "path": [
-            "packagers"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "supply-notes",
-          "label": "External manufacturing notes",
-          "path": [
-            "externalManufacturingNotes"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "supply-pharmaoffer",
-          "label": "Pharmaoffer suppliers",
-          "path": [
-            "pharmaofferSuppliers"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "supply-summary",
-          "label": "Supply chain summary",
-          "path": [
-            "supplyChainSummary"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": "supply_chain_summary",
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "safety",
-      "label": "Safety",
-      "path": [
-        "safety"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "safety-toxicity",
-          "label": "Toxicity",
-          "path": [
-            "toxicity"
-          ],
-          "type": "field",
-          "visible": true,
-          "limit": null,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "safety-warnings",
-          "label": "High level warnings",
-          "path": [
-            "highLevelWarnings"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 6,
-          "dataSource": "data",
-          "generationId": "safety_highlights",
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "experimental",
-      "label": "Experimental properties",
-      "path": [
-        "experimentalProperties"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "experimental-list",
-          "label": "Properties",
-          "path": [
-            "properties"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 25,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "references",
-      "label": "References",
-      "path": [
-        "references"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "references-articles",
-          "label": "Scientific articles",
-          "path": [
-            "scientificArticles"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "references-regulatory",
-          "label": "Regulatory links",
-          "path": [
-            "regulatoryLinks"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        },
-        {
-          "id": "references-other",
-          "label": "Other links",
-          "path": [
-            "otherLinks"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 20,
-          "dataSource": "data",
-          "generationId": null,
-          "generationEnabled": true,
-          "children": []
+          "children": [
+            {
+              "id": "experimental-list",
+              "label": "Properties",
+              "path": [
+                "properties"
+              ],
+              "type": "array",
+              "visible": true,
+              "limit": 25,
+              "dataSource": "data",
+              "generationId": null,
+              "generationEnabled": true,
+              "children": []
+            }
+          ]
         }
       ]
     },
@@ -1335,35 +1465,6 @@
           "limit": 25,
           "dataSource": "data",
           "generationId": null,
-          "generationEnabled": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "buyer-cheatsheet",
-      "label": "Buyer cheatsheet",
-      "path": [
-        "buyerCheatsheet"
-      ],
-      "type": "group",
-      "visible": true,
-      "limit": null,
-      "dataSource": "data",
-      "generationId": null,
-      "generationEnabled": true,
-      "children": [
-        {
-          "id": "buyer-bullets",
-          "label": "Bullets",
-          "path": [
-            "bullets"
-          ],
-          "type": "array",
-          "visible": true,
-          "limit": 6,
-          "dataSource": "data",
-          "generationId": "buyer_cheatsheet",
           "generationEnabled": true,
           "children": []
         }
