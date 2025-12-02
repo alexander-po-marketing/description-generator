@@ -429,11 +429,11 @@ def build_page_model(
         "hero": {
             "title": drug_title,
             "summarySentence": generated.summary_sentence,
+            "summary": generated.summary,
             "tags": tags,
             "primaryUseCases": primary_use_cases,
         },
         "overview": {
-            "summary": generated.summary,
             "description": generated.description,
         },
         "identification": {
@@ -452,11 +452,12 @@ def build_page_model(
             "experimentalProperties": _experimental_properties(drug),
         },
         "regulatoryAndMarket": {
+            "lifecycleSummary": lifecycle_summary,
             "approvalStatus": approval_status,
             "markets": markets,
             "labelHighlights": primary_use_cases,
             "patents": patents_table,
-            "lifecycleSummary": lifecycle_summary,
+            
         },
         "formulationNotes": {
             "bullets": formulation_notes,
@@ -467,12 +468,14 @@ def build_page_model(
             "classification": drug.classification,
         },
         "pharmacology": {
+            "highLevelSummary": pharmacology_summary,
             "mechanismOfAction": drug.mechanism_of_action,
             "pharmacodynamics": drug.pharmacodynamics,
             "targets": _targets_to_dict(drug.targets),
-            "highLevelSummary": pharmacology_summary,
+            
         },
         "admePk": {
+            "pkSnapshot": {"keyPoints": _pk_snapshot(drug)},
             "absorption": drug.absorption,
             "halfLife": drug.half_life or drug.raw_fields.get("half-life"),
             "proteinBinding": drug.protein_binding,
@@ -480,7 +483,7 @@ def build_page_model(
             "routeOfElimination": drug.route_of_elimination,
             "volumeOfDistribution": drug.volume_of_distribution,
             "clearance": drug.clearance,
-            "pkSnapshot": {"keyPoints": _pk_snapshot(drug)},
+            
         },
         "productsAndDosageForms": {
             "dosageForms": _dosage_forms(drug),
@@ -488,11 +491,12 @@ def build_page_model(
         },
 
         "suppliersAndManufacturing": {
+            "supplyChainSummary": supply_chain_summary,
             "manufacturers": list(drug.manufacturers),
             "packagers": list(drug.packagers),
             "externalManufacturingNotes": drug.raw_fields.get("manufacturing-notes"),
             "pharmaofferSuppliers": [],
-            "supplyChainSummary": supply_chain_summary,
+            
         },
         "safety": {
             "toxicity": drug.toxicity,
