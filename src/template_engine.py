@@ -297,26 +297,6 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                             ],
                         ),
                         TemplateNode(
-                            id="regulatory-classification",
-                            label="Regulatory classification",
-                            path=["regulatoryClassification"],
-                            children=[
-                                TemplateNode(id="reg-approval", label="Approval status", path=["approvalStatus"], type="field"),
-                                TemplateNode(id="reg-markets", label="Markets", path=["markets"], type="array", limit=20),
-                                TemplateNode(id="reg-groups", label="Groups", path=["groups"], type="array", limit=10),
-                                TemplateNode(id="reg-therapeutic", label="Therapeutic classes", path=["therapeuticClasses"], type="array", limit=6),
-                                TemplateNode(id="reg-classification", label="Classification", path=["classification"], type="field"),
-                                TemplateNode(
-                                    id="reg-atc",
-                                    label="ATC codes",
-                                    path=["atcCodes"],
-                                    type="array",
-                                    limit=10,
-                                    children=[TemplateNode(id="reg-atc-code", label="Code", path=["code"], type="field")],
-                                ),
-                            ],
-                        ),
-                        TemplateNode(
                             id="chemistry",
                             label="Chemistry",
                             path=["chemistry"],
@@ -407,8 +387,25 @@ DEFAULT_TEMPLATE = TemplateDefinition(
                             type="field",
                             generation_id="lifecycle_summary",
                         ),
-                        TemplateNode(id="regulatory-approval", label="Approval status", path=["approvalStatus"], type="field"),
                         TemplateNode(id="regulatory-markets", label="Markets", path=["markets"], type="array", limit=20),
+                        TemplateNode(
+                            id="regulatory-classification",
+                            label="Regulatory classification",
+                            path=["regulatoryClassification"],
+                            children=[
+                                TemplateNode(id="reg-groups", label="Groups", path=["groups"], type="array", limit=10),
+                                TemplateNode(id="reg-therapeutic", label="Therapeutic classes", path=["therapeuticClasses"], type="array", limit=6),
+                                TemplateNode(id="reg-classification", label="Classification", path=["classification"], type="field"),
+                                TemplateNode(
+                                    id="reg-atc",
+                                    label="ATC codes",
+                                    path=["atcCodes"],
+                                    type="array",
+                                    limit=10,
+                                    children=[TemplateNode(id="reg-atc-code", label="Code", path=["code"], type="field")],
+                                ),
+                            ],
+                        ),
                         TemplateNode(id="regulatory-label-highlights", label="Label highlights", path=["labelHighlights"], type="array", limit=10),
                         TemplateNode(
                             id="regulatory-supply",
