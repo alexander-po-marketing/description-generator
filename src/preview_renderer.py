@@ -3,12 +3,39 @@
 from __future__ import annotations
 
 import html
+from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
+import re
+
+
+_REFERENCE_PATTERN = re.compile(r"\[L\d+(?:,\s*L\d+)*\]")
+
+
+def _clean_text(value: object) -> str:
+    text = str(value)
+    text = _REFERENCE_PATTERN.sub("", text)
+    text = " ".join(text.split())
+    return text.strip(" ,;\n\t")
+
 
 def _escape(value: object) -> str:
-    return html.escape(str(value))
+    return html.escape(_clean_text(value))
+
+
+def _merge_row_values(pairs: Sequence[Tuple[str, object]]) -> List[Tuple[str, str]]:
+    merged: OrderedDict[str, List[str]] = OrderedDict()
+    for label, value in pairs:
+        if value is None:
+            continue
+        clean_value = _clean_text(value)
+        if not clean_value:
+            continue
+        merged.setdefault(label, [])
+        if clean_value not in merged[label]:
+            merged[label].append(clean_value)
+    return [(label, " • ".join(values)) for label, values in merged.items()]
 
 
 def _table_from_pairs(pairs: Sequence[Tuple[str, object]]) -> str:
@@ -106,7 +133,7 @@ def _collapsible_panel(title: str, summary_text: str, body: str, *, open_default
 
 
 def _facts_table(facts: Mapping[str, object]) -> str:
-    pairs = [
+    entries = [
         ("Generic name", facts.get("genericName")),
         ("Molecule type", facts.get("moleculeType")),
         ("CAS", facts.get("casNumber")),
@@ -114,7 +141,17 @@ def _facts_table(facts: Mapping[str, object]) -> str:
         ("Approval status", facts.get("approvalStatus")),
         ("ATC code", facts.get("atcCode")),
     ]
-    return _table_from_pairs(pairs)
+    cards = []
+    for label, value in entries:
+        if not value:
+            continue
+        cards.append(
+            "<div class=\"fact-card\">"
+            f"<div class=\"fact-label\">{_escape(label)}</div>"
+            f"<div class=\"fact-value\">{_escape(value)}</div>"
+            "</div>"
+        )
+    return f"<div class=\"facts-grid\">{''.join(cards)}</div>" if cards else ""
 
 
 def _build_hero_block(page: Mapping[str, object]) -> str:
@@ -137,7 +174,7 @@ def _build_hero_block(page: Mapping[str, object]) -> str:
         f"<h2>{_escape(title)}</h2>",
         f"<p class=\"lead\">{_escape(summary_sentence)}</p>" if summary_sentence else "",
         _subblock("Therapeutic categories", category_chips),
-        _subblock("Key facts", facts_html),
+        facts_html,
         _subblock("Primary indications", primary_indications),
         _subblock("Buyer cheatsheet", buyer_cheatsheet),
     ]
@@ -182,36 +219,50 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
         identification = page.get("identification", {})
 
     identifiers = identification.get("identifiers", {}) if isinstance(identification, Mapping) else {}
-    id_rows = []
-    if identifiers.get("casNumber"):
-        id_rows.append(("CAS", identifiers.get("casNumber")))
-    if identifiers.get("unii"):
-        id_rows.append(("UNII", identifiers.get("unii")))
-    if identifiers.get("drugbankId"):
-        id_rows.append(("DrugBank ID", identifiers.get("drugbankId")))
-    if identifiers.get("external"):
-        id_rows.append(("External", identifiers.get("external")))
-    id_table = _table_from_pairs(id_rows)
-
-    identity_rows = []
+    merged_rows: List[Tuple[str, object]] = []
     if identification.get("genericName"):
-        identity_rows.append(("Generic name", identification.get("genericName")))
+        merged_rows.append(("Generic name", identification.get("genericName")))
     if identification.get("moleculeType"):
-        identity_rows.append(("Molecule type", identification.get("moleculeType")))
-    identity_rows.extend(("Group", group) for group in identification.get("groups", []) if group)
-    identity_table = _table_from_pairs(identity_rows)
-    synonyms = _chip_list(identification.get("synonyms", []))
+        merged_rows.append(("Molecule type", identification.get("moleculeType")))
+    groups = identification.get("groups", []) if isinstance(identification, Mapping) else []
+    if groups:
+        merged_rows.append(("Group", " • ".join([_clean_text(group) for group in groups if group])))
+    synonyms = identification.get("synonyms", []) if isinstance(identification, Mapping) else []
+    if synonyms:
+        merged_rows.append(("Synonyms", ", ".join([_clean_text(s) for s in synonyms if s])))
+
+    if identifiers.get("casNumber"):
+        merged_rows.append(("CAS", identifiers.get("casNumber")))
+    if identifiers.get("unii"):
+        merged_rows.append(("UNII", identifiers.get("unii")))
+    if identifiers.get("drugbankId"):
+        merged_rows.append(("DrugBank ID", identifiers.get("drugbankId")))
+    if identifiers.get("external"):
+        merged_rows.append(("External", identifiers.get("external")))
+
+    chemistry = id_section.get("chemistry") if isinstance(id_section, Mapping) else {}
+    if not chemistry and isinstance(page, Mapping):
+        chemistry = page.get("chemistry", {})
+    for label, key in (
+        ("Formula", "formula"),
+        ("Average MW", "averageMolecularWeight"),
+        ("Monoisotopic mass", "monoisotopicMass"),
+        ("logP", "logP"),
+    ):
+        if isinstance(chemistry, Mapping) and chemistry.get(key):
+            merged_rows.append((label, chemistry.get(key)))
 
     regulatory_class = id_section.get("regulatoryClassification") if isinstance(id_section, Mapping) else {}
     taxonomy = page.get("categoriesAndTaxonomy", {}) if isinstance(page, Mapping) else {}
-    reg_rows = []
+    reg_rows: List[Tuple[str, object]] = []
     if isinstance(regulatory_class, Mapping):
         if regulatory_class.get("approvalStatus"):
             reg_rows.append(("Approval status", regulatory_class.get("approvalStatus")))
         if regulatory_class.get("markets"):
             reg_rows.append(("Markets", ", ".join(regulatory_class.get("markets") or [])))
     therapeutic_classes = taxonomy.get("therapeuticClasses") if isinstance(taxonomy, Mapping) else []
-    reg_rows.extend(("Therapeutic class", entry) for entry in therapeutic_classes or [])
+    if therapeutic_classes:
+        reg_rows.append(("Therapeutic class", " • ".join(tc for tc in therapeutic_classes if tc)))
     classification = taxonomy.get("classification") if isinstance(taxonomy, Mapping) else None
     if isinstance(regulatory_class, Mapping) and regulatory_class.get("classification"):
         classification = regulatory_class.get("classification")
@@ -220,23 +271,17 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
             if value:
                 reg_rows.append((key.replace("_", " ").title(), value))
     atc_codes = taxonomy.get("atcCodes") if isinstance(taxonomy, Mapping) else []
-    reg_rows.extend(("ATC code", code.get("code")) for code in atc_codes or [])
-    reg_table = _table_from_pairs(reg_rows)
+    if atc_codes:
+        reg_rows.append(
+            (
+                "ATC code",
+                " • ".join(
+                    code.get("code") for code in atc_codes if isinstance(code, Mapping) and code.get("code")
+                ),
+            )
+        )
 
-    chemistry = id_section.get("chemistry") if isinstance(id_section, Mapping) else {}
-    if not chemistry and isinstance(page, Mapping):
-        chemistry = page.get("chemistry", {})
-    chemistry_rows = []
-    for label, key in (
-        ("Formula", "formula"),
-        ("Average MW", "averageMolecularWeight"),
-        ("Monoisotopic mass", "monoisotopicMass"),
-        ("logP", "logP"),
-    ):
-        if chemistry.get(key):
-            chemistry_rows.append((label, chemistry.get(key)))
-    chemistry_table = _table_from_pairs(chemistry_rows)
-    exp_props = chemistry.get("experimentalProperties") or []
+    exp_props = chemistry.get("experimentalProperties") or [] if isinstance(chemistry, Mapping) else []
     experimental_table = _table_from_dicts(
         exp_props if isinstance(exp_props, list) else [],
         [("Name", "name"), ("Value", "value")],
@@ -253,9 +298,9 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
     brand_block = _brands_block(products if isinstance(products, Mapping) else {})
 
     content_parts = [
-        _subblock("Identification", identity_table + synonyms + id_table),
-        _subblock("Regulatory classification", reg_table),
-        _subblock("Chemistry", chemistry_table + experimental_table),
+        _subblock("Identification & chemistry", _table_from_pairs(_merge_row_values(merged_rows))),
+        _subblock("Regulatory classification", _table_from_pairs(_merge_row_values(reg_rows))),
+        _subblock("Experimental properties", experimental_table),
         _subblock("Products & dosage forms", dosage_table + brand_block),
     ]
     return "".join(part for part in content_parts if part)
@@ -294,7 +339,7 @@ def _build_pharmacology_section(clinical: Mapping[str, object], page: Mapping[st
         for entry in pharmacology.get("details"):
             if isinstance(entry, Mapping) and entry.get("value"):
                 rows.append((entry.get("label") or "Detail", entry.get("value")))
-    summary_table = _table_from_pairs(rows)
+    summary_table = _table_from_pairs(_merge_row_values(rows))
 
     targets_source = None
     if isinstance(pharmacology_container, Mapping) and pharmacology_container.get("targets") is not None:
@@ -304,7 +349,7 @@ def _build_pharmacology_section(clinical: Mapping[str, object], page: Mapping[st
     targets = targets_source or []
     targets_table = _table_from_dicts(
         targets if isinstance(targets, list) else [],
-        [("Name", "name"), ("Organism", "organism"), ("Actions", "actions"), ("GO processes", "goProcesses")],
+        [("Target", "name"), ("Organism", "organism"), ("Actions", "actions")],
     )
 
     return "".join(
@@ -337,13 +382,7 @@ def _build_adme_section(clinical: Mapping[str, object], page: Mapping[str, objec
             rows.append((label, table_data.get(key)))
     table_html = _table_from_pairs(rows)
 
-    pk_snapshot = None
-    if isinstance(adme, Mapping):
-        snapshot_source = adme.get("pkSnapshot") or (table_data or {}).get("pkSnapshot") if isinstance(table_data, Mapping) else {}
-        pk_snapshot = snapshot_source
-    pk_list = _unordered_list(pk_snapshot.get("keyPoints", []) if isinstance(pk_snapshot, Mapping) else [])
-
-    return _subblock("ADME / PK", table_html + pk_list)
+    return _subblock("ADME / PK", table_html)
 
 
 def _build_safety_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -472,8 +511,6 @@ def _build_clinical_overview_block(page: Mapping[str, object]) -> str:
     description = clinical.get("longDescription") or overview.get("description")
 
     description_block = ""
-    if summary_text:
-        description_block += f"<p class=\"lead\">{_escape(summary_text)}</p>"
     if description:
         description_block += f"<div class=\"long-description\"><p>{_escape(description)}</p></div>"
 
@@ -586,6 +623,7 @@ def generate_html_preview(api_pages: Dict[str, object]) -> str:
     .block { border-top: 1px solid #e5e7eb; }
     .block summary { cursor: pointer; padding: 10px 14px; font-weight: 600; background: #ffffff; display: flex; flex-direction: column; gap: 4px; }
     .block[open] > summary { background: #eef2ff; }
+    .block[open] > summary .summary-text { display: none; }
     .summary-title { font-size: 14px; text-transform: uppercase; letter-spacing: 0.02em; color: #475569; }
     .summary-text { font-size: 13px; color: #0f172a; }
     .subblock { padding: 0 16px 12px; }
@@ -599,6 +637,10 @@ def generate_html_preview(api_pages: Dict[str, object]) -> str:
     .market-group { margin-bottom: 10px; }
     .long-description { padding: 0 16px; font-size: 13px; color: #0f172a; }
     .long-description p { margin: 0 0 12px 0; }
+    .facts-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px 0 12px; }
+    .fact-card { background: #ffffff; border: 1px solid #d9e0ef; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+    .fact-label { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; margin-bottom: 4px; }
+    .fact-value { font-size: 14px; font-weight: 600; color: #0f172a; word-break: break-word; }
     </style>
     """
 
