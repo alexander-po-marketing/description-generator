@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from collections import defaultdict
 from dataclasses import asdict, is_dataclass
 from typing import Callable, Dict, List, Mapping, Optional, Sequence
 
@@ -19,7 +18,7 @@ from src.generators import (
     build_summary_prompt,
     build_summary_sentence_prompt,
 )
-from src.models import DrugData, ExternalIdentifier, GeneratedContent, Patent, Target
+from src.models import DrugData, GeneratedContent, Patent, Target
 from src.openai_client import OpenAIClient
 from src.template_engine import DEFAULT_TEMPLATE, TemplateDefinition
 
@@ -92,6 +91,10 @@ def _split_to_list(value: Optional[str], max_items: int = 4) -> List[str]:
     return cleaned
 
 
+def _limited_therapeutic_classes(categories: Sequence[str], limit: int = 6) -> List[str]:
+    return _unique(categories)[:limit]
+
+
 def _synonym_list(drug: DrugData) -> List[str]:
     synonyms_raw = getattr(drug, "synonyms", None) or drug.raw_fields.get("synonyms")
     if synonyms_raw is None:
@@ -144,69 +147,6 @@ def _pk_snapshot(drug: DrugData) -> List[str]:
     return bullets[:6]
 
 
-def _dosage_forms(drug: DrugData) -> List[Dict[str, Optional[str]]]:
-    forms: List[Dict[str, Optional[str]]] = []
-    seen = set()
-
-    for dosage in drug.dosages:
-        key = (dosage.form, dosage.route, dosage.strength)
-        if key in seen:
-            continue
-        seen.add(key)
-        forms.append({"form": dosage.form, "route": dosage.route, "strength": dosage.strength})
-
-    for product in drug.products:
-        key = (product.dosage_form, product.route, product.strength)
-        if key in seen:
-            continue
-        seen.add(key)
-        forms.append({"form": product.dosage_form, "route": product.route, "strength": product.strength})
-
-    return forms
-
-
-def _brands_by_market(drug: DrugData) -> Dict[str, List[Dict[str, object]]]:
-    markets: Dict[str, List[Dict[str, object]]] = defaultdict(list)
-    for product in drug.products:
-        country = product.country or "Unspecified"
-        markets[country].append(
-            {
-                "brand": product.brand,
-                "dosageForm": product.dosage_form,
-                "route": product.route,
-                "strength": product.strength,
-                "startedMarketingOn": product.started_marketing_on,
-                "endedMarketingOn": product.ended_marketing_on,
-                "generic": product.generic,
-                "regulatorySource": product.regulatory_source,
-            }
-        )
-    return dict(markets)
-
-
-def _experimental_properties(drug: DrugData) -> List[Dict[str, object]]:
-    properties: List[Dict[str, object]] = []
-    raw_props = drug.raw_fields.get("experimental-properties") or drug.raw_fields.get("experimental_properties")
-    if isinstance(raw_props, list):
-        for prop in raw_props:
-            properties.append({"name": str(prop)})
-    elif isinstance(raw_props, dict):
-        for key, value in raw_props.items():
-            properties.append({"name": key, "value": value})
-    elif raw_props:
-        properties.append({"name": "Experimental property", "value": raw_props})
-
-    chemistry_backfill = [
-        ("logP", drug.logp),
-        ("Water solubility", drug.water_solubility),
-        ("Melting point", drug.melting_point),
-    ]
-    for name, value in chemistry_backfill:
-        if value:
-            properties.append({"name": name, "value": value})
-    return properties
-
-
 def _targets_to_dict(targets: List[Target]) -> List[Dict[str, object]]:
     data: List[Dict[str, object]] = []
     for target in targets:
@@ -235,30 +175,32 @@ def _atc_codes_to_dict(atc_codes: List[object]) -> List[Dict[str, object]]:
 
 
 def _identifier_table(drug: DrugData) -> Dict[str, object]:
-    table: Dict[str, object] = {
+    return {
         "casNumber": drug.cas_number or drug.raw_fields.get("casNumber") or drug.raw_fields.get("cas-number"),
         "unii": drug.unii,
         "drugbankId": getattr(drug, "drugbank_id", None)
         or drug.raw_fields.get("drugbankId")
         or drug.raw_fields.get("drugbank-id"),
     }
-    external: List[Dict[str, object]] = []
-    for identifier in drug.external_identifiers:
-        if isinstance(identifier, ExternalIdentifier):
-            external.append({"resource": identifier.resource, "identifier": identifier.identifier})
-    if external:
-        table["external"] = external
-    return table
 
 
-def _serialize_list(items: List[object]) -> List[object]:
-    serialized: List[object] = []
-    for item in items:
-        if is_dataclass(item):
-            serialized.append(asdict(item))
-        else:
-            serialized.append(item)
-    return serialized
+def _sanitize_classification(classification: object) -> object:
+    if classification is None:
+        return None
+    if is_dataclass(classification):
+        classification = asdict(classification)
+    if not isinstance(classification, Mapping):
+        return classification
+
+    disallowed_keys = {"alternative_parents", "alternativeParents", "substituents"}
+    cleaned = {}
+    for key, value in classification.items():
+        if key in disallowed_keys:
+            continue
+        if key.lower().replace(" ", "_") in {"alternative_parents", "substituents"}:
+            continue
+        cleaned[key] = value
+    return cleaned
 
 
 def _ensure_generated_fields(
@@ -444,7 +386,6 @@ def build_page_model(
         "averageMolecularWeight": drug.average_mass,
         "monoisotopicMass": drug.monoisotopic_mass,
         "logP": drug.logp,
-        "experimentalProperties": _experimental_properties(drug),
     }
 
     regulatory_block = {
@@ -452,13 +393,12 @@ def build_page_model(
         "approvalStatus": approval_status,
         "markets": markets,
         "labelHighlights": primary_use_cases,
-        "patents": patents_table,
     }
 
     taxonomy_block = {
-        "therapeuticClasses": list(drug.categories),
+        "therapeuticClasses": _limited_therapeutic_classes(drug.categories),
         "atcCodes": _atc_codes_to_dict(drug.atc_codes),
-        "classification": drug.classification,
+        "classification": _sanitize_classification(drug.classification),
     }
 
     pharmacology_block = {
@@ -467,10 +407,6 @@ def build_page_model(
         "pharmacodynamics": drug.pharmacodynamics,
         "targets": _targets_to_dict(drug.targets),
         "summary": pharmacology_summary,
-        "details": [
-            {"label": "Mechanism of action", "value": drug.mechanism_of_action},
-            {"label": "Pharmacodynamics", "value": drug.pharmacodynamics},
-        ],
     }
 
     pk_snapshot = {"keyPoints": _pk_snapshot(drug)}
@@ -489,12 +425,6 @@ def build_page_model(
         "table": {**adme_table, "pkSnapshot": pk_snapshot},
     }
 
-    products_block = {
-        "dosageForms": _dosage_forms(drug),
-        "brandsByMarket": _brands_by_market(drug),
-        "marketPresenceSummary": None,
-    }
-
     supply_block = {
         "supplyChainSummary": supply_chain_summary,
         "manufacturers": list(drug.manufacturers),
@@ -506,16 +436,6 @@ def build_page_model(
     safety_block = {
         "toxicity": drug.toxicity,
         "highLevelWarnings": safety_highlights,
-    }
-
-    experimental_block = {
-        "properties": _experimental_properties(drug),
-    }
-
-    references_block = {
-        "scientificArticles": _serialize_list(drug.scientific_articles),
-        "regulatoryLinks": _serialize_list(drug.regulatory_links),
-        "otherLinks": _serialize_list(getattr(drug.general_references, "links", [])),
     }
 
     seo_block = {
@@ -556,7 +476,7 @@ def build_page_model(
         "summary": generated.summary,
         "tags": tags,
         "primaryUseCases": primary_use_cases,
-        "therapeuticCategories": list(drug.categories),
+        "therapeuticCategories": taxonomy_block.get("therapeuticClasses"),
         "facts": hero_facts,
     }
 
@@ -579,12 +499,10 @@ def build_page_model(
                 "markets": markets,
             },
             "chemistry": chemistry_block,
-            "productsAndDosageForms": products_block,
         },
         "pharmacologyTargets": {
             "summary": pharmacology_summary,
             "pharmacology": pharmacology_block,
-            "details": pharmacology_block.get("details"),
             "targets": pharmacology_block.get("targets"),
         },
         "admePk": {
@@ -597,14 +515,11 @@ def build_page_model(
             "approvalStatus": approval_status,
             "markets": markets,
             "labelHighlights": primary_use_cases,
-            "patents": patents_table,
             "details": regulatory_block,
             "supplyChain": supply_block,
         },
         "safetyRisks": safety_block,
         "safety": safety_block,
-        "references": references_block,
-        "experimentalProperties": experimental_block,
     }
 
     page = {
@@ -622,12 +537,9 @@ def build_page_model(
         "pharmacology": pharmacology_block,
         "pharmacologyTargets": clinical_overview.get("pharmacologyTargets"),
         "admePk": adme_pk_block,
-        "productsAndDosageForms": products_block,
         "suppliersAndManufacturing": supply_block,
         "safety": safety_block,
         "safetyRisks": safety_block,
-        "experimentalProperties": experimental_block,
-        "references": references_block,
         "seo": seo_block,
         "metadata": metadata_block,
     }
