@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import random
 from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
@@ -464,6 +465,62 @@ def _page_wrapper(page_name: str, content: str) -> str:
     )
 
 
+def _is_semaglutide(page_key: object, page: Mapping[str, object]) -> bool:
+    def _matches(value: object) -> bool:
+        if not value:
+            return False
+        text = str(value).strip().lower()
+        return text in {"db01323", "semaglutide"}
+
+    if _matches(page_key):
+        return True
+
+    hero_title = page.get("hero", {}).get("title") if isinstance(page, Mapping) else None
+    identifiers = (
+        page.get("identification", {}).get("identifiers", {}) if isinstance(page, Mapping) else {}
+    )
+    metadata = page.get("metadata", {}) if isinstance(page, Mapping) else {}
+    facts = page.get("facts", {}) if isinstance(page, Mapping) else {}
+
+    return any(
+        _matches(value)
+        for value in (
+            hero_title,
+            identifiers.get("drugbankId") if isinstance(identifiers, Mapping) else None,
+            metadata.get("drugbankId") if isinstance(metadata, Mapping) else None,
+            facts.get("drugbankId") if isinstance(facts, Mapping) else None,
+        )
+    )
+
+
+def _select_preview_pages(
+    page_entries: Iterable[Tuple[object, Mapping[str, object]]], limit: int = 3
+) -> List[Tuple[object, Mapping[str, object]]]:
+    normalized: List[Tuple[object, Mapping[str, object]]] = []
+    for page_key, page in page_entries:
+        if isinstance(page, Mapping) and "raw" in page:
+            page = page.get("raw", {})
+        if not isinstance(page, Mapping):
+            continue
+        normalized.append((page_key, page))
+
+    if not normalized:
+        return []
+
+    selected: List[Tuple[object, Mapping[str, object]]] = []
+    semaglutide_entry = next((entry for entry in normalized if _is_semaglutide(*entry)), None)
+    if semaglutide_entry:
+        selected.append(semaglutide_entry)
+
+    remaining = [entry for entry in normalized if entry != semaglutide_entry]
+    rng = random.Random(17)
+    remaining_needed = min(limit - len(selected), len(remaining))
+    if remaining_needed > 0:
+        selected.extend(rng.sample(remaining, k=remaining_needed))
+
+    return selected
+
+
 def generate_html_preview(api_pages: Dict[str, object]) -> str:
     """Render a compact HTML preview for API page models."""
 
@@ -501,13 +558,10 @@ def generate_html_preview(api_pages: Dict[str, object]) -> str:
     """
 
     page_entries = api_pages.items() if isinstance(api_pages, Mapping) else enumerate(api_pages)
+    selected_pages = _select_preview_pages(page_entries, limit=3)
 
     page_sections: List[str] = []
-    for page_key, page in page_entries:
-        if isinstance(page, Mapping) and "raw" in page:
-            page = page.get("raw", {})
-        if not isinstance(page, Mapping):
-            continue
+    for page_key, page in selected_pages:
         page_name = page.get("hero", {}).get("title") or str(page_key)
         blocks = [
             _build_hero_block(page),

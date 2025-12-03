@@ -70,10 +70,12 @@ def _unique(items: Sequence[Optional[str]]) -> List[str]:
     return result
 
 
-def _split_to_list(value: Optional[str], max_items: int = 4) -> List[str]:
+def _split_to_list(
+    value: Optional[str], max_items: int = 4, *, delimiter_pattern: str = r"[;\.\n]"
+) -> List[str]:
     if not value:
         return []
-    parts = re.split(r"[;\.\n]", value)
+    parts = re.split(delimiter_pattern, value)
 
     def _normalize_fragment(fragment: str) -> Optional[str]:
         cleaned = fragment or ""
@@ -340,7 +342,9 @@ def build_page_model(
     if generation_enabled("formulation_notes"):
         formulation_prompt = build_formulation_notes_prompt(drug)
         formulation_output = _sanitize_text(client.generate_text(formulation_prompt))
-        formulation_notes = _split_to_list(formulation_output, max_items=3)
+        formulation_notes = _split_to_list(
+            formulation_output, max_items=3, delimiter_pattern=r"\n+"
+        )
 
     supply_chain_summary: Optional[str] = None
     if generation_enabled("supply_chain_summary") and (
