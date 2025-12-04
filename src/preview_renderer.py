@@ -40,27 +40,49 @@ def _merge_row_values(pairs: Sequence[Tuple[str, object]]) -> List[Tuple[str, st
 
 
 def _table_from_pairs(pairs: Sequence[Tuple[str, object]]) -> str:
-    rows = [f"<tr><th>{_escape(label)}</th><td>{_escape(value)}</td></tr>" for label, value in pairs if value]
-    return f"<table>{''.join(rows)}</table>" if rows else ""
+    rows = [
+        (
+            "<tr class=\"table-row row\">"
+            f"<th class=\"table-label label cell\">{_escape(label)}</th>"
+            f"<td class=\"table-value value cell\">{_escape(value)}</td>"
+            "</tr>"
+        )
+        for label, value in pairs
+        if value
+    ]
+    if not rows:
+        return ""
+
+    table = f"<table class=\"data-table info-table\"><tbody>{''.join(rows)}</tbody></table>"
+    return f"<div class=\"table-wrapper\">{table}</div>"
 
 
 def _chip_list(items: Iterable[object]) -> str:
-    chips = [f"<span class=\"chip\">{_escape(item)}</span>" for item in items if item]
-    return f"<div class=\"chip-list\">{''.join(chips)}</div>" if chips else ""
+    chips = [f"<span class=\"chip list-item\">{_escape(item)}</span>" for item in items if item]
+    return f"<div class=\"chip-list list list-inline\">{''.join(chips)}</div>" if chips else ""
 
 
 def _unordered_list(items: Iterable[object]) -> str:
-    entries = [f"<li>{_escape(item)}</li>" for item in items if item]
-    return f"<ul>{''.join(entries)}</ul>" if entries else ""
+    entries = [f"<li class=\"list-item\">{_escape(item)}</li>" for item in items if item]
+    if not entries:
+        return ""
+
+    return "".join(
+        [
+            "<div class=\"list-wrapper\">",
+            f"<ul class=\"list list-bulleted\">{''.join(entries)}</ul>",
+            "</div>",
+        ]
+    )
 
 
 def _subblock(title: str, body: str) -> str:
     if not body:
         return ""
     return (
-        f"<div class=\"subblock\">"
-        f"<div class=\"subblock-header\"><h4>{_escape(title)}</h4></div>"
-        f"<div class=\"subblock-body\">{body}</div>"
+        f"<div class=\"subblock section-block\">"
+        f"<div class=\"subblock-header block-header\"><h4 class=\"subblock-title\">{_escape(title)}</h4></div>"
+        f"<div class=\"subblock-body block-body\">{body}</div>"
         f"</div>"
     )
 
@@ -71,12 +93,20 @@ def _table_from_dicts(items: List[Mapping[str, object]], columns: List[Tuple[str
     active_columns = [label_key for label_key in columns if any(item.get(label_key[1]) for item in items)]
     if not active_columns:
         return ""
-    header = "".join(f"<th>{_escape(label)}</th>" for label, _ in active_columns)
+    header = "".join(
+        f"<th class=\"table-label label cell\">{_escape(label)}</th>" for label, _ in active_columns
+    )
     rows = []
     for item in items:
-        cells = [f"<td>{_escape(item.get(key, ''))}</td>" for _, key in active_columns]
-        rows.append(f"<tr>{''.join(cells)}</tr>")
-    return f"<table><thead><tr>{header}</tr></thead><tbody>{''.join(rows)}</tbody></table>"
+        cells = [f"<td class=\"table-value value cell\">{_escape(item.get(key, ''))}</td>" for _, key in active_columns]
+        rows.append(f"<tr class=\"table-row row\">{''.join(cells)}</tr>")
+    table = (
+        "<table class=\"data-table info-table\">"
+        f"<thead><tr class=\"table-row row\">{header}</tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody>"
+        "</table>"
+    )
+    return f"<div class=\"table-wrapper\">{table}</div>"
 
 
 def _collapsible_panel(title: str, summary_text: str, body: str, *, open_default: bool = False) -> str:
@@ -85,10 +115,13 @@ def _collapsible_panel(title: str, summary_text: str, body: str, *, open_default
     open_attr = " open" if open_default else ""
     summary_body = _escape(summary_text) if summary_text else "View details"
     return (
-        f"<details class=\"block\"{open_attr}>"
-        f"<summary><div class=\"summary-title\">{_escape(title)}</div>"
-        f"<div class=\"summary-text\">{summary_body}</div></summary>"
-        f"{body}</details>"
+        f"<details class=\"block panel panel-collapsible\"{open_attr}>"
+        f"<summary class=\"panel-summary\">"
+        f"<div class=\"summary-title panel-title\">{_escape(title)}</div>"
+        f"<div class=\"summary-text panel-description\">{summary_body}</div>"
+        f"</summary>"
+        f"<div class=\"panel-body\">{body}</div>"
+        f"</details>"
     )
 
 
@@ -106,12 +139,12 @@ def _facts_table(facts: Mapping[str, object]) -> str:
         if not value:
             continue
         cards.append(
-            "<div class=\"fact-card\">"
-            f"<div class=\"fact-label\">{_escape(label)}</div>"
-            f"<div class=\"fact-value\">{_escape(value)}</div>"
+            "<div class=\"fact-card row\">"
+            f"<div class=\"fact-label label cell\">{_escape(label)}</div>"
+            f"<div class=\"fact-value value cell\">{_escape(value)}</div>"
             "</div>"
         )
-    return f"<div class=\"facts-grid\">{''.join(cards)}</div>" if cards else ""
+    return f"<div class=\"facts-grid table-wrapper\">{''.join(cards)}</div>" if cards else ""
 
 
 def _build_hero_block(page: Mapping[str, object]) -> str:
@@ -131,15 +164,15 @@ def _build_hero_block(page: Mapping[str, object]) -> str:
     buyer_cheatsheet = _unordered_list((page.get("buyerCheatsheet", {}) or {}).get("bullets", []))
 
     content_parts = [
-        f"<h2>{_escape(title)}</h2>",
-        f"<p class=\"lead\">{_escape(summary_sentence)}</p>" if summary_sentence else "",
+        f"<h2 class=\"hero-title\">{_escape(title)}</h2>",
+        f"<p class=\"lead hero-summary\">{_escape(summary_sentence)}</p>" if summary_sentence else "",
         _subblock("Therapeutic categories", category_chips),
         facts_html,
         _subblock("Primary indications", primary_indications),
         _subblock("Buyer cheatsheet", buyer_cheatsheet),
     ]
     body = "".join(part for part in content_parts if part)
-    return f"<div class=\"hero-block\">{body}</div>" if body else ""
+    return f"<div class=\"hero-block section section-hero\">{body}</div>" if body else ""
 
 
 def _build_identification_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -179,7 +212,8 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
     content_parts = [
         _subblock("Identification & chemistry", _table_from_pairs(_merge_row_values(merged_rows))),
     ]
-    return "".join(part for part in content_parts if part)
+    body = "".join(part for part in content_parts if part)
+    return f"<section class=\"section section-identification\"><div class=\"section-body\">{body}</div></section>" if body else ""
 
 
 def _regulatory_classification_rows(
@@ -266,13 +300,18 @@ def _build_pharmacology_section(clinical: Mapping[str, object], page: Mapping[st
         [("Target", "name"), ("Organism", "organism"), ("Actions", "actions")],
     )
 
-    return "".join(
+    content = "".join(
         part
         for part in [
             _subblock("Pharmacology", summary_table),
             _subblock("Targets", targets_table),
         ]
         if part
+    )
+    return (
+        f"<section class=\"section section-pharmacology\"><div class=\"section-body\">{content}</div></section>"
+        if content
+        else ""
     )
 
 
@@ -296,7 +335,8 @@ def _build_adme_section(clinical: Mapping[str, object], page: Mapping[str, objec
             rows.append((label, table_data.get(key)))
     table_html = _table_from_pairs(rows)
 
-    return _subblock("ADME / PK", table_html)
+    body = _subblock("ADME / PK", table_html)
+    return f"<section class=\"section section-adme\"><div class=\"section-body\">{body}</div></section>" if body else ""
 
 
 def _build_safety_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -311,7 +351,8 @@ def _build_safety_section(clinical: Mapping[str, object], page: Mapping[str, obj
         safety_rows.append(("Toxicity", safety.get("toxicity")))
     safety_table = _table_from_pairs(safety_rows)
     safety_bullets = _unordered_list(safety.get("highLevelWarnings", []))
-    return _subblock("Safety", safety_table + safety_bullets)
+    body = _subblock("Safety", safety_table + safety_bullets)
+    return f"<section class=\"section section-safety\"><div class=\"section-body\">{body}</div></section>" if body else ""
 
 
 def _build_formulation_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -328,7 +369,8 @@ def _build_formulation_section(clinical: Mapping[str, object], page: Mapping[str
         values.append(notes)
     if isinstance(bullets, list):
         values.extend(bullets)
-    return _subblock("Formulation & handling", _unordered_list(values))
+    body = _subblock("Formulation & handling", _unordered_list(values))
+    return f"<section class=\"section section-formulation\"><div class=\"section-body\">{body}</div></section>" if body else ""
 
 
 def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -368,7 +410,8 @@ def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str,
         _subblock("Label highlights", label_highlights),
         _subblock("Supply chain", supply_table + manufacturers),
     ]
-    return "".join(part for part in content_parts if part)
+    body = "".join(part for part in content_parts if part)
+    return f"<section class=\"section section-regulatory\"><div class=\"section-body\">{body}</div></section>" if body else ""
 
 
 def _build_clinical_overview_content(page: Mapping[str, object]) -> str:
@@ -379,7 +422,13 @@ def _build_clinical_overview_content(page: Mapping[str, object]) -> str:
     if not description:
         return ""
 
-    return f"<div class=\"long-description\"><p>{_escape(description)}</p></div>"
+    return (
+        "<section class=\"section section-overview\">"
+        "<div class=\"section-body long-description\">"
+        f"<p class=\"overview-text\">{_escape(description)}</p>"
+        "</div>"
+        "</section>"
+    )
 
 
 def _build_clinical_overview_block(page: Mapping[str, object]) -> str:
@@ -465,8 +514,8 @@ def _build_seo_block(page: Mapping[str, object]) -> str:
 
 def _page_wrapper(page_name: str, content: str) -> str:
     return (
-        f"<section class=\"api-page-preview\" data-api-name=\"{_escape(page_name)}\">"
-        f"<header><h2>{_escape(page_name)}</h2></header>"
+        f"<section class=\"api-page-preview section section-page\" data-api-name=\"{_escape(page_name)}\">"
+        f"<header class=\"section-header page-header\"><h2 class=\"section-title page-title\">{_escape(page_name)}</h2></header>"
         f"{content}"
         f"</section>"
     )
