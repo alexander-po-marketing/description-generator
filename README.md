@@ -1,6 +1,6 @@
 # DrugBank to Pharmaoffer Content Pipeline
 
-This project transforms DrugBank XML exports into structured JSON ready for Pharmaoffer API product pages. The pipeline parses DrugBank data, generates expert pharmaceutical descriptions with OpenAI, builds UI-agnostic page models, and can optionally emit legacy HTML previews.
+This project transforms DrugBank XML exports into structured JSON ready for Pharmaoffer API product pages. The pipeline parses DrugBank data, generates expert pharmaceutical descriptions with OpenAI, builds UI-agnostic page models, and can optionally emit HTML previews as well as per-section HTML blocks for database ingestion.
 
 ## Features
 
@@ -10,6 +10,7 @@ This project transforms DrugBank XML exports into structured JSON ready for Phar
 - **Enhanced prompting:** pharma-grade description and summary prompts with logged inputs for traceability.
 - **Structured page models:** JSON designed for flexible React/Vue rendering (no embedded HTML tags).
 - **Optional HTML previews:** renderable snippets remain available for debugging.
+- **Section HTML export:** reuse the preview renderer to build clean, per-section HTML fragments suitable for storing directly in the database.
 - **CLI and UI control:** run the pipeline via command line or through the browser-based controller.
 - **Logging and retries:** visibility into each pipeline stage and resilient OpenAI calls.
 
@@ -17,7 +18,7 @@ This project transforms DrugBank XML exports into structured JSON ready for Phar
 
 ```
 inputs/     # DrugBank XML and optional valid-ID files
-outputs/    # database.json, api_pages.json, optional legacy preview files
+outputs/    # database.json, api_pages.json, optional legacy preview files, section_html/
 logs/       # prompt logs and pipeline logs
 cache/      # scratch directory for experiments
 scripts/    # helpers including the interface HTTP server
@@ -39,20 +40,32 @@ src/        # core pipeline modules and CLI entrypoint
 2. **Run the generator**
 
    ```bash
-   python src/main.py \
-     --xml-path inputs/drugbank.xml \
-     --output-database-json outputs/database.json \
-     --output-page-models-json outputs/api_pages.json \
+    python src/main.py \
+      --xml-path inputs/drugbank.xml \
+      --output-database-json outputs/database.json \
+      --output-page-models-json outputs/api_pages.json \
      --valid-drugs inputs/valid_ids.txt \
-     --max-drugs 50 \
-     --log-level INFO
+    --max-drugs 50 \
+    --log-level INFO
+  ```
+
+  Supply `--valid-drugs` as a comma-separated list or a path to a text file (one DrugBank ID per line). Omit it to process all entries. Use `--max-drugs` to cap processing during tests.
+
+3. **Export section-level HTML (optional)**
+
+   Convert existing `api_pages.json` output into database-ready section HTML fragments:
+
+   ```bash
+   python -m src.section_renderer \
+     --input outputs/api_pages.json \
+     --output outputs/section_html/section_blocks.json
    ```
 
-   Supply `--valid-drugs` as a comma-separated list or a path to a text file (one DrugBank ID per line). Omit it to process all entries. Use `--max-drugs` to cap processing during tests.
+   The exporter reads the generated page models, reuses the preview rendering blocks, and writes a dictionary keyed by API ID where each value contains section HTML (e.g., `hero`, `overview`, `pharmacology`, `adme_pk`, `formulation`, `regulatory`, `safety`).
 
 ## Interactive web interface
 
-The `/interface/index.html` UI wraps the CLI with a simple control panel to set credentials, browse repository files, pick output targets, and launch runs from the browser.
+The `/interface/index.html` UI wraps the CLI with a simple control panel to set credentials, browse repository files, pick output targets, and launch runs from the browser. It also exposes a one-click action to run the section HTML exporter against an existing `outputs/api_pages.json`, saving results under `outputs/section_html/`.
 
 1. Start the local server and open the UI automatically with Chrome/Chromium:
 
@@ -89,8 +102,23 @@ Environment variables control OpenAI behavior and defaults:
 - `outputs/database.json` — structured parsed DrugBank data per DrugBank ID (debug/secondary source).
 - `outputs/api_pages.json` — structured, HTML-free page models ready for UI rendering (primary output).
 - `outputs/api_pages_preview.html` — quick HTML preview of the structured models using the bundled template.
+- `outputs/section_html/section_blocks.json` — dictionary mapping API IDs to per-section HTML fragments ready for database storage.
 - `logs/prompts.log` — captured prompts for auditing and debugging.
 
 ## Testing and extension
 
 The modular design isolates parsing, prompt generation, rendering, and exporting, making it straightforward to unit test each component. Swap models, tweak prompts, or adjust HTML layout by editing the dedicated modules without touching the CLI.
+
+## HTML classes used in generated blocks
+
+The section renderer intentionally emits minimal HTML wrappers so styling can be applied later. Blocks may include these classes:
+
+- `api-page-preview` — wrapper for a single API preview section.
+- `hero-block` — container for the hero/header content.
+- `lead` — summary paragraph in the hero.
+- `subblock`, `subblock-header`, `subblock-body` — titled sub-sections used across identification, pharmacology, ADME, formulation, regulatory, and safety blocks.
+- `chip-list`, `chip` — inline lists for categories, markets, manufacturers, and keywords.
+- `block` — collapsible panels for in-depth sections.
+- `summary-title`, `summary-text` — header text inside collapsible panels.
+- `facts-grid`, `fact-card`, `fact-label`, `fact-value` — structured facts in the hero block.
+- `long-description` — wrapper for narrative description paragraphs.
