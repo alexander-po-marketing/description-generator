@@ -1,5 +1,6 @@
 const statusEl = document.getElementById("status");
 const runButton = document.getElementById("run-button");
+const buildSectionsButton = document.getElementById("build-sections");
 const refreshButton = document.getElementById("refresh-files");
 const openPreviewButton = document.getElementById("open-preview");
 const openTemplateModalButton = document.getElementById("open-template-modal");
@@ -66,6 +67,42 @@ async function fetchSuggestions() {
         setStatus("Updated file suggestions.");
     } catch (error) {
         setStatus(`Unable to refresh file suggestions: ${error.message}. Ensure the interface server is running.`);
+    }
+}
+
+async function buildSectionHtml() {
+    const payload = buildPayload();
+    if (!payload.pageModelsJson) {
+        setStatus("Provide a path to api_pages.json before exporting sections.");
+        return;
+    }
+
+    setStatus("Building section HTML snippets…");
+    if (buildSectionsButton) buildSectionsButton.disabled = true;
+    try {
+        const res = await fetch("/api/sections", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            setStatus(`Failed to export sections: ${data.error || res.status}`);
+            return;
+        }
+
+        const summary = [`Command: ${data.command.join(" ")}`, `Exit code: ${data.returncode}`].join("\n");
+        setStatus(summary);
+        if (data.stdout) {
+            setStatus(data.stdout, "Stdout", true);
+        }
+        if (data.stderr) {
+            setStatus(data.stderr, "Stderr", true);
+        }
+    } catch (error) {
+        setStatus(`Section export failed: ${error.message}. Confirm the interface server is running.`);
+    } finally {
+        if (buildSectionsButton) buildSectionsButton.disabled = false;
     }
 }
 
@@ -344,6 +381,7 @@ async function runPipeline() {
 }
 
 runButton.addEventListener("click", runPipeline);
+if (buildSectionsButton) buildSectionsButton.addEventListener("click", buildSectionHtml);
 refreshButton.addEventListener("click", fetchSuggestions);
 openPreviewButton.addEventListener("click", () => {
     const previewPath = DEFAULT_PREVIEW_PATH;

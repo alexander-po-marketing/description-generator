@@ -371,15 +371,22 @@ def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str,
     return "".join(part for part in content_parts if part)
 
 
+def _build_clinical_overview_content(page: Mapping[str, object]) -> str:
+    clinical = page.get("clinicalOverview", {}) if isinstance(page, Mapping) else {}
+    overview = page.get("overview", {}) if isinstance(page, Mapping) else {}
+    description = clinical.get("longDescription") or overview.get("description")
+
+    if not description:
+        return ""
+
+    return f"<div class=\"long-description\"><p>{_escape(description)}</p></div>"
+
+
 def _build_clinical_overview_block(page: Mapping[str, object]) -> str:
     clinical = page.get("clinicalOverview", {}) if isinstance(page, Mapping) else {}
     overview = page.get("overview", {}) if isinstance(page, Mapping) else {}
     summary_text = clinical.get("summary") or overview.get("summary")
-    description = clinical.get("longDescription") or overview.get("description")
-
-    description_block = ""
-    if description:
-        description_block += f"<div class=\"long-description\"><p>{_escape(description)}</p></div>"
+    description_block = _build_clinical_overview_content(page)
 
     if not description_block:
         return ""
@@ -463,6 +470,28 @@ def _page_wrapper(page_name: str, content: str) -> str:
         f"{content}"
         f"</section>"
     )
+
+
+def build_section_blocks(page: Mapping[str, object]) -> Dict[str, str]:
+    """Return structured HTML fragments for a single API page.
+
+    The fragments intentionally omit global styling so they can be stored and
+    styled later. Section keys follow the logical groupings used throughout
+    the generator.
+    """
+
+    clinical = page.get("clinicalOverview", {}) if isinstance(page, Mapping) else {}
+    sections = {
+        "hero": _build_hero_block(page),
+        "overview": _build_clinical_overview_content(page),
+        "identification": _build_identification_section(clinical, page),
+        "pharmacology": _build_pharmacology_section(clinical, page),
+        "adme_pk": _build_adme_section(clinical, page),
+        "formulation": _build_formulation_section(clinical, page),
+        "regulatory": _build_regulatory_section(clinical, page),
+        "safety": _build_safety_section(clinical, page),
+    }
+    return {key: value for key, value in sections.items() if value}
 
 
 def _is_semaglutide(page_key: object, page: Mapping[str, object]) -> bool:
