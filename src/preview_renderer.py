@@ -42,9 +42,9 @@ def _merge_row_values(pairs: Sequence[Tuple[str, object]]) -> List[Tuple[str, st
 def _table_from_pairs(pairs: Sequence[Tuple[str, object]]) -> str:
     rows = [
         (
-            "<tr class=\"table-row row\">"
-            f"<th class=\"table-label label cell\">{_escape(label)}</th>"
-            f"<td class=\"table-value value cell\">{_escape(value)}</td>"
+            "<tr class=\"raw-material-seo-table-row raw-material-seo-row\">"
+            f"<th class=\"raw-material-seo-table-label raw-material-seo-label raw-material-seo-cell\">{_escape(label)}</th>"
+            f"<td class=\"raw-material-seo-table-value raw-material-seo-value raw-material-seo-cell\">{_escape(value)}</td>"
             "</tr>"
         )
         for label, value in pairs
@@ -53,24 +53,32 @@ def _table_from_pairs(pairs: Sequence[Tuple[str, object]]) -> str:
     if not rows:
         return ""
 
-    table = f"<table class=\"data-table info-table\"><tbody>{''.join(rows)}</tbody></table>"
-    return f"<div class=\"table-wrapper\">{table}</div>"
+    table = f"<table class=\"raw-material-seo-data-table raw-material-seo-info-table\"><tbody>{''.join(rows)}</tbody></table>"
+    return f"<div class=\"raw-material-seo-table-wrapper\">{table}</div>"
 
 
 def _chip_list(items: Iterable[object]) -> str:
-    chips = [f"<span class=\"chip list-item\">{_escape(item)}</span>" for item in items if item]
-    return f"<div class=\"chip-list list list-inline\">{''.join(chips)}</div>" if chips else ""
+    chips = [
+        f"<span class=\"raw-material-seo-chip raw-material-seo-list-item\">{_escape(item)}</span>"
+        for item in items
+        if item
+    ]
+    return (
+        f"<div class=\"raw-material-seo-chip-list raw-material-seo-list raw-material-seo-list-inline\">{''.join(chips)}</div>"
+        if chips
+        else ""
+    )
 
 
 def _unordered_list(items: Iterable[object]) -> str:
-    entries = [f"<li class=\"list-item\">{_escape(item)}</li>" for item in items if item]
+    entries = [f"<li class=\"raw-material-seo-list-item\">{_escape(item)}</li>" for item in items if item]
     if not entries:
         return ""
 
     return "".join(
         [
-            "<div class=\"list-wrapper\">",
-            f"<ul class=\"list list-bulleted\">{''.join(entries)}</ul>",
+            "<div class=\"raw-material-seo-list-wrapper\">",
+            f"<ul class=\"raw-material-seo-list raw-material-seo-list-bulleted\">{''.join(entries)}</ul>",
             "</div>",
         ]
     )
@@ -80,9 +88,9 @@ def _subblock(title: str, body: str) -> str:
     if not body:
         return ""
     return (
-        f"<div class=\"subblock section-block\">"
-        f"<div class=\"subblock-header block-header\"><h4 class=\"subblock-title\">{_escape(title)}</h4></div>"
-        f"<div class=\"subblock-body block-body\">{body}</div>"
+        f"<div class=\"raw-material-seo-subblock raw-material-seo-section-block\">"
+        f"<div class=\"raw-material-seo-subblock-header raw-material-seo-block-header\"><h4 class=\"raw-material-seo-subblock-title\">{_escape(title)}</h4></div>"
+        f"<div class=\"raw-material-seo-subblock-body raw-material-seo-block-body\">{body}</div>"
         f"</div>"
     )
 
@@ -94,19 +102,23 @@ def _table_from_dicts(items: List[Mapping[str, object]], columns: List[Tuple[str
     if not active_columns:
         return ""
     header = "".join(
-        f"<th class=\"table-label label cell\">{_escape(label)}</th>" for label, _ in active_columns
+        f"<th class=\"raw-material-seo-table-label raw-material-seo-label raw-material-seo-cell\">{_escape(label)}</th>"
+        for label, _ in active_columns
     )
     rows = []
     for item in items:
-        cells = [f"<td class=\"table-value value cell\">{_escape(item.get(key, ''))}</td>" for _, key in active_columns]
-        rows.append(f"<tr class=\"table-row row\">{''.join(cells)}</tr>")
+        cells = [
+            f"<td class=\"raw-material-seo-table-value raw-material-seo-value raw-material-seo-cell\">{_escape(item.get(key, ''))}</td>"
+            for _, key in active_columns
+        ]
+        rows.append(f"<tr class=\"raw-material-seo-table-row raw-material-seo-row\">{''.join(cells)}</tr>")
     table = (
-        "<table class=\"data-table info-table\">"
-        f"<thead><tr class=\"table-row row\">{header}</tr></thead>"
+        "<table class=\"raw-material-seo-data-table raw-material-seo-info-table\">"
+        f"<thead><tr class=\"raw-material-seo-table-row raw-material-seo-row\">{header}</tr></thead>"
         f"<tbody>{''.join(rows)}</tbody>"
         "</table>"
     )
-    return f"<div class=\"table-wrapper\">{table}</div>"
+    return f"<div class=\"raw-material-seo-table-wrapper\">{table}</div>"
 
 
 def _collapsible_panel(title: str, summary_text: str, body: str, *, open_default: bool = False) -> str:
@@ -115,12 +127,12 @@ def _collapsible_panel(title: str, summary_text: str, body: str, *, open_default
     open_attr = " open" if open_default else ""
     summary_body = _escape(summary_text) if summary_text else "View details"
     return (
-        f"<details class=\"block panel panel-collapsible\"{open_attr}>"
-        f"<summary class=\"panel-summary\">"
-        f"<div class=\"summary-title panel-title\">{_escape(title)}</div>"
-        f"<div class=\"summary-text panel-description\">{summary_body}</div>"
+        f"<details class=\"raw-material-seo-block raw-material-seo-panel raw-material-seo-panel-collapsible\"{open_attr}>"
+        f"<summary class=\"raw-material-seo-panel-summary\">"
+        f"<div class=\"raw-material-seo-summary-title raw-material-seo-panel-title\">{_escape(title)}</div>"
+        f"<div class=\"raw-material-seo-summary-text raw-material-seo-panel-description\">{summary_body}</div>"
         f"</summary>"
-        f"<div class=\"panel-body\">{body}</div>"
+        f"<div class=\"raw-material-seo-panel-body\">{body}</div>"
         f"</details>"
     )
 
@@ -139,12 +151,14 @@ def _facts_table(facts: Mapping[str, object]) -> str:
         if not value:
             continue
         cards.append(
-            "<div class=\"fact-card row\">"
-            f"<div class=\"fact-label label cell\">{_escape(label)}</div>"
-            f"<div class=\"fact-value value cell\">{_escape(value)}</div>"
+            "<div class=\"raw-material-seo-fact-card raw-material-seo-row\">"
+            f"<div class=\"raw-material-seo-fact-label raw-material-seo-label raw-material-seo-cell\">{_escape(label)}</div>"
+            f"<div class=\"raw-material-seo-fact-value raw-material-seo-value raw-material-seo-cell\">{_escape(value)}</div>"
             "</div>"
         )
-    return f"<div class=\"facts-grid table-wrapper\">{''.join(cards)}</div>" if cards else ""
+    return (
+        f"<div class=\"raw-material-seo-facts-grid raw-material-seo-table-wrapper\">{''.join(cards)}</div>" if cards else ""
+    )
 
 
 def _build_hero_block(page: Mapping[str, object]) -> str:
@@ -164,15 +178,19 @@ def _build_hero_block(page: Mapping[str, object]) -> str:
     buyer_cheatsheet = _unordered_list((page.get("buyerCheatsheet", {}) or {}).get("bullets", []))
 
     content_parts = [
-        f"<h2 class=\"hero-title\">{_escape(title)}</h2>",
-        f"<p class=\"lead hero-summary\">{_escape(summary_sentence)}</p>" if summary_sentence else "",
+        f"<h2 class=\"raw-material-seo-hero-title\">{_escape(title)}</h2>",
+        f"<p class=\"raw-material-seo-lead raw-material-seo-hero-summary\">{_escape(summary_sentence)}</p>" if summary_sentence else "",
         _subblock("Therapeutic categories", category_chips),
         facts_html,
         _subblock("Primary indications", primary_indications),
         _subblock("Buyer cheatsheet", buyer_cheatsheet),
     ]
     body = "".join(part for part in content_parts if part)
-    return f"<div class=\"hero-block section section-hero\">{body}</div>" if body else ""
+    return (
+        f"<div class=\"raw-material-seo-hero-block raw-material-seo-section raw-material-seo-section-hero\">{body}</div>"
+        if body
+        else ""
+    )
 
 
 def _build_identification_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -213,7 +231,13 @@ def _build_identification_section(clinical: Mapping[str, object], page: Mapping[
         _subblock("Identification & chemistry", _table_from_pairs(_merge_row_values(merged_rows))),
     ]
     body = "".join(part for part in content_parts if part)
-    return f"<section class=\"section section-identification\"><div class=\"section-body\">{body}</div></section>" if body else ""
+    return (
+        "<section class=\"raw-material-seo-section raw-material-seo-section-identification\">"
+        f"<div class=\"raw-material-seo-section-body\">{body}</div>"
+        "</section>"
+        if body
+        else ""
+    )
 
 
 def _regulatory_classification_rows(
@@ -309,7 +333,9 @@ def _build_pharmacology_section(clinical: Mapping[str, object], page: Mapping[st
         if part
     )
     return (
-        f"<section class=\"section section-pharmacology\"><div class=\"section-body\">{content}</div></section>"
+        "<section class=\"raw-material-seo-section raw-material-seo-section-pharmacology\">"
+        f"<div class=\"raw-material-seo-section-body\">{content}</div>"
+        "</section>"
         if content
         else ""
     )
@@ -336,7 +362,13 @@ def _build_adme_section(clinical: Mapping[str, object], page: Mapping[str, objec
     table_html = _table_from_pairs(rows)
 
     body = _subblock("ADME / PK", table_html)
-    return f"<section class=\"section section-adme\"><div class=\"section-body\">{body}</div></section>" if body else ""
+    return (
+        "<section class=\"raw-material-seo-section raw-material-seo-section-adme\">"
+        f"<div class=\"raw-material-seo-section-body\">{body}</div>"
+        "</section>"
+        if body
+        else ""
+    )
 
 
 def _build_safety_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -352,7 +384,13 @@ def _build_safety_section(clinical: Mapping[str, object], page: Mapping[str, obj
     safety_table = _table_from_pairs(safety_rows)
     safety_bullets = _unordered_list(safety.get("highLevelWarnings", []))
     body = _subblock("Safety", safety_table + safety_bullets)
-    return f"<section class=\"section section-safety\"><div class=\"section-body\">{body}</div></section>" if body else ""
+    return (
+        "<section class=\"raw-material-seo-section raw-material-seo-section-safety\">"
+        f"<div class=\"raw-material-seo-section-body\">{body}</div>"
+        "</section>"
+        if body
+        else ""
+    )
 
 
 def _build_formulation_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -370,7 +408,13 @@ def _build_formulation_section(clinical: Mapping[str, object], page: Mapping[str
     if isinstance(bullets, list):
         values.extend(bullets)
     body = _subblock("Formulation & handling", _unordered_list(values))
-    return f"<section class=\"section section-formulation\"><div class=\"section-body\">{body}</div></section>" if body else ""
+    return (
+        "<section class=\"raw-material-seo-section raw-material-seo-section-formulation\">"
+        f"<div class=\"raw-material-seo-section-body\">{body}</div>"
+        "</section>"
+        if body
+        else ""
+    )
 
 
 def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str, object]) -> str:
@@ -411,7 +455,13 @@ def _build_regulatory_section(clinical: Mapping[str, object], page: Mapping[str,
         _subblock("Supply chain", supply_table + manufacturers),
     ]
     body = "".join(part for part in content_parts if part)
-    return f"<section class=\"section section-regulatory\"><div class=\"section-body\">{body}</div></section>" if body else ""
+    return (
+        "<section class=\"raw-material-seo-section raw-material-seo-section-regulatory\">"
+        f"<div class=\"raw-material-seo-section-body\">{body}</div>"
+        "</section>"
+        if body
+        else ""
+    )
 
 
 def _build_clinical_overview_content(page: Mapping[str, object]) -> str:
@@ -423,9 +473,9 @@ def _build_clinical_overview_content(page: Mapping[str, object]) -> str:
         return ""
 
     return (
-        "<section class=\"section section-overview\">"
-        "<div class=\"section-body long-description\">"
-        f"<p class=\"overview-text\">{_escape(description)}</p>"
+        "<section class=\"raw-material-seo-section raw-material-seo-section-overview\">"
+        "<div class=\"raw-material-seo-section-body raw-material-seo-long-description\">"
+        f"<p class=\"raw-material-seo-overview-text\">{_escape(description)}</p>"
         "</div>"
         "</section>"
     )
@@ -514,8 +564,8 @@ def _build_seo_block(page: Mapping[str, object]) -> str:
 
 def _page_wrapper(page_name: str, content: str) -> str:
     return (
-        f"<section class=\"api-page-preview section section-page\" data-api-name=\"{_escape(page_name)}\">"
-        f"<header class=\"section-header page-header\"><h2 class=\"section-title page-title\">{_escape(page_name)}</h2></header>"
+        f"<section class=\"raw-material-seo-api-page-preview raw-material-seo-section raw-material-seo-section-page\" data-api-name=\"{_escape(page_name)}\">"
+        f"<header class=\"raw-material-seo-section-header raw-material-seo-page-header\"><h2 class=\"raw-material-seo-section-title raw-material-seo-page-title\">{_escape(page_name)}</h2></header>"
         f"{content}"
         f"</section>"
     )
@@ -605,33 +655,33 @@ def generate_html_preview(api_pages: Dict[str, object]) -> str:
     base_styles = """
     <style>
     body { font-family: Arial, sans-serif; margin: 16px; background: #f8fafc; color: #0f172a; }
-    .api-page-preview { border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; background: #ffffff; box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06); }
-    .api-page-preview header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; background: #f1f5f9; }
-    .api-page-preview h2 { margin: 0; font-size: 18px; }
-    .hero-block { padding: 16px; background: linear-gradient(135deg, #eef2ff 0%, #e0f2fe 100%); border-bottom: 1px solid #d9e0ef; }
-    .hero-block h2 { margin: 0 0 6px 0; }
-    .hero-block .lead { margin: 4px 0 12px 0; font-size: 14px; color: #0f172a; }
-    .block { border-top: 1px solid #e5e7eb; }
-    .block summary { cursor: pointer; padding: 10px 14px; font-weight: 600; background: #ffffff; display: flex; flex-direction: column; gap: 4px; }
-    .block[open] > summary { background: #eef2ff; }
-    .block[open] > summary .summary-text { display: none; }
-    .summary-title { font-size: 14px; text-transform: uppercase; letter-spacing: 0.02em; color: #475569; }
-    .summary-text { font-size: 13px; color: #0f172a; }
-    .subblock { padding: 0 16px 12px; }
-    .subblock-header h4 { margin: 8px 0 4px; font-size: 14px; }
-    .subblock-body { font-size: 13px; }
+    .raw-material-seo-api-page-preview { border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; background: #ffffff; box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06); }
+    .raw-material-seo-api-page-preview .raw-material-seo-section-header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; background: #f1f5f9; }
+    .raw-material-seo-api-page-preview .raw-material-seo-page-title { margin: 0; font-size: 18px; }
+    .raw-material-seo-hero-block { padding: 16px; background: linear-gradient(135deg, #eef2ff 0%, #e0f2fe 100%); border-bottom: 1px solid #d9e0ef; }
+    .raw-material-seo-hero-title { margin: 0 0 6px 0; }
+    .raw-material-seo-hero-block .raw-material-seo-lead { margin: 4px 0 12px 0; font-size: 14px; color: #0f172a; }
+    .raw-material-seo-block { border-top: 1px solid #e5e7eb; }
+    .raw-material-seo-block summary { cursor: pointer; padding: 10px 14px; font-weight: 600; background: #ffffff; display: flex; flex-direction: column; gap: 4px; }
+    .raw-material-seo-block[open] > summary { background: #eef2ff; }
+    .raw-material-seo-block[open] > summary .raw-material-seo-summary-text { display: none; }
+    .raw-material-seo-summary-title { font-size: 14px; text-transform: uppercase; letter-spacing: 0.02em; color: #475569; }
+    .raw-material-seo-summary-text { font-size: 13px; color: #0f172a; }
+    .raw-material-seo-subblock { padding: 0 16px 12px; }
+    .raw-material-seo-subblock-title { margin: 8px 0 4px; font-size: 14px; }
+    .raw-material-seo-subblock-body { font-size: 13px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
     th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; font-size: 12px; }
     ul { margin: 4px 0 8px 18px; padding: 0; }
-    .chip-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px 0; }
-    .chip { background: #e0f2fe; color: #0f172a; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
-    .market-group { margin-bottom: 10px; }
-    .long-description { padding: 0 16px; font-size: 13px; color: #0f172a; }
-    .long-description p { margin: 0 0 12px 0; }
-    .facts-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px 0 12px; }
-    .fact-card { background: #ffffff; border: 1px solid #d9e0ef; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
-    .fact-label { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; margin-bottom: 4px; }
-    .fact-value { font-size: 14px; font-weight: 600; color: #0f172a; word-break: break-word; }
+    .raw-material-seo-chip-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px 0; }
+    .raw-material-seo-chip { background: #e0f2fe; color: #0f172a; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+    .raw-material-seo-market-group { margin-bottom: 10px; }
+    .raw-material-seo-long-description { padding: 0 16px; font-size: 13px; color: #0f172a; }
+    .raw-material-seo-long-description p { margin: 0 0 12px 0; }
+    .raw-material-seo-facts-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px 0 12px; }
+    .raw-material-seo-fact-card { background: #ffffff; border: 1px solid #d9e0ef; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+    .raw-material-seo-fact-label { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; margin-bottom: 4px; }
+    .raw-material-seo-fact-value { font-size: 14px; font-weight: 600; color: #0f172a; word-break: break-word; }
     </style>
     """
 
