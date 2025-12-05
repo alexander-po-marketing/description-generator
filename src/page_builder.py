@@ -2,26 +2,26 @@
 
 from __future__ import annotations
 
+import html
 import re
-from collections import defaultdict
 from dataclasses import asdict, is_dataclass
-from typing import Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Mapping, Optional, Sequence
 
 from src.generators import (
-    SEO_DESCRIPTION_SYSTEM_MESSAGE,
     build_description_prompt,
     build_buyer_cheatsheet_prompt,
     build_lifecycle_summary_prompt,
     build_formulation_notes_prompt,
+    build_meta_description,
     build_pharmacology_summary_prompt,
     build_safety_highlights_prompt,
-    build_seo_description_prompt,
     build_supply_chain_prompt,
     build_summary_prompt,
     build_summary_sentence_prompt,
 )
-from src.models import DrugData, ExternalIdentifier, GeneratedContent, Patent, Target
+from src.models import DrugData, GeneratedContent, Patent, Target
 from src.openai_client import OpenAIClient
+from src.template_engine import DEFAULT_TEMPLATE, TemplateDefinition
 
 
 def _sanitize_text(text: Optional[str]) -> Optional[str]:
@@ -32,6 +32,10 @@ def _sanitize_text(text: Optional[str]) -> Optional[str]:
     cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
     cleaned = re.sub(r"[ \t]+", " ", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    cleaned = html.unescape(cleaned)
+    cleaned = cleaned.replace("\u00a0", " ")
+    cleaned = cleaned.replace("<", "\u2039").replace(">", "\u203a")
+    cleaned = re.sub(r"[\u2028\u2029]", " ", cleaned)
     return cleaned.strip()
 
 
@@ -43,6 +47,15 @@ def _build_seo_title(drug_name: Optional[str]) -> Optional[str]:
     if len(full_title) > 66:
         return f"{drug_name} API manufacturers - Verified GMP suppliers"
     return full_title
+
+
+def _classification_description_text(drug: DrugData) -> Optional[str]:
+    classification = getattr(drug, "classification", None)
+    if isinstance(classification, dict):
+        return classification.get("description")
+    if hasattr(classification, "description"):
+        return getattr(classification, "description")
+    return None
 
 
 def _unique(items: Sequence[Optional[str]]) -> List[str]:
@@ -57,12 +70,36 @@ def _unique(items: Sequence[Optional[str]]) -> List[str]:
     return result
 
 
-def _split_to_list(value: Optional[str], max_items: int = 4) -> List[str]:
+def _split_to_list(
+    value: Optional[str], max_items: int = 4, *, delimiter_pattern: str = r"[;\.\n]"
+) -> List[str]:
     if not value:
         return []
-    parts = re.split(r"[;\.\n]", value)
-    cleaned = [part.strip() for part in parts if part and part.strip()]
-    return cleaned[:max_items]
+    parts = re.split(delimiter_pattern, value)
+
+    def _normalize_fragment(fragment: str) -> Optional[str]:
+        cleaned = fragment or ""
+        cleaned = re.sub(r"^[\s\-•*\u2022\u2023\uf0b7]+", "", cleaned)
+        cleaned = re.sub(r"^\d+[\.)]\s*", "", cleaned)
+        cleaned = cleaned.strip(" \t-–—")
+        if not cleaned:
+            return None
+        if cleaned[0].isalpha():
+            cleaned = cleaned[0].upper() + cleaned[1:]
+        return cleaned
+
+    cleaned = []
+    for part in parts:
+        normalized = _normalize_fragment(part)
+        if normalized:
+            cleaned.append(normalized)
+        if len(cleaned) >= max_items:
+            break
+    return cleaned
+
+
+def _limited_therapeutic_classes(categories: Sequence[str], limit: int = 6) -> List[str]:
+    return _unique(categories)[:limit]
 
 
 def _synonym_list(drug: DrugData) -> List[str]:
@@ -117,69 +154,6 @@ def _pk_snapshot(drug: DrugData) -> List[str]:
     return bullets[:6]
 
 
-def _dosage_forms(drug: DrugData) -> List[Dict[str, Optional[str]]]:
-    forms: List[Dict[str, Optional[str]]] = []
-    seen = set()
-
-    for dosage in drug.dosages:
-        key = (dosage.form, dosage.route, dosage.strength)
-        if key in seen:
-            continue
-        seen.add(key)
-        forms.append({"form": dosage.form, "route": dosage.route, "strength": dosage.strength})
-
-    for product in drug.products:
-        key = (product.dosage_form, product.route, product.strength)
-        if key in seen:
-            continue
-        seen.add(key)
-        forms.append({"form": product.dosage_form, "route": product.route, "strength": product.strength})
-
-    return forms
-
-
-def _brands_by_market(drug: DrugData) -> Dict[str, List[Dict[str, object]]]:
-    markets: Dict[str, List[Dict[str, object]]] = defaultdict(list)
-    for product in drug.products:
-        country = product.country or "Unspecified"
-        markets[country].append(
-            {
-                "brand": product.brand,
-                "dosageForm": product.dosage_form,
-                "route": product.route,
-                "strength": product.strength,
-                "startedMarketingOn": product.started_marketing_on,
-                "endedMarketingOn": product.ended_marketing_on,
-                "generic": product.generic,
-                "regulatorySource": product.regulatory_source,
-            }
-        )
-    return dict(markets)
-
-
-def _experimental_properties(drug: DrugData) -> List[Dict[str, object]]:
-    properties: List[Dict[str, object]] = []
-    raw_props = drug.raw_fields.get("experimental-properties") or drug.raw_fields.get("experimental_properties")
-    if isinstance(raw_props, list):
-        for prop in raw_props:
-            properties.append({"name": str(prop)})
-    elif isinstance(raw_props, dict):
-        for key, value in raw_props.items():
-            properties.append({"name": key, "value": value})
-    elif raw_props:
-        properties.append({"name": "Experimental property", "value": raw_props})
-
-    chemistry_backfill = [
-        ("logP", drug.logp),
-        ("Water solubility", drug.water_solubility),
-        ("Melting point", drug.melting_point),
-    ]
-    for name, value in chemistry_backfill:
-        if value:
-            properties.append({"name": name, "value": value})
-    return properties
-
-
 def _targets_to_dict(targets: List[Target]) -> List[Dict[str, object]]:
     data: List[Dict[str, object]] = []
     for target in targets:
@@ -208,30 +182,32 @@ def _atc_codes_to_dict(atc_codes: List[object]) -> List[Dict[str, object]]:
 
 
 def _identifier_table(drug: DrugData) -> Dict[str, object]:
-    table: Dict[str, object] = {
+    return {
         "casNumber": drug.cas_number or drug.raw_fields.get("casNumber") or drug.raw_fields.get("cas-number"),
         "unii": drug.unii,
         "drugbankId": getattr(drug, "drugbank_id", None)
         or drug.raw_fields.get("drugbankId")
         or drug.raw_fields.get("drugbank-id"),
     }
-    external: List[Dict[str, object]] = []
-    for identifier in drug.external_identifiers:
-        if isinstance(identifier, ExternalIdentifier):
-            external.append({"resource": identifier.resource, "identifier": identifier.identifier})
-    if external:
-        table["external"] = external
-    return table
 
 
-def _serialize_list(items: List[object]) -> List[object]:
-    serialized: List[object] = []
-    for item in items:
-        if is_dataclass(item):
-            serialized.append(asdict(item))
-        else:
-            serialized.append(item)
-    return serialized
+def _sanitize_classification(classification: object) -> object:
+    if classification is None:
+        return None
+    if is_dataclass(classification):
+        classification = asdict(classification)
+    if not isinstance(classification, Mapping):
+        return classification
+
+    disallowed_keys = {"alternative_parents", "alternativeParents", "substituents"}
+    cleaned = {}
+    for key, value in classification.items():
+        if key in disallowed_keys:
+            continue
+        if key.lower().replace(" ", "_") in {"alternative_parents", "substituents"}:
+            continue
+        cleaned[key] = value
+    return cleaned
 
 
 def _ensure_generated_fields(
@@ -241,20 +217,21 @@ def _ensure_generated_fields(
     summary: Optional[str] = None,
     description: Optional[str] = None,
     summary_sentence: Optional[str] = None,
+    generation_enabled: Callable[[str], bool],
 ) -> GeneratedContent:
     description_text = description
     summary_text = summary
     summary_sentence_text = summary_sentence
 
-    if not description_text:
+    if not description_text and generation_enabled("description"):
         desc_prompt = build_description_prompt(drug)
         description_text = client.generate_description(desc_prompt)
 
-    if not summary_text:
-        summary_prompt = build_summary_prompt(drug, description_text)
+    if not summary_text and generation_enabled("summary"):
+        summary_prompt = build_summary_prompt(drug, description_text or "")
         summary_text = client.generate_summary(summary_prompt)
 
-    if not summary_sentence_text:
+    if not summary_sentence_text and generation_enabled("summary_sentence"):
         sentence_prompt = build_summary_sentence_prompt(drug)
         summary_sentence_text = client.generate_text(sentence_prompt)
 
@@ -262,11 +239,11 @@ def _ensure_generated_fields(
     summary_clean = _sanitize_text(summary_text) or ""
     summary_sentence_clean = _sanitize_text(summary_sentence_text)
 
-    if not summary_sentence_clean and summary_clean:
+    if not summary_sentence_clean and summary_clean and generation_enabled("summary_sentence"):
         summary_sentences = _split_to_list(summary_clean, max_items=1)
         summary_sentence_clean = summary_sentences[0] if summary_sentences else None
 
-    if not summary_sentence_clean and description_clean:
+    if not summary_sentence_clean and description_clean and generation_enabled("summary_sentence"):
         description_sentences = _split_to_list(description_clean, max_items=1)
         summary_sentence_clean = description_sentences[0] if description_sentences else None
 
@@ -277,6 +254,41 @@ def _ensure_generated_fields(
     )
 
 
+def _build_openapi_snapshot(drug: DrugData, page_model: Dict[str, object]) -> Dict[str, object]:
+    overview = page_model.get("clinicalOverview", {}) if isinstance(page_model, Mapping) else {}
+    legacy_overview = page_model.get("overview", {}) if isinstance(page_model, Mapping) else {}
+    summary_text = overview.get("summary") or legacy_overview.get("summary")
+    description_text = overview.get("longDescription") or legacy_overview.get("description")
+
+    return {
+        "openapi": "3.1.0",
+        "info": {
+            "title": f"{drug.name} reference" if drug.name else "API reference",
+            "version": "1.0.0",
+            "summary": summary_text,
+            "description": description_text,
+        },
+        "paths": {
+            "/pageModel": {
+                "get": {
+                    "summary": "Retrieve the generated API page model",
+                    "responses": {
+                        "200": {
+                            "description": "Structured API page output",
+                            "content": {"application/json": {"schema": {"type": "object"}}},
+                        }
+                    },
+                }
+            }
+        },
+        "components": {
+            "schemas": {
+                "pageModel": {"type": "object", "description": "Raw structured API page", "example": page_model}
+            }
+        },
+    }
+
+
 def build_page_model(
     drug: DrugData,
     client: OpenAIClient,
@@ -284,13 +296,24 @@ def build_page_model(
     summary: Optional[str] = None,
     description: Optional[str] = None,
     summary_sentence: Optional[str] = None,
+    template: Optional[TemplateDefinition] = None,
 ) -> Dict[str, object]:
+    template_definition = template or DEFAULT_TEMPLATE
+    generation_flags = template_definition.generation_flags()
+    has_generation_controls = template_definition.has_generation_ids()
+
+    def generation_enabled(key: str) -> bool:
+        if not has_generation_controls:
+            return True
+        return generation_flags.get(key, False)
+
     generated = _ensure_generated_fields(
         drug,
         client,
         summary=summary,
         description=description,
         summary_sentence=summary_sentence,
+        generation_enabled=generation_enabled,
     )
 
     primary_use_cases = _split_to_list(drug.indication, max_items=4)
@@ -300,41 +323,51 @@ def build_page_model(
     patents_table = _patent_rows(drug.patents)
 
     lifecycle_summary: Optional[str] = None
-    if patents_table or markets:
+    if generation_enabled("lifecycle_summary") and (patents_table or markets):
         lifecycle_prompt = build_lifecycle_summary_prompt(drug, drug.patents, markets)
         lifecycle_summary = _sanitize_text(client.generate_text(lifecycle_prompt))
 
     pharmacology_summary: Optional[str] = None
-    if drug.mechanism_of_action or drug.pharmacodynamics:
+    if generation_enabled("pharmacology_summary") and (drug.mechanism_of_action or drug.pharmacodynamics):
         pharmacology_prompt = build_pharmacology_summary_prompt(drug)
         pharmacology_summary = _sanitize_text(client.generate_text(pharmacology_prompt))
 
     safety_highlights: List[str] = []
-    if drug.toxicity:
+    if generation_enabled("safety_highlights") and drug.toxicity:
         safety_prompt = build_safety_highlights_prompt(drug)
         highlights = _sanitize_text(client.generate_text(safety_prompt))
         safety_highlights = _split_to_list(highlights, max_items=3)
 
     formulation_notes: List[str] = []
-    formulation_prompt = build_formulation_notes_prompt(drug)
-    formulation_output = _sanitize_text(client.generate_text(formulation_prompt))
-    formulation_notes = _split_to_list(formulation_output, max_items=3)
+    if generation_enabled("formulation_notes"):
+        formulation_prompt = build_formulation_notes_prompt(drug)
+        formulation_output = _sanitize_text(client.generate_text(formulation_prompt))
+        formulation_notes = _split_to_list(
+            formulation_output, max_items=3, delimiter_pattern=r"\n+"
+        )
 
     supply_chain_summary: Optional[str] = None
-    if drug.manufacturers or drug.packagers or drug.products or drug.patents:
+    if generation_enabled("supply_chain_summary") and (
+        drug.manufacturers or drug.packagers or drug.products or drug.patents
+    ):
         supply_prompt = build_supply_chain_prompt(drug)
         supply_chain_summary = _sanitize_text(client.generate_text(supply_prompt))
 
     buyer_cheatsheet: List[str] = []
-    cheatsheet_prompt = build_buyer_cheatsheet_prompt(drug)
-    cheatsheet_output = _sanitize_text(client.generate_text(cheatsheet_prompt))
-    buyer_cheatsheet = _split_to_list(cheatsheet_output, max_items=3)
+    if generation_enabled("buyer_cheatsheet"):
+        cheatsheet_prompt = build_buyer_cheatsheet_prompt(drug)
+        cheatsheet_output = _sanitize_text(client.generate_text(cheatsheet_prompt))
+        buyer_cheatsheet = _split_to_list(cheatsheet_output, max_items=3)
 
-    seo_meta_description = generated.summary or generated.summary_sentence
-    seo_prompt = build_seo_description_prompt(drug)
-    seo_meta_description = _sanitize_text(
-        client.generate_text(seo_prompt, developer_message=SEO_DESCRIPTION_SYSTEM_MESSAGE)
-    ) or seo_meta_description
+    cas_number = drug.cas_number or drug.raw_fields.get("casNumber") or drug.raw_fields.get("cas-number")
+    seo_meta_description = build_meta_description(
+        api_name=drug.name or "",
+        cas_number=cas_number or "",
+        drug_type=drug.drug_type or drug.type or "",
+        state=drug.state or "",
+        therapeutic_class=drug.categories,
+        classification_description=_classification_description_text(drug),
+    )
 
     approval_status = None
     if drug.groups:
@@ -343,114 +376,189 @@ def build_page_model(
             for group in drug.groups
             if group
         )
+    if drug.cas_number:
+        drug_title = f"{drug.name} | CAS No: {drug.cas_number} | GMP-certified suppliers"
+    else:
+        drug_title = f"{drug.name} | GMP-certified suppliers"
+        
+    identification_block = {
+        "genericName": drug.name,
+        "brandNames": brands,
+        "synonyms": _synonym_list(drug),
+        "identifiers": _identifier_table(drug),
+        "moleculeType": drug.drug_type or drug.type,
+        "groups": list(drug.groups),
+    }
 
-    page = {
-        "hero": {
-            "title": drug.name,
-            "summarySentence": generated.summary_sentence,
-            "tags": tags,
-            "primaryUseCases": primary_use_cases,
+    chemistry_block = {
+        "formula": drug.molecular_formula,
+        "averageMolecularWeight": drug.average_mass,
+        "monoisotopicMass": drug.monoisotopic_mass,
+        "logP": drug.logp,
+    }
+
+    regulatory_classification = {
+        "groups": list(drug.groups),
+        "therapeuticClasses": _limited_therapeutic_classes(drug.categories),
+        "classification": _sanitize_classification(drug.classification),
+        "atcCodes": _atc_codes_to_dict(drug.atc_codes),
+    }
+
+    regulatory_block = {
+        "lifecycleSummary": lifecycle_summary,
+        "approvalStatus": approval_status,
+        "markets": markets,
+        "labelHighlights": primary_use_cases,
+        "regulatoryClassification": regulatory_classification,
+    }
+
+    taxonomy_block = {
+        "therapeuticClasses": _limited_therapeutic_classes(drug.categories),
+        "atcCodes": _atc_codes_to_dict(drug.atc_codes),
+        "classification": _sanitize_classification(drug.classification),
+    }
+
+    pharmacology_block = {
+        "highLevelSummary": pharmacology_summary,
+        "mechanismOfAction": drug.mechanism_of_action,
+        "pharmacodynamics": drug.pharmacodynamics,
+        "targets": _targets_to_dict(drug.targets),
+        "summary": pharmacology_summary,
+    }
+
+    pk_snapshot = {"keyPoints": _pk_snapshot(drug)}
+    adme_table = {
+        "absorption": drug.absorption,
+        "halfLife": drug.half_life or drug.raw_fields.get("half-life"),
+        "proteinBinding": drug.protein_binding,
+        "metabolism": drug.metabolism,
+        "routeOfElimination": drug.route_of_elimination,
+        "volumeOfDistribution": drug.volume_of_distribution,
+        "clearance": drug.clearance,
+    }
+    adme_pk_block = {
+        **adme_table,
+        "pkSnapshot": pk_snapshot,
+        "table": {**adme_table, "pkSnapshot": pk_snapshot},
+    }
+
+    supply_block = {
+        "supplyChainSummary": supply_chain_summary,
+        "manufacturers": list(drug.manufacturers),
+        "packagers": list(drug.packagers),
+        "externalManufacturingNotes": drug.raw_fields.get("manufacturing-notes"),
+        "pharmaofferSuppliers": [],
+    }
+
+    safety_block = {
+        "toxicity": drug.toxicity,
+        "highLevelWarnings": safety_highlights,
+    }
+
+    seo_block = {
+        "title": _build_seo_title(drug.name),
+        "metaDescription": seo_meta_description,
+        "keywords": _unique(
+            [
+                drug.name,
+                *(brands or []),
+                drug.cas_number,
+                *(drug.categories or []),
+                *[atc.code for atc in drug.atc_codes if atc.code],
+            ]
+        ),
+    }
+
+    metadata_block = {
+        "drugbankId": getattr(drug, "drugbank_id", None),
+        "casNumber": drug.cas_number,
+        "unii": drug.unii,
+        "createdAt": drug.raw_fields.get("created-at"),
+        "updatedAt": drug.raw_fields.get("updated-at"),
+        "sourceSystems": ["DrugBank"],
+    }
+
+    hero_facts = {
+        "genericName": drug.name,
+        "moleculeType": identification_block.get("moleculeType"),
+        "casNumber": identification_block.get("identifiers", {}).get("casNumber"),
+        "drugbankId": identification_block.get("identifiers", {}).get("drugbankId"),
+        "approvalStatus": approval_status,
+        "atcCode": (taxonomy_block.get("atcCodes") or [{}])[0].get("code") if taxonomy_block.get("atcCodes") else None,
+    }
+
+    hero_block = {
+        "title": drug_title,
+        "summarySentence": generated.summary_sentence,
+        "summary": generated.summary,
+        "tags": tags,
+        "primaryUseCases": primary_use_cases,
+        "therapeuticCategories": taxonomy_block.get("therapeuticClasses"),
+        "facts": hero_facts,
+    }
+
+    overview_block = {
+        "summary": generated.summary,
+        "description": generated.description,
+    }
+
+    clinical_overview = {
+        "summary": generated.summary,
+        "longDescription": generated.description,
+        "identificationClassification": {
+            "identification": identification_block,
+            "chemistry": chemistry_block,
         },
-        "overview": {
-            "summary": generated.summary,
-            "description": generated.description,
+        "pharmacologyTargets": {
+            "summary": pharmacology_summary,
+            "pharmacology": pharmacology_block,
+            "targets": pharmacology_block.get("targets"),
         },
-        "identification": {
-            "genericName": drug.name,
-            "brandNames": brands,
-            "synonyms": _synonym_list(drug),
-            "identifiers": _identifier_table(drug),
-            "moleculeType": drug.drug_type or drug.type,
-            "groups": list(drug.groups),
+        "admePk": {
+            "table": {**adme_table, "pkSnapshot": adme_pk_block.get("pkSnapshot")},
+            "pkSnapshot": adme_pk_block.get("pkSnapshot"),
         },
-        "chemistry": {
-            "formula": drug.molecular_formula,
-            "averageMolecularWeight": drug.average_mass,
-            "monoisotopicMass": drug.monoisotopic_mass,
-            "logP": drug.logp,
-            "experimentalProperties": _experimental_properties(drug),
-        },
-        "regulatoryAndMarket": {
+        "formulationHandling": {"notes": formulation_notes},
+        "regulatoryMarket": {
+            "summary": lifecycle_summary,
             "approvalStatus": approval_status,
             "markets": markets,
             "labelHighlights": primary_use_cases,
-            "patents": patents_table,
-            "lifecycleSummary": lifecycle_summary,
+            "regulatoryClassification": regulatory_classification,
+            "details": regulatory_block,
+            "supplyChain": supply_block,
         },
-        "formulationNotes": {
-            "bullets": formulation_notes,
-        },
-        "categoriesAndTaxonomy": {
-            "therapeuticClasses": list(drug.categories),
-            "atcCodes": _atc_codes_to_dict(drug.atc_codes),
-            "classification": drug.classification,
-        },
-        "pharmacology": {
-            "mechanismOfAction": drug.mechanism_of_action,
-            "pharmacodynamics": drug.pharmacodynamics,
-            "targets": _targets_to_dict(drug.targets),
-            "highLevelSummary": pharmacology_summary,
-        },
-        "admePk": {
-            "absorption": drug.absorption,
-            "halfLife": drug.half_life or drug.raw_fields.get("half-life"),
-            "proteinBinding": drug.protein_binding,
-            "metabolism": drug.metabolism,
-            "routeOfElimination": drug.route_of_elimination,
-            "volumeOfDistribution": drug.volume_of_distribution,
-            "clearance": drug.clearance,
-            "pkSnapshot": {"keyPoints": _pk_snapshot(drug)},
-        },
-        "productsAndDosageForms": {
-            "dosageForms": _dosage_forms(drug),
-            "brandsByMarket": _brands_by_market(drug),
-            "marketPresenceSummary": None,
-        },
-        "clinicalTrials": {
-            "trialsByPhase": {},
-            "hasClinicalTrialsData": False,
-        },
-        "suppliersAndManufacturing": {
-            "manufacturers": list(drug.manufacturers),
-            "packagers": list(drug.packagers),
-            "externalManufacturingNotes": drug.raw_fields.get("manufacturing-notes"),
-            "pharmaofferSuppliers": [],
-            "supplyChainSummary": supply_chain_summary,
-        },
-        "safety": {
-            "toxicity": drug.toxicity,
-            "highLevelWarnings": safety_highlights,
-        },
-        "experimentalProperties": {
-            "properties": _experimental_properties(drug),
-        },
-        "references": {
-            "scientificArticles": _serialize_list(drug.scientific_articles),
-            "regulatoryLinks": _serialize_list(drug.regulatory_links),
-            "otherLinks": _serialize_list(getattr(drug.general_references, "links", [])),
-        },
-        "seo": {
-            "title": _build_seo_title(drug.name),
-            "metaDescription": seo_meta_description,
-            "keywords": _unique(
-                [
-                    drug.name,
-                    *(brands or []),
-                    drug.cas_number,
-                    *(drug.categories or []),
-                    *[atc.code for atc in drug.atc_codes if atc.code],
-                ]
-            ),
-        },
-        "buyerCheatsheet": {"bullets": buyer_cheatsheet},
-        "metadata": {
-            "drugbankId": getattr(drug, "drugbank_id", None),
-            "casNumber": drug.cas_number,
-            "unii": drug.unii,
-            "createdAt": drug.raw_fields.get("created-at"),
-            "updatedAt": drug.raw_fields.get("updated-at"),
-            "sourceSystems": ["DrugBank"],
-        },
+        "safetyRisks": safety_block,
+        "safety": safety_block,
     }
 
-    return page
+    page = {
+        "hero": hero_block,
+        "facts": hero_facts,
+        "primaryIndications": primary_use_cases,
+        "buyerCheatsheet": {"bullets": buyer_cheatsheet},
+        "clinicalOverview": clinical_overview,
+        "overview": overview_block,
+        "identification": identification_block,
+        "chemistry": chemistry_block,
+        "regulatoryAndMarket": regulatory_block,
+        "formulationNotes": {"bullets": formulation_notes},
+        "categoriesAndTaxonomy": taxonomy_block,
+        "pharmacology": pharmacology_block,
+        "pharmacologyTargets": clinical_overview.get("pharmacologyTargets"),
+        "admePk": adme_pk_block,
+        "suppliersAndManufacturing": supply_block,
+        "safety": safety_block,
+        "safetyRisks": safety_block,
+        "seo": seo_block,
+        "metadata": metadata_block,
+    }
+
+    openapi_snapshot = _build_openapi_snapshot(drug, page)
+    rendered_blocks = template_definition.render({**page, "openapi": openapi_snapshot}, openapi_snapshot)
+
+    return {
+        "template": template_definition.to_dict(),
+        "blocks": rendered_blocks,
+        "raw": {**page, "openapi": openapi_snapshot},
+    }

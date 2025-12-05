@@ -74,6 +74,9 @@
                     <label>Page models JSON output
                         <input type="text" id="page-models-json" list="json-suggestions" placeholder="api_pages.json" value="api_pages.json" />
                     </label>
+                    <label>Import-ready JSON output
+                        <input type="text" id="import-json" list="json-suggestions" placeholder="api_pages_import.json" value="api_pages_import.json" />
+                    </label>
                 </div>
                 <datalist id="xml-suggestions"></datalist>
                 <datalist id="json-suggestions"></datalist>
@@ -118,11 +121,29 @@
         <section class="card wide">
             <div class="toolbar">
                 <div>
+                    <h2>Visual template builder</h2>
+                    <p class="hint">
+                        Toggle blocks, rename headings, control array limits, and reorder sections before they are written to
+                        <code>api_pages.json</code>.
+                    </p>
+                </div>
+                <div class="toolbar-actions">
+                    <button id="open-template-modal" type="button" class="primary">Edit template</button>
+                    <button id="reset-template" type="button" class="ghost">Reset to default template</button>
+                </div>
+            </div>
+            <p class="hint">The template editor opens in a modal so it stays out of the way until needed.</p>
+        </section>
+
+        <section class="card wide">
+            <div class="toolbar">
+                <div>
                     <h2>Run generator</h2>
                     <p class="hint">Settings above are serialized into a single request to the local server.</p>
                 </div>
                 <div class="toolbar-actions">
                     <button id="open-preview" type="button" class="ghost">Open preview HTML</button>
+                    <button id="build-sections" type="button" class="ghost">Build section HTML</button>
                     <button id="run-button" class="primary">Run pipeline</button>
                 </div>
             </div>
@@ -136,6 +157,25 @@
             <pre class="status-body"></pre>
         </div>
     </template>
+
+    <div id="template-modal" class="modal" aria-hidden="true" role="dialog" aria-label="Template editor">
+        <div class="modal-surface">
+            <div class="modal-header">
+                <div>
+                    <p class="eyebrow">Template editor</p>
+                    <h3>Configure API page blocks</h3>
+                </div>
+                <button type="button" id="close-template-modal" class="ghost">Close</button>
+            </div>
+            <div class="modal-body">
+                <div class="template-builder" id="template-builder" aria-live="polite"></div>
+                <details class="template-preview">
+                    <summary>Template definition JSON</summary>
+                    <pre id="template-preview"></pre>
+                </details>
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>

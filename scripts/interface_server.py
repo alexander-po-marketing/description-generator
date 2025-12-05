@@ -6,6 +6,8 @@ Endpoints
   can suggest local paths.
 - POST /api/run: validate paths, prepare environment variables for OpenAI
   credentials, and launch ``src/main.py`` using ``subprocess``.
+- POST /api/sections: generate section-level HTML snippets from ``api_pages.json``
+  without rerunning the full pipeline.
 
 The server intentionally keeps all paths inside the repository root to avoid
 accidental traversal into the host machine while providing a simple bridge
@@ -77,7 +79,7 @@ def resolve_path(value: str | None, default_dir: Path | None = None) -> Path | N
     return candidate
 
 
-def build_command(options: dict) -> list[str]:
+def build_command(options: dict, template_path: Path | None = None) -> list[str]:
     """Assemble the CLI command from UI-provided options."""
 
     xml_path = resolve_path(options.get("xmlPath"), DIRECTORIES["inputs"])
@@ -86,9 +88,10 @@ def build_command(options: dict) -> list[str]:
 
     database_json = resolve_path(options.get("databasePath") or "outputs/database.json", DIRECTORIES["outputs"])
     page_models_json = resolve_path(options.get("pageModelsJson") or "outputs/api_pages.json", DIRECTORIES["outputs"])
+    import_json = resolve_path(options.get("importJson") or "outputs/api_pages_import.json", DIRECTORIES["outputs"])
     preview_html = resolve_path("outputs/api_pages_preview.html", DIRECTORIES["outputs"])
 
-    for path in (database_json, page_models_json, preview_html):
+    for path in (database_json, page_models_json, import_json, preview_html):
         if path and path.exists() and not (options.get("overwrite") or options.get("continueExisting")):
             raise FileExistsError(f"Refusing to overwrite existing file: {path}")
 
@@ -101,6 +104,8 @@ def build_command(options: dict) -> list[str]:
         str(database_json),
         "--output-page-models-json",
         str(page_models_json),
+        "--output-import-json",
+        str(import_json),
         "--log-level",
         options.get("logLevel", "INFO"),
     ]
@@ -113,7 +118,46 @@ def build_command(options: dict) -> list[str]:
     if options.get("maxDrugs"):
         command.extend(["--max-drugs", str(options["maxDrugs"])])
 
+    if template_path:
+        command.extend(["--template-definition", str(template_path)])
+
     return command
+
+
+def build_section_command(options: dict) -> list[str]:
+    """Build the command to render section-level HTML snippets."""
+
+    page_models_json = resolve_path(
+        options.get("pageModelsJson") or "outputs/api_pages.json", DIRECTORIES["outputs"]
+    )
+    if not page_models_json or not page_models_json.exists():
+        raise FileNotFoundError("Page models JSON is missing; run the main pipeline first")
+
+    sections_output = resolve_path(
+        options.get("sectionsOutput") or "outputs/section_html/section_blocks.json",
+        DIRECTORIES["outputs"],
+    )
+    if sections_output and sections_output.exists() and not options.get("overwrite"):
+        raise FileExistsError(f"Refusing to overwrite existing file: {sections_output}")
+
+    return [
+        sys.executable,
+        "-m",
+        "src.section_renderer",
+        "--input",
+        str(page_models_json),
+        "--output",
+        str(sections_output),
+    ]
+
+
+def persist_template_definition(payload: dict | None) -> Path | None:
+    if not payload:
+        return None
+    destination = DIRECTORIES["cache"] / "template_definition.json"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return destination
 
 
 def build_env(options: dict) -> dict:
@@ -194,13 +238,50 @@ class InterfaceRequestHandler(SimpleHTTPRequestHandler):
         if self.path == "/api/run":
             self.handle_run()
             return
+        if self.path == "/api/sections":
+            self.handle_sections()
+            return
         self.send_error(HTTPStatus.NOT_FOUND, "Unknown endpoint")
 
     def handle_run(self) -> None:
         length = int(self.headers.get("Content-Length", 0))
         payload = json.loads(self.rfile.read(length) or b"{}")
+        template_path = persist_template_definition(payload.get("templateDefinition"))
         try:
-            command = build_command(payload)
+            command = build_command(payload, template_path=template_path)
+            env = build_env(payload)
+        except (FileNotFoundError, FileExistsError, ValueError) as exc:
+            self._set_headers(HTTPStatus.BAD_REQUEST)
+            self.wfile.write(json.dumps({"error": str(exc)}).encode())
+            return
+        except Exception as exc:  # pragma: no cover - unexpected parsing error
+            self._set_headers(HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.wfile.write(json.dumps({"error": str(exc)}).encode())
+            return
+
+        completed = subprocess.run(
+            command,
+            cwd=REPO_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+
+        status = HTTPStatus.OK if completed.returncode == 0 else HTTPStatus.BAD_REQUEST
+        self._set_headers(status)
+        response = {
+            "command": command,
+            "returncode": completed.returncode,
+            "stdout": completed.stdout,
+            "stderr": completed.stderr,
+        }
+        self.wfile.write(json.dumps(response).encode())
+
+    def handle_sections(self) -> None:
+        length = int(self.headers.get("Content-Length", 0))
+        payload = json.loads(self.rfile.read(length) or b"{}")
+        try:
+            command = build_section_command(payload)
             env = build_env(payload)
         except (FileNotFoundError, FileExistsError, ValueError) as exc:
             self._set_headers(HTTPStatus.BAD_REQUEST)

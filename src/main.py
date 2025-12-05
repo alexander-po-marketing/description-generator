@@ -11,12 +11,13 @@ from typing import Dict, Iterable
 
 from src.config import OpenAIConfig, PipelineConfig, parse_valid_ids
 from src.drugbank_parser import parse_drugbank_xml
-from src.exporters import export_database, export_page_models
+from src.exporters import export_clean_import, export_database, export_page_models
 from src.generators import build_description_prompt, build_summary_prompt, build_summary_sentence_prompt
 from src.models import DrugData, GeneratedContent
+from src.openai_client import OpenAIClient
 from src.page_builder import build_page_model
 from src.preview_renderer import save_html_preview
-from src.openai_client import OpenAIClient
+from src.template_engine import load_template_definition
 
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ def generate_for_drug(drug: DrugData, client: OpenAIClient, config: PipelineConf
     summary_prompt = build_summary_prompt(drug, description)
     summary = client.generate_summary(summary_prompt)
 
-    summary_sentence_prompt = build_summary_sentence_prompt(drug)
+    summary_sentence_prompt = build_summary_sentence_prompt(drug, description)
     summary_sentence = client.generate_text(summary_sentence_prompt)
 
     description = sanitize_text(description)
@@ -68,6 +69,7 @@ def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, 
     parsed = parse_drugbank_xml(config)
     export_database(config.database_json, parsed)
 
+    template_definition = load_template_definition(config.template_definition)
     page_models: Dict[str, object] = {}
     for drug_id, drug in parsed.items():
         missing = list(validate_drug(drug))
@@ -82,12 +84,14 @@ def process_drugs(config: PipelineConfig, ai_config: OpenAIConfig) -> Dict[str, 
                 summary=generated.summary,
                 description=generated.description,
                 summary_sentence=generated.summary_sentence,
+                template=template_definition,
             )
             logger.info("Generated content for %s", drug.name)
         except Exception as exc:  # pragma: no cover - integration layer
             logger.exception("Failed to generate content for %s: %s", drug_id, exc)
 
     export_page_models(config.page_models_json, page_models)
+    export_clean_import(config.import_json, page_models)
     save_html_preview(page_models, config.preview_html)
     return page_models
 
@@ -102,6 +106,15 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         "--output-page-models-json",
         default="outputs/api_pages.json",
         help="Structured API page models JSON output path (primary output)",
+    )
+    parser.add_argument(
+        "--output-import-json",
+        default="outputs/api_pages_import.json",
+        help="Clean import JSON without template metadata",
+    )
+    parser.add_argument(
+        "--template-definition",
+        help="Path to a JSON template definition emitted by the visual builder",
     )
     parser.add_argument("--valid-drugs", help="Comma-separated list of DrugBank IDs or path to file with one ID per line")
     parser.add_argument("--max-drugs", type=int, help="Limit number of drugs processed")
@@ -118,6 +131,8 @@ def main(argv: Iterable[str] | None = None) -> int:
         xml_path=args.xml_path,
         database_json=args.output_database_json,
         page_models_json=args.output_page_models_json,
+        import_json=args.output_import_json,
+        template_definition=args.template_definition,
         valid_drug_ids=valid_ids,
         max_drugs=args.max_drugs,
         log_level=args.log_level,
