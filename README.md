@@ -49,7 +49,7 @@ src/        # core pipeline modules and CLI entrypoint
     --log-level INFO
   ```
 
-  Supply `--valid-drugs` as a comma-separated list or a path to a text file (one DrugBank ID per line). Omit it to process all entries. Use `--max-drugs` to cap processing during tests.
+ Supply `--valid-drugs` as a comma-separated list or a path to a text file (one DrugBank ID per line). Omit it to process all entries. Use `--max-drugs` to cap processing during tests.
 
 3. **Export section-level HTML (optional)**
 
@@ -62,6 +62,20 @@ src/        # core pipeline modules and CLI entrypoint
    ```
 
    The exporter reads the generated page models, reuses the preview rendering blocks, and writes a dictionary keyed by API ID where each value contains section HTML (e.g., `hero`, `overview`, `pharmacology`, `adme_pk`, `formulation`, `regulatory`, `safety`).
+
+4. **Generate FAQs from existing pages**
+
+   Convert structured API page models into templated FAQs (mixing direct substitutions and LLM-backed answers):
+
+   ```bash
+   python -m src.faq_generator \
+     --input outputs/api_pages.json \
+     --output outputs/api_faqs.json \
+     --max-faqs 20 \
+     --model gpt-4o-mini
+   ```
+
+   Direct FAQs use placeholder substitution; LLM FAQs reuse the existing OpenAI configuration and pull context from hero, overview, pharmacology, ADME, and regulatory slices. Missing placeholders are logged and skipped to keep outputs clean.
 
 ## Interactive web interface
 
@@ -103,6 +117,7 @@ Environment variables control OpenAI behavior and defaults:
 - `outputs/api_pages.json` — structured, HTML-free page models ready for UI rendering (primary output).
 - `outputs/api_pages_preview.html` — quick HTML preview of the structured models using the bundled template.
 - `outputs/section_html/section_blocks.json` — dictionary mapping API IDs to per-section HTML fragments ready for database storage.
+- `outputs/api_faqs.json` — templated FAQ entries (direct and LLM-backed) for each API, sourced from the structured page models.
 - `logs/prompts.log` — captured prompts for auditing and debugging.
 
 ## Testing and extension
