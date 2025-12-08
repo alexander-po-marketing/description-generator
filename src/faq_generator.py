@@ -76,7 +76,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="half_life",
         mode="direct",
         question="What is the elimination half-life of {drug_name}?",
-        answer_template="{generic_name} has an elimination half-life of approximately {half_life}.",
+        answer_template="{drug_name} has an elimination half-life of approximately {half_life}.",
         tags=["adme", "pk"],
     ),
     FAQTemplate(
@@ -89,30 +89,163 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
     FAQTemplate(
         id="safety_toxicity",
         mode="llm",
-        question="What are the key safety and toxicity considerations for {generic_name}?",
+        question="What are the key safety and toxicity considerations for {drug_name}?",
         context_keys=["safety", "overview", "pharmacology"],
         tags=["safety", "toxicity"],
     ),
     FAQTemplate(
         id="formulation_handling",
         mode="llm",
-        question="What are important formulation and handling considerations for {generic_name} as an API?",
+        question="What are important formulation and handling considerations for {drug_name} as an API?",
         context_keys=["adme", "formulation"],
         tags=["formulation", "handling"],
     ),
     FAQTemplate(
         id="regulatory_patent",
         mode="llm",
-        question="What is the current regulatory lifecycle and patent situation for {generic_name}?",
+        question="What is the current regulatory lifecycle and patent situation for {drug_name}?",
         context_keys=["regulatory"],
         tags=["regulatory", "patents"],
     ),
     FAQTemplate(
         id="sourcing",
         mode="llm",
-        question="What should buyers consider when sourcing {generic_name} API from GMP manufacturers?",
+        question="What should buyers consider when sourcing {drug_name} API from GMP manufacturers?",
         context_keys=["regulatory", "supply"],
         tags=["sourcing", "buyers"],
+    ),
+    FAQTemplate(
+        id="fda_approval",
+        mode="llm",
+        question="Is {drug_name} FDA-approved?",
+        context_keys=["regulatory"],
+        tags=["regulatory", "markets", "fda"],
+    ),
+    FAQTemplate(
+        id="regions_approved_detail",
+        mode="direct",
+        question="In which regions is {drug_name} approved?",
+        answer_template="{drug_name} is reported as approved in: {regions_approved}.",
+        tags=["regulatory", "markets"],
+    ),
+    FAQTemplate(
+        id="sourcing_documents",
+        mode="direct",
+        question="What documents should I request when sourcing {drug_name} API?",
+        answer_template="Request the core API documentation set: {sourcing_documents}.",
+        tags=["sourcing", "documentation"],
+    ),
+    FAQTemplate(
+        id="small_molecule",
+        mode="llm",
+        question="Is {drug_name} a small molecule?",
+        context_keys=["pharmacology", "overview", "hero"],
+        tags=["classification", "chemistry"],
+    ),
+    FAQTemplate(
+        id="formulation_handling_specific",
+        mode="llm",
+        question="How should {drug_name} API be handled during formulation?",
+        context_keys=["formulation", "adme"],
+        tags=["formulation", "handling"],
+    ),
+    FAQTemplate(
+        id="stability_concerns",
+        mode="llm",
+        question="Are there special stability concerns for oral {drug_name}?",
+        context_keys=["formulation", "adme"],
+        tags=["formulation", "stability"],
+    ),
+    FAQTemplate(
+        id="patent_expiry",
+        mode="direct",
+        question="When do {drug_name} patents expire?",
+        answer_template="Patent timelines reported for {drug_name}: {patent_status}.",
+        tags=["regulatory", "patents"],
+    ),
+    FAQTemplate(
+        id="manufacturers",
+        mode="direct",
+        question="Who manufactures {drug_name} API?",
+        answer_template="Known or reported manufacturers for {drug_name}: {manufacturers}.",
+        tags=["suppliers", "manufacturing"],
+    ),
+    FAQTemplate(
+        id="alternative_manufacturers",
+        mode="direct",
+        question="Are there alternative manufacturers for {drug_name} API?",
+        answer_template="Alternate or additional manufacturers for {drug_name}: {manufacturers}.",
+        tags=["suppliers", "alternatives"],
+    ),
+    FAQTemplate(
+        id="quote_requests",
+        mode="direct",
+        question="How can I request quotes for {drug_name} API from GMP suppliers?",
+        answer_template="Submit quote requests through the supplier listings with your specs and required documents ({quote_guidance}).",
+        tags=["sourcing", "quotes"],
+    ),
+    FAQTemplate(
+        id="smart_sourcing",
+        mode="direct",
+        question="How does Pharmaoffer’s Smart Sourcing Service help with {drug_name} procurement?",
+        answer_template="Pharmaoffer's Smart Sourcing Service can coordinate compliant suppliers, documentation, and competitive quotes for {drug_name}.",
+        tags=["pharmaoffer", "services"],
+    ),
+    FAQTemplate(
+        id="gmp_audit",
+        mode="direct",
+        question="Can I get a GMP audit report for {drug_name} manufacturers?",
+        answer_template="Audit reports may be requested from suppliers; availability for {drug_name}: {gmp_audit_access}.",
+        tags=["gmp", "audit"],
+    ),
+    FAQTemplate(
+        id="pro_data",
+        mode="direct",
+        question="Does {drug_name} appear in the PRO Data Insights subscription?",
+        answer_template="PRO Data Insights coverage for {drug_name}: {pro_data_availability}.",
+        tags=["analytics", "pro-data"],
+    ),
+    FAQTemplate(
+        id="market_report",
+        mode="direct",
+        question="Where can I download the {drug_name} market report?",
+        answer_template="Market report availability for {drug_name}: {market_report_link}.",
+        tags=["market", "report"],
+    ),
+    FAQTemplate(
+        id="supplier_count",
+        mode="direct",
+        question="How many {drug_name} API suppliers are available on Pharmaoffer?",
+        answer_template="Reported supplier count for {drug_name}: {supplier_count}.",
+        tags=["suppliers", "counts"],
+    ),
+    FAQTemplate(
+        id="producing_countries",
+        mode="direct",
+        question="Which countries produce {drug_name} API?",
+        answer_template="Production countries reported for {drug_name}: {manufacturer_countries}.",
+        tags=["suppliers", "countries"],
+    ),
+    FAQTemplate(
+        id="gmp_certifications",
+        mode="direct",
+        question="Which GMP certifications do {drug_name} suppliers typically hold?",
+        answer_template="Common GMP certifications for {drug_name} suppliers: {gmp_certifications}.",
+        tags=["gmp", "certifications"],
+    ),
+    FAQTemplate(
+        id="sourcing_docs_generic",
+        mode="direct",
+        question="What documents are normally required when sourcing {drug_name} for formulation development?",
+        answer_template="For formulation development, request: {sourcing_documents}.",
+        tags=["sourcing", "documentation"],
+    ),
+    FAQTemplate(
+        id="typical_moq",
+        mode="direct",
+        question="What is the typical MOQ for {drug_name} API?",
+        answer_template="Typical minimum order quantities (MOQ) for {drug_name}: {moq_info}.",
+        tags=["sourcing", "moq"],
     ),
 ]
 
@@ -174,6 +307,21 @@ def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str
     context["mechanism_of_action"] = _first_non_empty(
         pharmacology.get("mechanismOfAction"), pharmacology.get("summary"), overview.get("summary")
     ) or "Not specified"
+    context["patent_status"] = _first_non_empty(regulatory.get("patentSummary"), regulatory.get("ipStatus")) or "Not specified"
+    context["manufacturers"] = _first_non_empty(supply.get("manufacturers"), supply.get("suppliers")) or "Not specified"
+    context["supplier_count"] = _first_non_empty(supply.get("supplierCount")) or "Not specified"
+    context["manufacturer_countries"] = _first_non_empty(
+        supply.get("countries"), supply.get("manufacturingCountries"), supply.get("regions")
+    ) or "Not specified"
+    context["gmp_certifications"] = _first_non_empty(supply.get("gmpCertifications"), supply.get("certifications")) or "Not specified"
+    context["gmp_audit_access"] = _first_non_empty(supply.get("auditAvailability"), supply.get("auditReports")) or "Check with supplier"
+    context["pro_data_availability"] = _first_non_empty(regulatory.get("proData")) or "Check PRO Data Insights catalogue"
+    context["market_report_link"] = _first_non_empty(regulatory.get("marketReport")) or "Market report availability not listed"
+    context["quote_guidance"] = "specifications, target volume, delivery timeline, and destination"
+    context["sourcing_documents"] = (
+        "DMF/ASMF, CEP (if available), GMP certificate, CoA, SDS/MSDS, stability data, and method of analysis"
+    )
+    context["moq_info"] = _first_non_empty(supply.get("moq"), supply.get("minimumOrder")) or "MOQ varies by supplier"
 
     # Context slices for LLM or fallback answers
     context_slices: Dict[str, str] = {}
