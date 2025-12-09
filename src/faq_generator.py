@@ -43,7 +43,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="basic_use",
         mode="llm",
         question="What is {drug_name} (CAS {cas}) used for?",
-        group="clinical",
+        group="technical",
         context_keys=["hero", "overview", "pharmacology"],
         tags=["indications", "clinical", "high-intent"],
     ),
@@ -52,7 +52,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="therapeutic_class",
         mode="direct",
         question="Which therapeutic class does {drug_name} fall into?",
-        group="clinical",
+        group="technical",
         answer_template=(
             "{drug_name} belongs to the following therapeutic categories: {therapeutic_categories}. "
             "This positioning helps teams compare alternative APIs, anticipate pharmacology expectations, and align early rese"
@@ -65,7 +65,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="primary_indications",
         mode="direct",
         question="What conditions is {drug_name} mainly prescribed for?",
-        group="clinical",
+        group="technical",
         answer_template=(
             "The primary indications for {drug_name}: {primary_indications}. "
             "These use cases frame the target patient populations and help prioritize formulation and safety evaluations."
@@ -98,7 +98,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="safety_toxicity",
         mode="llm",
         question="What should someone know about the safety or toxicity profile of {drug_name}?",
-        group="clinical",
+        group="technical",
         context_keys=["safety", "overview", "pharmacology"],
         tags=["safety", "toxicity"],
     ),
@@ -174,7 +174,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="manufacturers",
         mode="direct",
         question="Which manufacturers are known to produce {drug_name} API?",
-        group="supply_chain",
+        group="sourcing",
         answer_template=(
             "Known or reported manufacturers for {drug_name}: [[manufacturers]]. "
             "Evaluate their GMP history, scale, and regional coverage before requesting dossiers or allocating demand."
@@ -233,7 +233,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
     FAQTemplate(
         id="market_report",
         mode="direct",
-        question="Where can I access the market report for {drug_name}?",
+        question="Where can I access the API market report for {drug_name}?",
         group="pharmaoffer",
         answer_template=(
             "Market report availability for {drug_name}: [[market_report_link]]. "
@@ -246,9 +246,9 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="supplier_count",
         mode="direct",
         question="How many suppliers offer {drug_name} API on Pharmaoffer?",
-        group="supply_chain",
+        group="sourcing",
         answer_template=(
-            "Reported supplier count for {drug_name}: [[supplier_count]]. "
+            "Reported supplier count for {drug_name}: [[supplier_count]] verified suppliers. "
             "Filter listings by certifications, regions, and delivery options to match your qualification plan."
         ),
         context_keys=["supply"],
@@ -258,7 +258,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="producing_countries",
         mode="direct",
         question="Which countries are known to manufacture {drug_name} API?",
-        group="supply_chain",
+        group="sourcing",
         answer_template=(
             "Production countries reported for {drug_name}: [[manufacturer_countries]]. "
             "Knowing the manufacturing geography helps anticipate logistics lead times and import compliance needs."
