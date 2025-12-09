@@ -63,7 +63,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         mode="direct",
         question="What conditions is {drug_name} mainly prescribed for?",
         answer_template=(
-            "The primary indications for {drug_name} include: {primary_indications}. "
+            "The primary indications for {drug_name}: {primary_indications}. "
             "These use cases frame the target patient populations and help prioritize formulation and safety evaluations."
         ),
         context_keys=["overview"],
@@ -121,7 +121,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         mode="direct",
         question="Which documents are typically required when sourcing {drug_name} API?",
         answer_template=(
-            "Request the core API documentation set: {sourcing_documents}. "
+            "Request the core API documentation set: [[sourcing_documents]]. "
             "Confirm versions and validity dates match the destination market to avoid delays in qualification."
         ),
         context_keys=["regulatory", "supply"],
@@ -161,7 +161,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         mode="direct",
         question="Which manufacturers are known to produce {drug_name} API?",
         answer_template=(
-            "Known or reported manufacturers for {drug_name}: {manufacturers}. "
+            "Known or reported manufacturers for {drug_name}: [[manufacturers]]. "
             "Evaluate their GMP history, scale, and regional coverage before requesting dossiers or allocating demand."
         ),
         context_keys=["supply"],
@@ -194,7 +194,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         mode="direct",
         question="Is a GMP audit report available for {drug_name} manufacturers?",
         answer_template=(
-            "Audit reports may be requested from suppliers; availability for {drug_name}: {gmp_audit_access}. "
+            "Audit reports may be requested for {drug_name}: [[gmp_audit_reports]]. "
             "Confirm the scope and recency of any audit before relying on it for qualification decisions."
         ),
         context_keys=["supply", "regulatory"],
@@ -205,7 +205,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         mode="direct",
         question="Is {drug_name} included in the PRO Data Insights coverage?",
         answer_template=(
-            "PRO Data Insights coverage for {drug_name}: {pro_data_availability}. "
+            "PRO Data Insights coverage for {drug_name}: [[pro_data_available]]. "
             "Use the dataset to benchmark suppliers and monitor regulatory activity where available."
         ),
         context_keys=["regulatory"],
@@ -216,7 +216,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         mode="direct",
         question="Where can I access the market report for {drug_name}?",
         answer_template=(
-            "Market report availability for {drug_name}: {market_report_link}. "
+            "Market report availability for {drug_name}: [[market_report_link]]. "
             "The report highlights demand trends, pricing drivers, and supplier landscape insights for procurement planning."
         ),
         context_keys=["regulatory", "supply"],
@@ -227,7 +227,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         mode="direct",
         question="How many suppliers offer {drug_name} API on Pharmaoffer?",
         answer_template=(
-            "Reported supplier count for {drug_name}: {supplier_count}. "
+            "Reported supplier count for {drug_name}: [[supplier_count]]. "
             "Filter listings by certifications, regions, and delivery options to match your qualification plan."
         ),
         context_keys=["supply"],
@@ -238,7 +238,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         mode="direct",
         question="Which countries are known to manufacture {drug_name} API?",
         answer_template=(
-            "Production countries reported for {drug_name}: {manufacturer_countries}. "
+            "Production countries reported for {drug_name}: [[manufacturer_countries]]. "
             "Knowing the manufacturing geography helps anticipate logistics lead times and import compliance needs."
         ),
         context_keys=["supply"],
@@ -247,9 +247,9 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
     FAQTemplate(
         id="gmp_certifications",
         mode="direct",
-        question="Which GMP certifications do suppliers of {drug_name} usually hold?",
+        question="Which certifications do suppliers of {drug_name} usually hold?",
         answer_template=(
-            "Common GMP certifications for {drug_name} suppliers: {gmp_certifications}. "
+            "Common certifications for {drug_name} suppliers: [[gmp_certifications]]. "
             "Always verify issuing authorities and expiry dates when reviewing audit packages."
         ),
         context_keys=["supply"],
@@ -260,83 +260,12 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         mode="direct",
         question="What’s a typical MOQ for {drug_name} API?",
         answer_template=(
-            "Typical minimum order quantities (MOQ) for {drug_name}: {moq_info}. "
+            "Typical minimum order quantities (MOQ) for {drug_name}: [[moq_info]]. "
             "Discuss flexibility for pilot, validation, or scale-up batches with suppliers early."
         ),
         context_keys=["supply"],
         tags=["sourcing", "moq"],
-    ),
-
-    FAQTemplate(
-        id="research_comparisons",
-        mode="llm",
-        question="How does {drug_name} compare with other APIs in its class for early research decisions?",
-        context_keys=["overview", "pharmacology", "adme", "regulatory"],
-        tags=["research", "comparisons", "strategy"],
-    ),
-    FAQTemplate(
-        id="manufacturing_cost_drivers",
-        mode="llm",
-        question="What factors influence manufacturing cost drivers for {drug_name} API?",
-        context_keys=["supply", "formulation", "adme"],
-        tags=["manufacturing", "cost", "strategy"],
-    ),
-    FAQTemplate(
-        id="regulatory_preselection",
-        mode="llm",
-        question="Which regulatory considerations should be reviewed before selecting {drug_name} suppliers?",
-        context_keys=["regulatory", "supply"],
-        tags=["regulatory", "sourcing", "preselection"],
-    ),
-    FAQTemplate(
-        id="supply_reliability",
-        mode="llm",
-        question="How can manufacturers validate supply reliability for {drug_name} API?",
-        context_keys=["supply", "regulatory"],
-        tags=["manufacturing", "reliability", "risk"],
-    ),
-    FAQTemplate(
-        id="gmp_benchmarking",
-        mode="llm",
-        question="How do we benchmark GMP quality for {drug_name} producers?",
-        context_keys=["supply", "regulatory"],
-        tags=["gmp", "quality", "benchmarking"],
-    ),
-    FAQTemplate(
-        id="global_documentation",
-        mode="llm",
-        question="How should documentation be prepared for global markets when producing {drug_name}?",
-        context_keys=["regulatory", "supply"],
-        tags=["documentation", "global", "manufacturing"],
-    ),
-    FAQTemplate(
-        id="supply_chain_risk",
-        mode="llm",
-        question="What supply-chain risks should be mitigated when planning {drug_name} API sourcing?",
-        context_keys=["supply", "regulatory"],
-        tags=["supply-chain", "risk", "planning"],
-    ),
-    FAQTemplate(
-        id="cold_chain_handling",
-        mode="llm",
-        question="Are there cold-chain or specialized handling challenges for {drug_name}?",
-        context_keys=["formulation", "adme", "supply"],
-        tags=["handling", "cold-chain", "logistics"],
-    ),
-    FAQTemplate(
-        id="modality_differences",
-        mode="llm",
-        question="How do sourcing considerations differ if {drug_name} is a peptide versus a biologic?",
-        context_keys=["formulation", "supply", "regulatory"],
-        tags=["modality", "sourcing", "strategy"],
-    ),
-    FAQTemplate(
-        id="before_sourcing",
-        mode="llm",
-        question="What should be checked before sourcing {drug_name} API, and how can Pharmaoffer assist?",
-        context_keys=["overview", "supply", "regulatory"],
-        tags=["pharmaoffer", "pre-sourcing", "guidance"],
-    ),
+    )
 ]
 
 
