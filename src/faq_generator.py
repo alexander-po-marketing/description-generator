@@ -44,13 +44,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         context_keys=["hero", "overview"],
         tags=["indications", "clinical", "high-intent"],
     ),
-    FAQTemplate(
-        id="cas_number",
-        mode="direct",
-        question="What is the CAS number of {drug_name}?",
-        answer_template="{drug_name} has CAS number {cas}.",
-        tags=["identification", "chemistry"],
-    ),
+    
     FAQTemplate(
         id="therapeutic_class",
         mode="direct",
@@ -71,13 +65,6 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         question="In which major markets is {drug_name} approved?",
         answer_template="{drug_name} is reported as approved in the following major regions: {regions_approved}.",
         tags=["regulatory", "markets"],
-    ),
-    FAQTemplate(
-        id="half_life",
-        mode="direct",
-        question="What is the elimination half-life of {drug_name}?",
-        answer_template="{drug_name} has an elimination half-life of approximately {half_life}.",
-        tags=["adme", "pk"],
     ),
     FAQTemplate(
         id="mechanism_of_action",
