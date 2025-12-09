@@ -283,18 +283,18 @@ def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str
     )
     context["moq_info"] = _first_non_empty(supply.get("moq"), supply.get("minimumOrder")) or "MOQ varies by supplier"
     context["drug_type"] = _first_non_empty(
-        hero.get("moleculeType"),
-        hero.get("drugType"),
-        facts.get("moleculeType"),
-        facts.get("drugType"),
-        identification.get("moleculeType"),
-        page.get("moleculeType"),
-        page.get("drugType"),
         page.get("drug_type"),
         page.get("type"),
+        page.get("drugType"),
+        page.get("moleculeType"),
         (raw or {}).get("drug_type"),
-        (raw or {}).get("drugType"),
         (raw or {}).get("type"),
+        (raw or {}).get("drugType"),
+        hero.get("drugType"),
+        hero.get("moleculeType"),
+        facts.get("drugType"),
+        facts.get("moleculeType"),
+        identification.get("moleculeType"),
     )
     context["molecule_type"] = context["drug_type"]
 
