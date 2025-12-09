@@ -77,6 +77,25 @@ src/        # core pipeline modules and CLI entrypoint
 
    Direct FAQs use placeholder substitution; LLM FAQs reuse the existing OpenAI configuration and pull context from hero, overview, pharmacology, ADME, and regulatory slices. Missing placeholders are logged and skipped to keep outputs clean.
 
+### Running the FAQ generator manually
+
+The FAQ generator only needs the structured page models produced by the main pipeline:
+
+- **Required input:** `outputs/api_pages.json` (created by `python src/main.py ...`).
+- **Output produced:** `outputs/api_faqs.json`.
+
+Launch it directly from the repository root:
+
+```bash
+python -m src.faq_generator \
+  --input outputs/api_pages.json \
+  --output outputs/api_faqs.json \
+  --max-faqs 20 \
+  --model gpt-4o-mini
+```
+
+The script skips any FAQ template that lacks the required context (including fallback fields) and writes the resulting per-drug FAQ list to the specified output path.
+
 ## Interactive web interface
 
 The `/interface/index.html` UI wraps the CLI with a simple control panel to set credentials, browse repository files, pick output targets, and launch runs from the browser. It also exposes a one-click action to run the section HTML exporter against an existing `outputs/api_pages.json`, saving results under `outputs/section_html/`.
