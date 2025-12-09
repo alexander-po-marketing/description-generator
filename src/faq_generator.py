@@ -110,9 +110,9 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
     ),
     FAQTemplate(
         id="small_molecule",
-        mode="llm",
-        question="Is {drug_name} a small molecule?",
-        context_keys=["pharmacology", "overview", "hero"],
+        mode="direct",
+        question="Is {drug_name} a {drug_type}?",
+        answer_template="{drug_name} is classified as a {drug_type}.",
         tags=["classification", "chemistry"],
     ),
     FAQTemplate(
@@ -202,6 +202,27 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
 ]
 
 
+FIELD_FALLBACKS: Mapping[str, Sequence[str]] = {
+    "drug_type": ["molecule_type"],
+    "drug_name": ["generic_name"],
+    "generic_name": ["drug_name"],
+}
+
+ALWAYS_ALLOW_TEMPLATES = {
+    "manufacturers",
+    "sourcing_documents",
+    "quote_requests",
+    "smart_sourcing",
+    "gmp_audit",
+    "pro_data",
+    "market_report",
+    "supplier_count",
+    "producing_countries",
+    "gmp_certifications",
+    "typical_moq",
+}
+
+
 def _load_json(path: str) -> Mapping[str, object]:
     with open(path, "r", encoding="utf-8") as handle:
         data = json.load(handle)
@@ -210,11 +231,18 @@ def _load_json(path: str) -> Mapping[str, object]:
     return data
 
 
-def _stringify(value: object) -> Optional[str]:
+def _stringify(value: object, *, max_items: Optional[int] = None) -> Optional[str]:
     if value is None:
         return None
     if isinstance(value, (list, tuple, set)):
-        flattened = [str(item) for item in value if str(item).strip()]
+        flattened: List[str] = []
+        for item in value:
+            text = str(item).strip()
+            if not text:
+                continue
+            flattened.append(text)
+            if max_items is not None and len(flattened) >= max_items:
+                break
         return ", ".join(flattened) if flattened else None
     if isinstance(value, Mapping):
         return "; ".join(f"{k}: {v}" for k, v in value.items() if v)
@@ -230,6 +258,35 @@ def _first_non_empty(*values: object) -> Optional[str]:
     return None
 
 
+def _clean_title(value: object) -> Optional[str]:
+    text = _stringify(value)
+    if not text:
+        return None
+    return text.split("|")[0].strip()
+
+
+def _extract_market_countries(markets: object) -> Optional[str]:
+    if not markets:
+        return None
+    if isinstance(markets, Mapping):
+        markets = markets.values()
+    if isinstance(markets, str):
+        return _stringify(markets)
+    countries: List[str] = []
+    if isinstance(markets, Iterable):
+        for entry in markets:
+            if isinstance(entry, Mapping):
+                country = _stringify(entry.get("country"))
+            else:
+                country = _stringify(entry)
+            if not country:
+                continue
+            countries.append(country)
+            if len(countries) >= 50:  # hard stop to avoid runaway lists
+                break
+    return ", ".join(dict.fromkeys(countries)) if countries else None
+
+
 def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str, str], Dict[str, str]]:
     raw = page.get("raw") if isinstance(page, Mapping) else None
     hero = (raw or {}).get("hero") or page.get("hero") or {}
@@ -241,25 +298,32 @@ def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str
     formulation = (raw or {}).get("formulationNotes") or page.get("formulationNotes") or {}
     supply = (raw or {}).get("suppliersAndManufacturing") or page.get("suppliersAndManufacturing") or {}
     safety = (raw or {}).get("safety") or page.get("safety") or {}
+    identification = (raw or {}).get("identification") or page.get("identification") or {}
 
     facts = hero.get("facts") if isinstance(hero, Mapping) else {}
     markets = regulatory.get("markets") if isinstance(regulatory, Mapping) else None
 
     context: Dict[str, str] = {}
     context["drug_id"] = drug_id
-    context["drug_name"] = _first_non_empty(hero.get("title"), facts.get("genericName"), hero.get("name")) or drug_id
-    context["generic_name"] = _first_non_empty(facts.get("genericName"), hero.get("title"), hero.get("name")) or context["drug_name"]
+    context["drug_name"] = _first_non_empty(
+        _clean_title(hero.get("title")), _clean_title(facts.get("genericName")), _clean_title(hero.get("name"))
+    ) or drug_id
+    context["generic_name"] = _first_non_empty(
+        _clean_title(facts.get("genericName")), _clean_title(hero.get("title")), _clean_title(hero.get("name"))
+    ) or context["drug_name"]
     context["cas"] = _first_non_empty(facts.get("casNumber"), hero.get("cas")) or "Unknown"
     context["therapeutic_categories"] = _first_non_empty(
-        taxonomy.get("therapeuticClasses"), taxonomy.get("categories"), taxonomy.get("drugClasses")
-    ) or "Not specified"
-    context["primary_indications"] = _first_non_empty(page.get("primaryIndications"), hero.get("primaryUseCases")) or "Not specified"
-    context["regions_approved"] = _first_non_empty(markets, regulatory.get("approvalStatus")) or "Not specified"
-    context["half_life"] = _first_non_empty(adme.get("halfLife"), adme.get("pkSnapshot")) or "Not specified"
+        _stringify(taxonomy.get("therapeuticClasses"), max_items=5),
+        _stringify(taxonomy.get("categories"), max_items=5),
+        _stringify(taxonomy.get("drugClasses"), max_items=5),
+    )
+    context["primary_indications"] = _first_non_empty(page.get("primaryIndications"), hero.get("primaryUseCases"))
+    context["regions_approved"] = _extract_market_countries(markets)
+    context["half_life"] = _first_non_empty(adme.get("halfLife"), adme.get("pkSnapshot"))
     context["mechanism_of_action"] = _first_non_empty(
         pharmacology.get("mechanismOfAction"), pharmacology.get("summary"), overview.get("summary")
-    ) or "Not specified"
-    context["patent_status"] = _first_non_empty(regulatory.get("patentSummary"), regulatory.get("ipStatus")) or "Not specified"
+    )
+    context["patent_status"] = _first_non_empty(regulatory.get("patentSummary"), regulatory.get("ipStatus"))
     context["manufacturers"] = _first_non_empty(supply.get("manufacturers"), supply.get("suppliers")) or "Not specified"
     context["supplier_count"] = _first_non_empty(supply.get("supplierCount")) or "Not specified"
     context["manufacturer_countries"] = _first_non_empty(
@@ -274,6 +338,21 @@ def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str
         "DMF/ASMF, CEP (if available), GMP certificate, CoA, SDS/MSDS, stability data, and method of analysis"
     )
     context["moq_info"] = _first_non_empty(supply.get("moq"), supply.get("minimumOrder")) or "MOQ varies by supplier"
+    context["drug_type"] = _first_non_empty(
+        page.get("drug_type"),
+        page.get("type"),
+        page.get("drugType"),
+        page.get("moleculeType"),
+        (raw or {}).get("drug_type"),
+        (raw or {}).get("type"),
+        (raw or {}).get("drugType"),
+        hero.get("drugType"),
+        hero.get("moleculeType"),
+        facts.get("drugType"),
+        facts.get("moleculeType"),
+        identification.get("moleculeType"),
+    )
+    context["molecule_type"] = context["drug_type"]
 
     # Context slices for LLM or fallback answers
     context_slices: Dict[str, str] = {}
@@ -284,7 +363,12 @@ def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str
     ) or ""
     adme_lines = adme.get("pkSnapshot") if isinstance(adme, Mapping) else None
     context_slices["adme"] = _first_non_empty(adme.get("summary"), adme_lines, adme.get("table")) or ""
-    context_slices["regulatory"] = _first_non_empty(regulatory.get("summary"), regulatory.get("approvalStatus"), markets) or ""
+    context_slices["regulatory"] = _first_non_empty(
+        regulatory.get("summary"),
+        regulatory.get("ipStatus"),
+        regulatory.get("patentSummary"),
+        _extract_market_countries(markets),
+    ) or ""
     context_slices["formulation"] = _first_non_empty(formulation.get("bullets"), formulation.get("notes")) or ""
     context_slices["supply"] = _first_non_empty(supply.get("supplyChainSummary"), supply.get("manufacturers")) or ""
     context_slices["safety"] = _first_non_empty(safety.get("highLevelWarnings"), safety.get("toxicity")) or ""
@@ -292,8 +376,19 @@ def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str
     return context, context_slices
 
 
-def _has_required_fields(template: FAQTemplate, context: Mapping[str, str]) -> bool:
-    missing = [field for field in template.required_fields() if not context.get(field)]
+def _has_required_fields(template: FAQTemplate, context: Dict[str, str]) -> bool:
+    missing = []
+    for field in template.required_fields():
+        value = context.get(field)
+        if value:
+            continue
+
+        fallback_value = _first_non_empty(*(context.get(key) for key in FIELD_FALLBACKS.get(field, ())))
+        if fallback_value:
+            context[field] = fallback_value
+            continue
+
+        missing.append(field)
     if missing:
         logger.debug("Skipping template %s due to missing fields: %s", template.id, ", ".join(missing))
         return False
@@ -319,14 +414,51 @@ def _build_llm_prompt(question: str, context_slices: Mapping[str, str], context_
         value = context_slices.get(key, "")
         if value:
             lines.append(f"- {key.title()}: {value}")
-    context_block = "\n".join(lines) if lines else "- No context available"
+    context_block = "\n".join(lines)
     return (
         "You are an expert pharmaceutical writer creating FAQ answers for active pharmaceutical ingredients. "
-        "Use only the provided context. If details are missing, respond with 'Insufficient data available.'\n"
+        "Use only the provided context and do not mention missing or unavailable information.\n"
         f"Question: {question}\n"
         f"Context:\n{context_block}\n\n"
         "Constraints:\n- Keep responses to 2-4 sentences.\n- Avoid marketing language or speculation.\n- Do not fabricate data."
     )
+
+
+def _has_context_for_template(
+    template: FAQTemplate, context: Mapping[str, str], context_slices: Mapping[str, str]
+) -> bool:
+    if template.id in ALWAYS_ALLOW_TEMPLATES:
+        return True
+
+    if template.mode == "llm":
+        if template.id == "regulatory_patent":
+            return bool(context.get("patent_status") or context_slices.get("regulatory"))
+        if template.id == "stability_concerns":
+            return bool(context_slices.get("formulation") or context_slices.get("adme"))
+        if template.id == "safety_toxicity":
+            return bool(
+                context_slices.get("safety")
+                or context_slices.get("pharmacology")
+                or context_slices.get("overview")
+            )
+        if template.id == "formulation_handling":
+            return bool(context_slices.get("adme") or context_slices.get("formulation"))
+        if template.id == "sourcing":
+            return bool(context_slices.get("supply") or context_slices.get("regulatory"))
+        return any(context_slices.get(key) for key in template.context_keys)
+
+    if template.id == "patent_expiry":
+        return bool(context.get("patent_status"))
+    if template.id == "therapeutic_class":
+        return bool(context.get("therapeutic_categories"))
+    if template.id == "primary_indications":
+        return bool(context.get("primary_indications"))
+    if template.id == "regions_approved":
+        return bool(context.get("regions_approved"))
+    if template.id == "small_molecule":
+        return bool(context.get("drug_type"))
+
+    return True
 
 
 def _generate_llm_answer(
@@ -360,6 +492,9 @@ def generate_faqs_for_page(
         if max_faqs is not None and len(faqs) >= max_faqs:
             break
         if not _has_required_fields(template, context):
+            continue
+        if not _has_context_for_template(template, context, context_slices):
+            logger.debug("Skipping FAQ %s for %s due to insufficient context", template.id, drug_id)
             continue
 
         try:
