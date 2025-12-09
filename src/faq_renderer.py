@@ -12,10 +12,10 @@ from typing import Dict, Iterable, List, Mapping, Sequence
 
 from src.faq_generator import FAQ_TEMPLATES
 
-# Порядок групп в выводе
+# Order of groups in the output
 GROUP_ORDER: Sequence[str] = ("technical", "regulatory", "sourcing", "pharmaoffer")
 
-# Порядок вопросов внутри каждой группы
+# Order of questions within each group
 FAQ_ORDER: Mapping[str, Sequence[str]] = {
     "technical": (
         "basic_use",
@@ -42,7 +42,7 @@ FAQ_ORDER: Mapping[str, Sequence[str]] = {
     "pharmaoffer": ("smart_sourcing", "pro_data", "market_report"),
 }
 
-# Человеко-читаемые названия групп
+# Human-readable titles for groups
 GROUP_TITLES: Mapping[str, str] = {
     "technical": "Technical",
     "regulatory": "Regulatory",
@@ -50,7 +50,7 @@ GROUP_TITLES: Mapping[str, str] = {
     "pharmaoffer": "Pharmaoffer",
 }
 
-# Маппинг id FAQ → group из FAQ_TEMPLATES
+# Mapping of FAQ id → group from FAQ_TEMPLATES
 ID_TO_GROUP: Mapping[str, str] = {template.id: template.group for template in FAQ_TEMPLATES}
 
 
@@ -93,7 +93,7 @@ def _sort_faqs_by_order(faqs: Sequence[Mapping[str, object]], group: str) -> Lis
     )
 
 
-# [[placeholder]] → {{ placeholder }} для Twig
+# [[placeholder]] → {{ placeholder }} for Twig
 _PLACEHOLDER_PATTERN = re.compile(r"\[\[([a-zA-Z0-9_]+)\]\]")
 
 
@@ -101,7 +101,7 @@ def _replace_placeholders_with_twig(answer: str) -> str:
     return _PLACEHOLDER_PATTERN.sub(r"{{ \1 }}", answer)
 
 
-# Паттерны для выдёргивания имени API из вопросов
+# Patterns for extracting API name from questions
 NAME_PATTERNS: Sequence[re.Pattern[str]] = (
     re.compile(r"^What is\s+(.+?)\s*\(CAS\b", re.IGNORECASE),
     re.compile(r"^What is\s+(.+?)\s+API\b", re.IGNORECASE),
@@ -113,8 +113,8 @@ NAME_PATTERNS: Sequence[re.Pattern[str]] = (
 
 def _infer_drug_name(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> str:
     """
-    Пытаемся вытащить красивое имя API из текста вопросов.
-    Если не получается — fallback = drug_id.
+    Try to extract a readable API name from the question texts.
+    If extraction fails, fallback to using drug_id.
     """
     for faq in faqs:
         question = str(faq.get("question", "")).strip()
@@ -131,7 +131,7 @@ def _infer_drug_name(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> str:
 
 def _slugify_id(raw: str) -> str:
     """
-    Делаем безопасный fragment id на основе drug_id.
+    Create a safe fragment id based on drug_id.
     """
     slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", raw)
     slug = re.sub(r"-{2,}", "-", slug).strip("-")
@@ -140,16 +140,16 @@ def _slugify_id(raw: str) -> str:
 
 def _render_faq_item(faq: Mapping[str, object]) -> str:
     """
-    Рендер одного FAQ-элемента с microdata (Question + Answer).
-    Класс .raw-material-seo-faq-item может быть модифицирован снаружи (teaser/extra).
+    Render a single FAQ item with microdata (Question + Answer).
+    The .raw-material-seo-faq-item class can be modified externally (teaser/extra).
     """
     faq_id = _escape(faq.get("id", ""))
     question = _escape(faq.get("question", ""))
 
     raw_answer = str(faq.get("answer", ""))
     answer_with_twig = _replace_placeholders_with_twig(raw_answer)
-    # Не экранируем, чтобы Twig-плейсхолдеры {{ var }} остались рабочими.
-    # Предполагается, что ответ приходит из контролируемого пайплайна.
+    # Do not escape so Twig placeholders {{ var }} remain functional.
+    # It is assumed the answer comes from a controlled pipeline.
 
     return (
         '<details class="raw-material-seo-faq-item" '
@@ -166,11 +166,11 @@ def _render_faq_item(faq: Mapping[str, object]) -> str:
 
 def _render_group(group: str, faqs: Sequence[Mapping[str, object]]) -> str:
     """
-    Рендер одной группы:
-    - первые 3 вопроса обычные
-    - 4-й вопрос: .raw-material-seo-faq-item--teaser
-    - 5+ вопросы: .raw-material-seo-faq-item--extra (скрыты CSS до раскрытия)
-    - если вопросов > 3, добавляем кнопку Show all questions
+    Render a single group:
+    - first 3 questions are shown normally
+    - the 4th question gets .raw-material-seo-faq-item--teaser
+    - questions 5+ get .raw-material-seo-faq-item--extra (hidden by CSS until expanded)
+    - if there are more than 3 questions, add a "Show all questions" button
     """
     if not faqs:
         return ""
@@ -178,13 +178,13 @@ def _render_group(group: str, faqs: Sequence[Mapping[str, object]]) -> str:
     items_html: List[str] = []
     for idx, faq in enumerate(faqs):
         extra_class = ""
-        if idx == 2:  # 3-й
+        if idx == 2:  # 3rd
             extra_class = " raw-material-seo-faq-item--teaser"
         elif idx > 2:  # 4+
             extra_class = " raw-material-seo-faq-item--extra"
 
         base_html = _render_faq_item(faq)
-        # Вставляем модификатор класса только в первый class="raw-material-seo-faq-item"
+        # Insert the modifier class only into the first occurrence of class="raw-material-seo-faq-item"
         if extra_class:
             item_html = base_html.replace(
                 'class="raw-material-seo-faq-item"',
@@ -201,7 +201,7 @@ def _render_group(group: str, faqs: Sequence[Mapping[str, object]]) -> str:
 
     body_html = "".join(items_html)
 
-    # Кнопка "Show all questions" только если вопросов > 3
+    # 'Show all questions' button only if questions > 3
     if len(faqs) > 2:
         toggle_html = (
             '<button type="button" class="raw-material-seo-faq-group__toggle" '
@@ -250,7 +250,7 @@ def _render_faq_section(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> s
 
     groups_html = "".join(ordered_groups_html)
 
-    # Human-readable drug name для заголовка
+    # Human-readable drug name for the title
     drug_name = _infer_drug_name(drug_id, faqs)
     title_text = f"Frequently asked questions about {drug_name} API"
     section_id = _slugify_id(f"raw-material-seo-faq-{drug_id}")
@@ -268,8 +268,8 @@ def _render_faq_section(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> s
 
 def render_faq_blocks(api_faqs: Mapping[str, object]) -> Dict[str, Dict[str, str]]:
     """
-    На вход: dict[drug_id] -> list[faq]
-    На выход: dict[drug_id] -> {"full": "<section ...>...</section>"}
+    Input: dict[drug_id] -> list[faq]
+    Output: dict[drug_id] -> {"full": "<section ...>...</section>"}
     """
     rendered: Dict[str, Dict[str, str]] = {}
     for drug_id, faqs in api_faqs.items():
