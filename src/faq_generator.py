@@ -110,9 +110,9 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
     ),
     FAQTemplate(
         id="small_molecule",
-        mode="llm",
-        question="Is {drug_name} a small molecule?",
-        context_keys=["pharmacology", "overview", "hero"],
+        mode="direct",
+        question="Is {drug_name} a {drug_type}?",
+        answer_template="{drug_name} is classified as a {drug_type}.",
         tags=["classification", "chemistry"],
     ),
     FAQTemplate(
@@ -202,6 +202,13 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
 ]
 
 
+FIELD_FALLBACKS: Mapping[str, Sequence[str]] = {
+    "drug_type": ["molecule_type"],
+    "drug_name": ["generic_name"],
+    "generic_name": ["drug_name"],
+}
+
+
 def _load_json(path: str) -> Mapping[str, object]:
     with open(path, "r", encoding="utf-8") as handle:
         data = json.load(handle)
@@ -241,6 +248,7 @@ def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str
     formulation = (raw or {}).get("formulationNotes") or page.get("formulationNotes") or {}
     supply = (raw or {}).get("suppliersAndManufacturing") or page.get("suppliersAndManufacturing") or {}
     safety = (raw or {}).get("safety") or page.get("safety") or {}
+    identification = (raw or {}).get("identification") or page.get("identification") or {}
 
     facts = hero.get("facts") if isinstance(hero, Mapping) else {}
     markets = regulatory.get("markets") if isinstance(regulatory, Mapping) else None
@@ -274,6 +282,21 @@ def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str
         "DMF/ASMF, CEP (if available), GMP certificate, CoA, SDS/MSDS, stability data, and method of analysis"
     )
     context["moq_info"] = _first_non_empty(supply.get("moq"), supply.get("minimumOrder")) or "MOQ varies by supplier"
+    context["drug_type"] = _first_non_empty(
+        hero.get("moleculeType"),
+        hero.get("drugType"),
+        facts.get("moleculeType"),
+        facts.get("drugType"),
+        identification.get("moleculeType"),
+        page.get("moleculeType"),
+        page.get("drugType"),
+        page.get("drug_type"),
+        page.get("type"),
+        (raw or {}).get("drug_type"),
+        (raw or {}).get("drugType"),
+        (raw or {}).get("type"),
+    )
+    context["molecule_type"] = context["drug_type"]
 
     # Context slices for LLM or fallback answers
     context_slices: Dict[str, str] = {}
@@ -292,8 +315,19 @@ def _extract_context(drug_id: str, page: Mapping[str, object]) -> tuple[Dict[str
     return context, context_slices
 
 
-def _has_required_fields(template: FAQTemplate, context: Mapping[str, str]) -> bool:
-    missing = [field for field in template.required_fields() if not context.get(field)]
+def _has_required_fields(template: FAQTemplate, context: Dict[str, str]) -> bool:
+    missing = []
+    for field in template.required_fields():
+        value = context.get(field)
+        if value:
+            continue
+
+        fallback_value = _first_non_empty(*(context.get(key) for key in FIELD_FALLBACKS.get(field, ())))
+        if fallback_value:
+            context[field] = fallback_value
+            continue
+
+        missing.append(field)
     if missing:
         logger.debug("Skipping template %s due to missing fields: %s", template.id, ", ".join(missing))
         return False
