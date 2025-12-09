@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 class FAQTemplate:
     id: str
     question: str
+    group: str
     mode: str = "direct"
     answer_template: Optional[str] = None
     context_keys: Sequence[str] = field(default_factory=list)
@@ -42,6 +43,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="basic_use",
         mode="llm",
         question="What is {drug_name} (CAS {cas}) used for?",
+        group="clinical",
         context_keys=["hero", "overview", "pharmacology"],
         tags=["indications", "clinical", "high-intent"],
     ),
@@ -50,6 +52,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="therapeutic_class",
         mode="direct",
         question="Which therapeutic class does {drug_name} fall into?",
+        group="clinical",
         answer_template=(
             "{drug_name} belongs to the following therapeutic categories: {therapeutic_categories}. "
             "This positioning helps teams compare alternative APIs, anticipate pharmacology expectations, and align early rese"
@@ -62,6 +65,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="primary_indications",
         mode="direct",
         question="What conditions is {drug_name} mainly prescribed for?",
+        group="clinical",
         answer_template=(
             "The primary indications for {drug_name}: {primary_indications}. "
             "These use cases frame the target patient populations and help prioritize formulation and safety evaluations."
@@ -73,6 +77,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="regions_approved",
         mode="direct",
         question="Where is {drug_name} approved or in use globally?",
+        group="regulatory",
         answer_template=(
             "{drug_name} is reported as approved in the following major regions: {regions_approved}. "
             "Understanding geographic coverage informs regulatory filings, supply planning, and risk assessments before escala"
@@ -85,6 +90,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="mechanism_of_action",
         mode="direct",
         question="How does {drug_name} work?",
+        group="technical",
         context_keys=["pharmacology"],
         tags=["mechanism", "pharmacology"],
     ),
@@ -92,6 +98,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="safety_toxicity",
         mode="llm",
         question="What should someone know about the safety or toxicity profile of {drug_name}?",
+        group="clinical",
         context_keys=["safety", "overview", "pharmacology"],
         tags=["safety", "toxicity"],
     ),
@@ -99,6 +106,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="formulation_handling",
         mode="llm",
         question="What are important formulation and handling considerations for {drug_name} as an API?",
+        group="technical",
         context_keys=["adme", "formulation"],
         tags=["formulation", "handling"],
     ),
@@ -106,6 +114,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="regulatory_patent",
         mode="llm",
         question="What’s the regulatory and patent landscape for {drug_name} right now?",
+        group="regulatory",
         context_keys=["regulatory"],
         tags=["regulatory", "patents"],
     ),
@@ -113,6 +122,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="sourcing",
         mode="llm",
         question="What matters most when sourcing GMP-grade {drug_name}?",
+        group="sourcing",
         context_keys=["regulatory", "supply"],
         tags=["sourcing", "buyers"],
     ),
@@ -120,6 +130,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="sourcing_documents",
         mode="direct",
         question="Which documents are typically required when sourcing {drug_name} API?",
+        group="sourcing",
         answer_template=(
             "Request the core API documentation set: [[sourcing_documents]]. "
             "Confirm versions and validity dates match the destination market to avoid delays in qualification."
@@ -131,6 +142,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="small_molecule",
         mode="direct",
         question="Is {drug_name} a {drug_type}?",
+        group="technical",
         answer_template=(
             "{drug_name} is classified as a {drug_type}. "
             "That classification shapes process design, impurity profiling, and analytical control strategies."
@@ -142,6 +154,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="stability_concerns",
         mode="llm",
         question="Are there special stability concerns for oral {drug_name}?",
+        group="technical",
         context_keys=["formulation", "adme"],
         tags=["formulation", "stability"],
     ),
@@ -149,6 +162,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="patent_expiry",
         mode="direct",
         question="When are the key patents for {drug_name} expected to expire?",
+        group="regulatory",
         answer_template=(
             "Patent timelines reported for {drug_name}: {patent_status}. "
             "Use these milestones to inform market entry planning, dossier preparation, and exclusivity risk assessments."
@@ -160,6 +174,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="manufacturers",
         mode="direct",
         question="Which manufacturers are known to produce {drug_name} API?",
+        group="supply_chain",
         answer_template=(
             "Known or reported manufacturers for {drug_name}: [[manufacturers]]. "
             "Evaluate their GMP history, scale, and regional coverage before requesting dossiers or allocating demand."
@@ -171,6 +186,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="quote_requests",
         mode="direct",
         question="How can I request quotes for {drug_name} API from GMP suppliers?",
+        group="sourcing",
         answer_template=(
             "Submit quote requests through the supplier listings with your specs and required documents ({quote_guidance}). "
             "Providing consistent details upfront speeds comparable offers and clarifies technical feasibility."
@@ -182,6 +198,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="smart_sourcing",
         mode="direct",
         question="How does Pharmaoffer’s Smart Sourcing Service help with {drug_name} procurement?",
+        group="pharmaoffer",
         answer_template=(
             "Pharmaoffer's Smart Sourcing Service coordinates compliant suppliers, documentation, and competitive quotes for {drug_name}. "
             "It centralizes outreach, follow-ups, and document validation to shorten procurement timelines."
@@ -193,6 +210,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="gmp_audit",
         mode="direct",
         question="Is a GMP audit report available for {drug_name} manufacturers?",
+        group="sourcing",
         answer_template=(
             "Audit reports may be requested for {drug_name}: [[gmp_audit_reports]]. "
             "Confirm the scope and recency of any audit before relying on it for qualification decisions."
@@ -204,6 +222,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="pro_data",
         mode="direct",
         question="Is {drug_name} included in the PRO Data Insights coverage?",
+        group="pharmaoffer",
         answer_template=(
             "PRO Data Insights coverage for {drug_name}: [[pro_data_available]]. "
             "Use the dataset to benchmark suppliers and monitor regulatory activity where available."
@@ -215,6 +234,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="market_report",
         mode="direct",
         question="Where can I access the market report for {drug_name}?",
+        group="pharmaoffer",
         answer_template=(
             "Market report availability for {drug_name}: [[market_report_link]]. "
             "The report highlights demand trends, pricing drivers, and supplier landscape insights for procurement planning."
@@ -226,6 +246,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="supplier_count",
         mode="direct",
         question="How many suppliers offer {drug_name} API on Pharmaoffer?",
+        group="supply_chain",
         answer_template=(
             "Reported supplier count for {drug_name}: [[supplier_count]]. "
             "Filter listings by certifications, regions, and delivery options to match your qualification plan."
@@ -237,6 +258,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="producing_countries",
         mode="direct",
         question="Which countries are known to manufacture {drug_name} API?",
+        group="supply_chain",
         answer_template=(
             "Production countries reported for {drug_name}: [[manufacturer_countries]]. "
             "Knowing the manufacturing geography helps anticipate logistics lead times and import compliance needs."
@@ -248,6 +270,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="gmp_certifications",
         mode="direct",
         question="Which certifications do suppliers of {drug_name} usually hold?",
+        group="sourcing",
         answer_template=(
             "Common certifications for {drug_name} suppliers: [[gmp_certifications]]. "
             "Always verify issuing authorities and expiry dates when reviewing audit packages."
@@ -259,6 +282,7 @@ FAQ_TEMPLATES: List[FAQTemplate] = [
         id="typical_moq",
         mode="direct",
         question="What’s a typical MOQ for {drug_name} API?",
+        group="sourcing",
         answer_template=(
             "Typical minimum order quantities (MOQ) for {drug_name}: [[moq_info]]. "
             "Discuss flexibility for pilot, validation, or scale-up batches with suppliers early."
