@@ -1,4 +1,5 @@
-"""Render grouped FAQ HTML blocks from generated FAQs, with schema.org markup and Twig placeholders."""
+"""Render grouped FAQ HTML blocks from generated FAQs, with schema.org markup,
+Twig placeholders, and per-group collapse (3 visible questions + teaser)."""
 
 from __future__ import annotations
 
@@ -11,7 +12,10 @@ from typing import Dict, Iterable, List, Mapping, Sequence
 
 from src.faq_generator import FAQ_TEMPLATES
 
+# Порядок групп в выводе
 GROUP_ORDER: Sequence[str] = ("technical", "regulatory", "sourcing", "pharmaoffer")
+
+# Порядок вопросов внутри каждой группы
 FAQ_ORDER: Mapping[str, Sequence[str]] = {
     "technical": (
         "basic_use",
@@ -37,12 +41,16 @@ FAQ_ORDER: Mapping[str, Sequence[str]] = {
     ),
     "pharmaoffer": ("smart_sourcing", "pro_data", "market_report"),
 }
+
+# Человеко-читаемые названия групп
 GROUP_TITLES: Mapping[str, str] = {
     "technical": "Technical",
     "regulatory": "Regulatory",
     "sourcing": "Sourcing",
     "pharmaoffer": "Pharmaoffer",
 }
+
+# Маппинг id FAQ → group из FAQ_TEMPLATES
 ID_TO_GROUP: Mapping[str, str] = {template.id: template.group for template in FAQ_TEMPLATES}
 
 
@@ -85,16 +93,15 @@ def _sort_faqs_by_order(faqs: Sequence[Mapping[str, object]], group: str) -> Lis
     )
 
 
+# [[placeholder]] → {{ placeholder }} для Twig
 _PLACEHOLDER_PATTERN = re.compile(r"\[\[([a-zA-Z0-9_]+)\]\]")
 
 
 def _replace_placeholders_with_twig(answer: str) -> str:
-    """
-    Convert [[placeholder]] → {{ placeholder }} for Twig.
-    """
     return _PLACEHOLDER_PATTERN.sub(r"{{ \1 }}", answer)
 
 
+# Паттерны для выдёргивания имени API из вопросов
 NAME_PATTERNS: Sequence[re.Pattern[str]] = (
     re.compile(r"^What is\s+(.+?)\s*\(CAS\b", re.IGNORECASE),
     re.compile(r"^What is\s+(.+?)\s+API\b", re.IGNORECASE),
@@ -106,8 +113,8 @@ NAME_PATTERNS: Sequence[re.Pattern[str]] = (
 
 def _infer_drug_name(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> str:
     """
-    Best-effort extraction of human-readable drug name from FAQ questions.
-    Falls back to drug_id if nothing matches.
+    Пытаемся вытащить красивое имя API из текста вопросов.
+    Если не получается — fallback = drug_id.
     """
     for faq in faqs:
         question = str(faq.get("question", "")).strip()
@@ -124,8 +131,7 @@ def _infer_drug_name(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> str:
 
 def _slugify_id(raw: str) -> str:
     """
-    Make a safe fragment id based on drug_id (or name if нужно).
-    For now keep it simple: alnum + dashes.
+    Делаем безопасный fragment id на основе drug_id.
     """
     slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", raw)
     slug = re.sub(r"-{2,}", "-", slug).strip("-")
@@ -133,42 +139,87 @@ def _slugify_id(raw: str) -> str:
 
 
 def _render_faq_item(faq: Mapping[str, object]) -> str:
+    """
+    Рендер одного FAQ-элемента с microdata (Question + Answer).
+    Класс .raw-material-seo-faq-item может быть модифицирован снаружи (teaser/extra).
+    """
     faq_id = _escape(faq.get("id", ""))
     question = _escape(faq.get("question", ""))
 
-    # We want Twig placeholders to survive, so:
     raw_answer = str(faq.get("answer", ""))
     answer_with_twig = _replace_placeholders_with_twig(raw_answer)
-    # Do NOT html.escape here, чтобы не ломать {{ var }}.
-    # Предполагаем, что текст контролируется нашим пайплайном.
+    # Не экранируем, чтобы Twig-плейсхолдеры {{ var }} остались рабочими.
+    # Предполагается, что ответ приходит из контролируемого пайплайна.
 
     return (
-        f'<details class="raw-material-seo-faq-item" data-faq-id="{faq_id}" '
+        '<details class="raw-material-seo-faq-item" '
+        f'data-faq-id="{faq_id}" '
         'itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">'
         f'<summary class="raw-material-seo-faq-item__question" itemprop="name">{question}</summary>'
         '<div class="raw-material-seo-faq-item__answer" '
         'itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">'
         f'<p itemprop="text">{answer_with_twig}</p>'
         '</div>'
-        "</details>"
+        '</details>'
     )
 
 
 def _render_group(group: str, faqs: Sequence[Mapping[str, object]]) -> str:
+    """
+    Рендер одной группы:
+    - первые 3 вопроса обычные
+    - 4-й вопрос: .raw-material-seo-faq-item--teaser
+    - 5+ вопросы: .raw-material-seo-faq-item--extra (скрыты CSS до раскрытия)
+    - если вопросов > 3, добавляем кнопку Show all questions
+    """
     if not faqs:
         return ""
-    items = [_render_faq_item(faq) for faq in faqs]
+
+    items_html: List[str] = []
+    for idx, faq in enumerate(faqs):
+        extra_class = ""
+        if idx == 2:  # 3-й
+            extra_class = " raw-material-seo-faq-item--teaser"
+        elif idx > 2:  # 4+
+            extra_class = " raw-material-seo-faq-item--extra"
+
+        base_html = _render_faq_item(faq)
+        # Вставляем модификатор класса только в первый class="raw-material-seo-faq-item"
+        if extra_class:
+            item_html = base_html.replace(
+                'class="raw-material-seo-faq-item"',
+                f'class="raw-material-seo-faq-item{extra_class}"',
+                1,
+            )
+        else:
+            item_html = base_html
+
+        items_html.append(item_html)
+
     title = _escape(GROUP_TITLES.get(group, group.title()))
     group_class = _escape(group)
+
+    body_html = "".join(items_html)
+
+    # Кнопка "Show all questions" только если вопросов > 3
+    if len(faqs) > 2:
+        toggle_html = (
+            '<button type="button" class="raw-material-seo-faq-group__toggle" '
+            'data-faq-toggle="group">Show all questions</button>'
+        )
+    else:
+        toggle_html = ""
+
     return (
         f'<article class="raw-material-seo-faq-group raw-material-seo-faq-group--{group_class}">'
         '<header class="raw-material-seo-faq-group__header">'
         f'<h3 class="raw-material-seo-faq-group__title">{title}</h3>'
-        "</header>"
+        '</header>'
         '<div class="raw-material-seo-faq-group__body">'
-        f'{"".join(items)}'
-        "</div>"
-        "</article>"
+        f'{body_html}'
+        '</div>'
+        f'{toggle_html}'
+        '</article>'
     )
 
 
@@ -184,20 +235,22 @@ def _group_faqs(faqs: Sequence[Mapping[str, object]]) -> Dict[str, List[Mapping[
 
 def _render_faq_section(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> str:
     grouped = _group_faqs(faqs)
-    ordered_groups: List[str] = []
+    ordered_groups_html: List[str] = []
+
     for group in GROUP_ORDER:
         if group not in grouped:
             continue
         sorted_group = _sort_faqs_by_order(grouped[group], group)
         group_html = _render_group(group, sorted_group)
         if group_html:
-            ordered_groups.append(group_html)
-    if not ordered_groups:
+            ordered_groups_html.append(group_html)
+
+    if not ordered_groups_html:
         return ""
 
-    groups_html = "".join(ordered_groups)
+    groups_html = "".join(ordered_groups_html)
 
-    # Human-readable drug name for title
+    # Human-readable drug name для заголовка
     drug_name = _infer_drug_name(drug_id, faqs)
     title_text = f"Frequently asked questions about {drug_name} API"
     section_id = _slugify_id(f"raw-material-seo-faq-{drug_id}")
@@ -214,6 +267,10 @@ def _render_faq_section(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> s
 
 
 def render_faq_blocks(api_faqs: Mapping[str, object]) -> Dict[str, Dict[str, str]]:
+    """
+    На вход: dict[drug_id] -> list[faq]
+    На выход: dict[drug_id] -> {"full": "<section ...>...</section>"}
+    """
     rendered: Dict[str, Dict[str, str]] = {}
     for drug_id, faqs in api_faqs.items():
         if not isinstance(faqs, list):
