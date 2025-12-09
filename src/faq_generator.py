@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import logging
 from dataclasses import dataclass, field
@@ -528,6 +529,30 @@ def generate_faqs_for_page(
     return faqs
 
 
+def _generate_for_single_page(
+    drug_id: str,
+    page: Mapping[str, object],
+    *,
+    templates: Sequence[FAQTemplate],
+    client: Optional[OpenAIClient],
+    model: Optional[str],
+    max_faqs: Optional[int],
+) -> tuple[str, List[Dict[str, object]]]:
+    if not isinstance(page, Mapping):
+        logger.warning("Skipping %s because page entry is not a mapping", drug_id)
+        return drug_id, []
+
+    faqs = generate_faqs_for_page(
+        drug_id,
+        page,
+        templates=templates,
+        client=client,
+        model=model,
+        max_faqs=max_faqs,
+    )
+    return drug_id, faqs
+
+
 def generate_faqs(
     pages: Mapping[str, object],
     *,
@@ -535,22 +560,33 @@ def generate_faqs(
     client: Optional[OpenAIClient] = None,
     model: Optional[str] = None,
     max_faqs: Optional[int] = None,
+    max_workers: int = 8,
 ) -> Dict[str, List[Dict[str, object]]]:
     faq_output: Dict[str, List[Dict[str, object]]] = {}
-    for drug_id, page in pages.items():
-        if not isinstance(page, Mapping):
-            logger.warning("Skipping %s because page entry is not a mapping", drug_id)
-            continue
-        faqs = generate_faqs_for_page(
-            drug_id,
-            page,
-            templates=templates,
-            client=client,
-            model=model,
-            max_faqs=max_faqs,
-        )
-        if faqs:
-            faq_output[drug_id] = faqs
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_drug_id = {
+            executor.submit(
+                _generate_for_single_page,
+                drug_id,
+                page,
+                templates=templates,
+                client=client,
+                model=model,
+                max_faqs=max_faqs,
+            ): drug_id
+            for drug_id, page in pages.items()
+        }
+
+        for future in concurrent.futures.as_completed(future_to_drug_id):
+            drug_id = future_to_drug_id[future]
+            try:
+                result_drug_id, faqs = future.result()
+            except Exception:
+                logger.exception("Failed to generate FAQs for %s", drug_id)
+                continue
+
+            if faqs:
+                faq_output[result_drug_id] = faqs
     return faq_output
 
 
