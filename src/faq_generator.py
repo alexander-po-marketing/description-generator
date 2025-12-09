@@ -610,6 +610,7 @@ def generate_faqs_for_page(
         faqs.append(
             {
                 "id": template.id,
+                "group": template.group,
                 "question": question_text,
                 "answer": answer.strip(),
                 "mode": template.mode,
