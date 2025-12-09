@@ -1,10 +1,11 @@
-"""Render grouped FAQ HTML blocks from generated FAQs."""
+"""Render grouped FAQ HTML blocks from generated FAQs, with schema.org markup and Twig placeholders."""
 
 from __future__ import annotations
 
 import argparse
 import html
 import json
+import re
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Sequence
 
@@ -84,14 +85,71 @@ def _sort_faqs_by_order(faqs: Sequence[Mapping[str, object]], group: str) -> Lis
     )
 
 
+_PLACEHOLDER_PATTERN = re.compile(r"\[\[([a-zA-Z0-9_]+)\]\]")
+
+
+def _replace_placeholders_with_twig(answer: str) -> str:
+    """
+    Convert [[placeholder]] → {{ placeholder }} for Twig.
+    """
+    return _PLACEHOLDER_PATTERN.sub(r"{{ \1 }}", answer)
+
+
+NAME_PATTERNS: Sequence[re.Pattern[str]] = (
+    re.compile(r"^What is\s+(.+?)\s*\(CAS\b", re.IGNORECASE),
+    re.compile(r"^What is\s+(.+?)\s+API\b", re.IGNORECASE),
+    re.compile(r"^What conditions is\s+(.+?)\s+mainly prescribed for\?", re.IGNORECASE),
+    re.compile(r"^Which therapeutic class does\s+(.+?)\s+fall into\?", re.IGNORECASE),
+    re.compile(r"^How does\s+(.+?)\s+work\?", re.IGNORECASE),
+)
+
+
+def _infer_drug_name(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> str:
+    """
+    Best-effort extraction of human-readable drug name from FAQ questions.
+    Falls back to drug_id if nothing matches.
+    """
+    for faq in faqs:
+        question = str(faq.get("question", "")).strip()
+        if not question:
+            continue
+        for pattern in NAME_PATTERNS:
+            match = pattern.search(question)
+            if match:
+                name = match.group(1).strip()
+                if name:
+                    return name
+    return drug_id
+
+
+def _slugify_id(raw: str) -> str:
+    """
+    Make a safe fragment id based on drug_id (or name if нужно).
+    For now keep it simple: alnum + dashes.
+    """
+    slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", raw)
+    slug = re.sub(r"-{2,}", "-", slug).strip("-")
+    return slug or raw
+
+
 def _render_faq_item(faq: Mapping[str, object]) -> str:
     faq_id = _escape(faq.get("id", ""))
     question = _escape(faq.get("question", ""))
-    answer = _escape(faq.get("answer", ""))
+
+    # We want Twig placeholders to survive, so:
+    raw_answer = str(faq.get("answer", ""))
+    answer_with_twig = _replace_placeholders_with_twig(raw_answer)
+    # Do NOT html.escape here, чтобы не ломать {{ var }}.
+    # Предполагаем, что текст контролируется нашим пайплайном.
+
     return (
-        f"<details class=\"raw-material-seo-faq-item\" data-faq-id=\"{faq_id}\">"
-        f"<summary class=\"raw-material-seo-faq-item__question\">{question}</summary>"
-        f"<div class=\"raw-material-seo-faq-item__answer\"><p>{answer}</p></div>"
+        f'<details class="raw-material-seo-faq-item" data-faq-id="{faq_id}" '
+        'itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">'
+        f'<summary class="raw-material-seo-faq-item__question" itemprop="name">{question}</summary>'
+        '<div class="raw-material-seo-faq-item__answer" '
+        'itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">'
+        f'<p itemprop="text">{answer_with_twig}</p>'
+        '</div>'
         "</details>"
     )
 
@@ -103,12 +161,12 @@ def _render_group(group: str, faqs: Sequence[Mapping[str, object]]) -> str:
     title = _escape(GROUP_TITLES.get(group, group.title()))
     group_class = _escape(group)
     return (
-        f"<article class=\"raw-material-seo-faq-group raw-material-seo-faq-group--{group_class}\">"
-        "<header class=\"raw-material-seo-faq-group__header\">"
-        f"<h3 class=\"raw-material-seo-faq-group__title\">{title}</h3>"
+        f'<article class="raw-material-seo-faq-group raw-material-seo-faq-group--{group_class}">'
+        '<header class="raw-material-seo-faq-group__header">'
+        f'<h3 class="raw-material-seo-faq-group__title">{title}</h3>'
         "</header>"
-        "<div class=\"raw-material-seo-faq-group__body\">"
-        f"{''.join(items)}"
+        '<div class="raw-material-seo-faq-group__body">'
+        f'{"".join(items)}'
         "</div>"
         "</article>"
     )
@@ -126,7 +184,7 @@ def _group_faqs(faqs: Sequence[Mapping[str, object]]) -> Dict[str, List[Mapping[
 
 def _render_faq_section(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> str:
     grouped = _group_faqs(faqs)
-    ordered_groups = []
+    ordered_groups: List[str] = []
     for group in GROUP_ORDER:
         if group not in grouped:
             continue
@@ -138,11 +196,17 @@ def _render_faq_section(drug_id: str, faqs: Sequence[Mapping[str, object]]) -> s
         return ""
 
     groups_html = "".join(ordered_groups)
-    title = _escape(drug_id)
+
+    # Human-readable drug name for title
+    drug_name = _infer_drug_name(drug_id, faqs)
+    title_text = f"Frequently asked questions about {drug_name} API"
+    section_id = _slugify_id(f"raw-material-seo-faq-{drug_id}")
+
     return (
-        "<section class=\"raw-material-seo-faq\" id=\"raw-material-seo-faq\">"
-        f"<h2 class=\"raw-material-seo-faq__title\">Frequently asked questions about {title} API</h2>"
-        "<div class=\"raw-material-seo-faq__groups\">"
+        f'<section class="raw-material-seo-faq" id="{section_id}" '
+        'itemscope itemtype="https://schema.org/FAQPage">'
+        f'<h2 class="raw-material-seo-faq__title">{_escape(title_text)}</h2>'
+        '<div class="raw-material-seo-faq__groups">'
         f"{groups_html}"
         "</div>"
         "</section>"
