@@ -33,13 +33,16 @@ FILTER_EXPLAINERS = {
 }
 
 FILTER_BLOCK_TEXT = {
-    "gmp": "filter_block_text_gmp for API_NAME",
-    "cep": "filter_block_text_cep for API_NAME",
-    "wc": "filter_block_text_wc for API_NAME",
-    "fda": "filter_block_text_fda for API_NAME",
-    "coa": "filter_block_text_coa for API_NAME",
-    "iso9001": "filter_block_text_iso9001 for API_NAME",
-    "usdmf": "filter_block_text_usdmf for API_NAME",
+    "gmp": """filter_block_text_gmp for API_NAME""",
+    "cep": """filter_block_text_cep for API_NAME""",
+    "wc": """filter_block_text_wc for API_NAME""",
+    "fda": """filter_block_text_fda for API_NAME""",
+    "coa": """filter_block_text_coa for API_NAME""",
+    "iso9001": """filter_block_text_iso9001 for API_NAME""",
+    "usdmf": """<p>A Drug Master File (DMF) for API_NAME is a confidential technical dossier that describes in detail how the API_NAME active pharmaceutical ingredient (API) is manufactured, controlled, packaged, and stored. In the sourcing process, a DMF is one of the key documents buyers look at to assess whether an API manufacturer has robust quality and regulatory documentation in place.</p>
+
+<p>Because regulations differ between regions, API_NAME DMFs can be registered in several formats, for example:</p>
+""",
 }
 
 
@@ -188,7 +191,8 @@ def generate_filter_text(api_name: str, filter_key: str) -> str:
     template = FILTER_BLOCK_TEXT.get(filter_key)
     if not template:
         raise ValueError(f"Unknown filter key '{filter_key}'. Expected one of: {', '.join(FILTER_BLOCK_TEXT)}")
-    return template.replace("API_NAME", api_name)
+    html_block = template.replace("API_NAME", api_name)
+    return html_block
 
 
 def apply_filtered_intent_to_file(
