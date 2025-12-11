@@ -220,10 +220,10 @@ def _build_filter_hero_block(page: Mapping[str, object], filter_key: Optional[st
         f"<p class=\"raw-material-seo-lead raw-material-seo-hero-summary\">{_escape(summary_sentence)}</p>"
         if summary_sentence
         else "",
+        _subblock("Buyer cheatsheet", buyer_cheatsheet_content),
         _subblock("Therapeutic categories", category_chips),
         facts_html,
         _subblock("Primary indications", primary_indications),
-        _subblock("Buyer cheatsheet", buyer_cheatsheet_content),
     ]
     body = "".join(part for part in content_parts if part)
     return (
