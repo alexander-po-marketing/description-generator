@@ -223,6 +223,7 @@ def apply_filtered_intent_to_file(
 
         logger.info("Applying filter '%s' to %s", filter_key, api_name)
         filter_intent_text = generate_filter_intent_text(api_name=api_name, filter_key=filter_key, client=client)
+        filter_block_text = generate_filter_text(api_name, filter_key)
         filter_intent_title = f"{api_name} API manufacturers: {FILTER_LABELS[filter_key]}"
 
         hero = normalized_page.get("hero")
@@ -236,7 +237,8 @@ def apply_filtered_intent_to_file(
             hero["filter_intent"] = filter_intent
 
         filter_intent["title"] = filter_intent_title
-        filter_intent["text"] = filter_intent_text
+        filter_intent["filter_summary"] = filter_intent_text
+        filter_intent["filter_block_text"] = filter_block_text
 
         if isinstance(page, MutableMapping):
             template = page.get("template")
@@ -278,9 +280,15 @@ def apply_filtered_intent_to_file(
                                             "type": "field",
                                         },
                                         {
-                                            "id": "hero-filter-intent-text",
-                                            "label": "Text",
-                                            "path": ["text"],
+                                            "id": "hero-filter-intent-filter-summary",
+                                            "label": "FilterSummary",
+                                            "path": ["filter_summary"],
+                                            "type": "field",
+                                        },
+                                        {
+                                            "id": "hero-filter-intent-filter-block-text",
+                                            "label": "FilterBlockText",
+                                            "path": ["filter_block_text"],
                                             "type": "field",
                                         },
                                     ],
@@ -295,7 +303,11 @@ def apply_filtered_intent_to_file(
                         hero_value = block.get("value")
                         if not isinstance(hero_value, MutableMapping):
                             hero_value = {}
-                        hero_value["Filter intent"] = {"Title": filter_intent_title, "Text": filter_intent_text}
+                        hero_value["Filter intent"] = {
+                            "Title": filter_intent_title,
+                            "FilterSummary": filter_intent_text,
+                            "FilterBlockText": filter_block_text,
+                        }
                         block["value"] = hero_value
                         break
 
@@ -303,7 +315,7 @@ def apply_filtered_intent_to_file(
         if not isinstance(filter_section, dict):
             filter_section = {}
             normalized_page["filter_section"] = filter_section
-        filter_section[filter_key] = generate_filter_text(api_name, filter_key)
+        filter_section[filter_key] = filter_block_text
         mutated = True
 
     if not mutated:
