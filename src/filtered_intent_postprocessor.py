@@ -55,7 +55,7 @@ def _require_env(key: str) -> str:
 
 
 def generate_filter_intent_text(api_name: str, filter_key: str, client: OpenAI) -> str:
-    """Generate a short, filter-focused sourcing paragraph for the hero block."""
+    """Generate a short, qualification-focused sourcing paragraph for the hero block."""
 
     if filter_key not in FILTER_LABELS:
         raise ValueError(f"Unknown filter key '{filter_key}'. Expected one of: {', '.join(FILTER_LABELS)}")
@@ -74,15 +74,15 @@ You will receive:
 
 An API name,
 
-A sourcing filter used by the buyer,
+A sourcing qualification used by the buyer,
 
-A background text describing what this filter means.
+A background text describing what this qualification means.
 
 Write ONE short paragraph (3–5 sentences) that explains, for {api_name} API:
 
-how the "{filter_label}" filter changes the sourcing context,
+how the "{filter_label}" qualification changes the sourcing context,
 
-what documentation and quality signals buyers typically expect under this filter,
+what documentation and quality signals buyers typically expect under this qualification,
 
 how this filter affects supplier selection, documentation review, or market availability.
 
@@ -92,9 +92,9 @@ Do NOT claim that finished products are approved by any authority; stay at the A
 Return ONLY the paragraph as plain text (no JSON, no bullet points).
 
 API name: {api_name}
-Filter label: {filter_label}
+Qualification label: {filter_label}
 
-Filter background:
+Qualification background:
 {filter_background}
 """.strip()
 
@@ -104,7 +104,7 @@ Filter background:
             {
                 "role": "developer",
                 "content": (
-                    "Provide a single sourcing-focused paragraph for the specified filter. Keep it concise and avoid clinical advice."
+                    "Provide a single sourcing-focused paragraph for the specified qualification. Keep it concise and avoid clinical advice."
                 ),
             },
             {"role": "user", "content": prompt},
