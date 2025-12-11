@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import re
 import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, MutableMapping, Tuple
+from typing import Any, Iterable, List, Mapping, MutableMapping, Optional, Tuple
 
 from openai import OpenAI
 
@@ -55,112 +54,67 @@ def _require_env(key: str) -> str:
     return value
 
 
-def _build_prompt(api_name: str, original_description: str, filter_key: str) -> str:
-    filter_label = FILTER_LABELS[filter_key]
-    filter_explainer = FILTER_EXPLAINERS[filter_key]
-    return f"""
-You are a senior pharmaceutical B2B content writer.
-
-Task:
-You will receive:
-- An API name
-- A sourcing filter applied by the buyer
-- A short explanation of what this filter means
-- The original API product description text
-
-You must create TWO new short paragraphs that add filter-specific sourcing context,
-without rewriting the original description.
-
-1) filtered_intro:
-   - 2–4 sentences
-   - Explain that this is the {filter_label} view of {api_name} API suppliers.
-   - Explain what buyers usually look for under this filter (documents, quality aspects, markets).
-   - Keep it factual and sourcing-focused.
-
-2) sourcing_note:
-   - 2–3 sentences
-   - Short note that can be placed AFTER the original description.
-   - Explain how the filter affects supplier selection, documentation review, or market availability.
-   - Do not contradict the original description.
-
-Constraints:
-- Do NOT rewrite or summarize the original description.
-- Do NOT provide medical advice.
-- Do NOT claim that finished products are approved by authorities (e.g. do not say 'FDA-approved drug'); keep it at the API/supplier level.
-- Output valid JSON with two string fields: "filtered_intro" and "sourcing_note".
-
-API name: {api_name}
-Filter label: {filter_label}
-Filter meaning: {filter_explainer}
-
-Original description:
-{original_description}
-""".strip()
-
-
-def _parse_model_response(raw_content: str) -> Dict[str, str]:
-    # базовая очистка
-    raw = (raw_content or "").strip()
-    if not raw:
-        raise FilteredIntentError("Model returned empty content, cannot parse JSON.")
-
-    # срезать ```json ... ``` если модель так ответила
-    if raw.startswith("```"):
-        # убираем первую строку ``` или ```json
-        raw = re.sub(r"^```(?:json)?", "", raw, flags=re.IGNORECASE).strip()
-        # убираем завершающее ```
-        if raw.endswith("```"):
-            raw = raw[:-3].strip()
-
-    try:
-        parsed = json.loads(raw)
-    except json.JSONDecodeError as exc:  # pragma: no cover - depends on model output
-        raise FilteredIntentError(f"Model did not return valid JSON: {exc}\nRaw content: {raw_content!r}") from exc
-
-    if not isinstance(parsed, dict) or "filtered_intro" not in parsed or "sourcing_note" not in parsed:
-        raise FilteredIntentError(
-            "Model response missing required fields: 'filtered_intro' and 'sourcing_note'. "
-            f"Parsed object keys: {list(parsed.keys()) if isinstance(parsed, dict) else type(parsed)}"
-        )
-
-    filtered_intro = parsed.get("filtered_intro")
-    sourcing_note = parsed.get("sourcing_note")
-    if not isinstance(filtered_intro, str) or not isinstance(sourcing_note, str):
-        raise FilteredIntentError("Model response fields must be strings.")
-
-    return {"filtered_intro": filtered_intro.strip(), "sourcing_note": sourcing_note.strip()}
-
-
-
-def apply_filtered_intent(
-    api_name: str,
-    original_description: str,
-    filter_key: str,
-    client: OpenAI,
-) -> Dict[str, str]:
-    """
-    Generate filter-intent overlays for a single API description.
-
-    Returns a dict with keys: 'filtered_intro', 'sourcing_note', 'filtered_description'.
-    """
+def generate_filter_intent_text(api_name: str, filter_key: str, client: OpenAI) -> str:
+    """Generate a short, filter-focused sourcing paragraph for the hero block."""
 
     if filter_key not in FILTER_LABELS:
         raise ValueError(f"Unknown filter key '{filter_key}'. Expected one of: {', '.join(FILTER_LABELS)}")
 
-    prompt = _build_prompt(api_name=api_name, original_description=original_description, filter_key=filter_key)
+    filter_label = FILTER_LABELS[filter_key]
+    template = FILTER_BLOCK_TEXT.get(filter_key)
+    if not template:
+        raise ValueError(f"Unknown filter key '{filter_key}'. Expected one of: {', '.join(FILTER_BLOCK_TEXT)}")
+    filter_background = template.replace("API_NAME", api_name)
+
+    prompt = f"""
+You are a senior pharmaceutical API B2B content writer.
+
+Task:
+You will receive:
+
+An API name,
+
+A sourcing filter used by the buyer,
+
+A background text describing what this filter means.
+
+Write ONE short paragraph (3–5 sentences) that explains, for {api_name} API:
+
+how the "{filter_label}" filter changes the sourcing context,
+
+what documentation and quality signals buyers typically expect under this filter,
+
+how this filter affects supplier selection, documentation review, or market availability.
+
+Focus only on sourcing, regulatory and quality aspects.
+Do NOT provide medical advice or treatment recommendations.
+Do NOT claim that finished products are approved by any authority; stay at the API/supplier level.
+Return ONLY the paragraph as plain text (no JSON, no bullet points).
+
+API name: {api_name}
+Filter label: {filter_label}
+
+Filter background:
+{filter_background}
+""".strip()
 
     completion = client.chat.completions.create(
         model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
         messages=[
-            {"role": "developer", "content": "Generate filter-intent overlays without rewriting the source description."},
+            {
+                "role": "developer",
+                "content": (
+                    "Provide a single sourcing-focused paragraph for the specified filter. Keep it concise and avoid clinical guidance."
+                ),
+            },
             {"role": "user", "content": prompt},
         ],
     )
-    content = completion.choices[0].message.content or ""
-    parsed = _parse_model_response(content)
-    filtered_description = f"{parsed['filtered_intro']}\n\n{original_description}\n\n{parsed['sourcing_note']}"
-    parsed["filtered_description"] = filtered_description
-    return parsed
+    content = (completion.choices[0].message.content or "").strip()
+    if not content:
+        raise FilteredIntentError("Model returned empty content for filter intent text.")
+
+    return content
 
 
 def _normalize_page(page: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -169,15 +123,39 @@ def _normalize_page(page: Mapping[str, Any]) -> Mapping[str, Any]:
     return page
 
 
+def _stringify(value: object) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, (list, tuple, set)):
+        flattened: List[str] = []
+        for item in value:
+            text = str(item).strip()
+            if not text:
+                continue
+            flattened.append(text)
+        return ", ".join(flattened) if flattened else None
+    if isinstance(value, Mapping):
+        return "; ".join(f"{k}: {v}" for k, v in value.items() if v)
+    text = str(value).strip()
+    return text or None
+
+
+def _clean_title(value: object) -> Optional[str]:
+    text = _stringify(value)
+    if not text:
+        return None
+    return text.split("|")[0].strip()
+
+
 def _extract_api_fields(page: Mapping[str, Any]) -> Tuple[str | None, str | None]:
     normalized = _normalize_page(page)
     api_name: str | None = None
     if isinstance(normalized, Mapping):
         hero = normalized.get("hero")
         if isinstance(hero, Mapping):
-            api_name = hero.get("title") or hero.get("genericName")
+            api_name = _clean_title(hero.get("title")) or _stringify(hero.get("genericName"))
         if not api_name:
-            api_name = normalized.get("api_name") or normalized.get("name")
+            api_name = _clean_title(normalized.get("name")) or _stringify(normalized.get("api_name"))
 
     original_description: str | None = None
     clinical_overview = normalized.get("clinicalOverview") if isinstance(normalized, Mapping) else None
@@ -218,7 +196,7 @@ def apply_filtered_intent_to_file(
     output_path: str,
     filter_key: str,
 ) -> None:
-    """Apply filtered intent overlays to every entry in a JSON file."""
+    """Apply filter-intent hero content to every entry in a JSON file."""
 
     if filter_key not in FILTER_LABELS:
         raise ValueError(f"Unknown filter key '{filter_key}'. Expected one of: {', '.join(FILTER_LABELS)}")
@@ -237,36 +215,88 @@ def apply_filtered_intent_to_file(
             logger.warning("Skipping item %s because page structure is not a mapping.", key)
             continue
 
-        api_name, original_description = _extract_api_fields(page)
-        if not api_name or not original_description:
-            logger.warning("Skipping item %s because required fields are missing.", key)
+        api_name, _ = _extract_api_fields(page)
+        if not api_name:
+            logger.warning("Skipping item %s because API name is missing.", key)
             continue
 
         logger.info("Applying filter '%s' to %s", filter_key, api_name)
-        overlays = apply_filtered_intent(
-            api_name=api_name,
-            original_description=original_description,
-            filter_key=filter_key,
-            client=client,
-        )
+        filter_intent_text = generate_filter_intent_text(api_name=api_name, filter_key=filter_key, client=client)
+        filter_intent_title = f"{api_name} API manufacturers: {FILTER_LABELS[filter_key]}"
 
-        filtered_descriptions = normalized_page.get("filtered_descriptions")
-        if not isinstance(filtered_descriptions, dict):
-            filtered_descriptions = {}
-            normalized_page["filtered_descriptions"] = filtered_descriptions
-        filtered_descriptions[filter_key] = overlays["filtered_description"]
+        hero = normalized_page.get("hero")
+        if not isinstance(hero, MutableMapping):
+            logger.warning("Skipping item %s because hero block is missing.", key)
+            continue
 
-        filtered_intro = normalized_page.get("filtered_intro")
-        if not isinstance(filtered_intro, dict):
-            filtered_intro = {}
-            normalized_page["filtered_intro"] = filtered_intro
-        filtered_intro[filter_key] = overlays["filtered_intro"]
+        filter_intent = hero.get("filter_intent")
+        if not isinstance(filter_intent, dict):
+            filter_intent = {}
+            hero["filter_intent"] = filter_intent
 
-        sourcing_note = normalized_page.get("sourcing_note")
-        if not isinstance(sourcing_note, dict):
-            sourcing_note = {}
-            normalized_page["sourcing_note"] = sourcing_note
-        sourcing_note[filter_key] = overlays["sourcing_note"]
+        filter_intent["title"] = filter_intent_title
+        filter_intent["text"] = filter_intent_text
+
+        if isinstance(page, MutableMapping):
+            template = page.get("template")
+            if isinstance(template, MutableMapping):
+                blocks = template.get("blocks")
+                if isinstance(blocks, list):
+                    hero_block = next(
+                        (block for block in blocks if isinstance(block, MutableMapping) and block.get("id") == "hero"),
+                        None,
+                    )
+                    if hero_block is not None:
+                        children = hero_block.get("children")
+                        if not isinstance(children, list):
+                            children = []
+                            hero_block["children"] = children
+
+                        existing_group = next(
+                            (
+                                child
+                                for child in children
+                                if isinstance(child, MutableMapping) and child.get("id") == "hero-filter-intent"
+                            ),
+                            None,
+                        )
+
+                        if existing_group is None:
+                            children.append(
+                                {
+                                    "id": "hero-filter-intent",
+                                    "label": "Filter intent",
+                                    "path": ["filter_intent"],
+                                    "type": "group",
+                                    "visible": True,
+                                    "children": [
+                                        {
+                                            "id": "hero-filter-intent-title",
+                                            "label": "Title",
+                                            "path": ["title"],
+                                            "type": "field",
+                                        },
+                                        {
+                                            "id": "hero-filter-intent-text",
+                                            "label": "Text",
+                                            "path": ["text"],
+                                            "type": "field",
+                                        },
+                                    ],
+                                }
+                            )
+
+        if isinstance(page, MutableMapping):
+            blocks_list = page.get("blocks")
+            if isinstance(blocks_list, list):
+                for block in blocks_list:
+                    if isinstance(block, MutableMapping) and block.get("id") == "hero":
+                        hero_value = block.get("value")
+                        if not isinstance(hero_value, MutableMapping):
+                            hero_value = {}
+                        hero_value["Filter intent"] = {"Title": filter_intent_title, "Text": filter_intent_text}
+                        block["value"] = hero_value
+                        break
 
         filter_section = normalized_page.get("filter_section")
         if not isinstance(filter_section, dict):
