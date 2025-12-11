@@ -220,10 +220,10 @@ def _build_filter_hero_block(page: Mapping[str, object], filter_key: Optional[st
         f"<p class=\"raw-material-seo-lead raw-material-seo-hero-summary\">{_escape(summary_sentence)}</p>"
         if summary_sentence
         else "",
-        _subblock("Buyer cheatsheet", buyer_cheatsheet_content),
         _subblock("Therapeutic categories", category_chips),
         facts_html,
         _subblock("Primary indications", primary_indications),
+        _subblock("Buyer cheatsheet", buyer_cheatsheet_content),
     ]
     body = "".join(part for part in content_parts if part)
     return (
@@ -256,13 +256,20 @@ def render_filter_sections(
 ) -> Dict[str, Dict[str, str]]:
     rendered: Dict[str, Dict[str, str]] = {}
     for api_id, page in api_pages.items():
-        normalized_page = page.get("raw") if isinstance(page, Mapping) and "raw" in page else page
-        if not isinstance(normalized_page, Mapping):
+        if not isinstance(page, Mapping):
             continue
 
-        working_copy: MutableMapping[str, object] = copy.deepcopy(normalized_page)
-        derived_filter_key = _detect_filter_key(working_copy, override=filter_key)
-        _update_seo_metadata(working_copy, derived_filter_key)
+        working_copy: MutableMapping[str, object] = copy.deepcopy(page)
+        normalized_page = (
+            working_copy.get("raw") if isinstance(working_copy, Mapping) and "raw" in working_copy else working_copy
+        )
+        if not isinstance(normalized_page, MutableMapping):
+            continue
+
+        derived_filter_key = _detect_filter_key(normalized_page, override=filter_key)
+        _update_seo_metadata(normalized_page, derived_filter_key)
+        if normalized_page is not working_copy:
+            _update_seo_metadata(working_copy, derived_filter_key)
 
         sections = build_filter_section_blocks(working_copy, derived_filter_key)
         if sections:
