@@ -7,7 +7,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, MutableMapping, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Tuple
 
 from openai import OpenAI
 
@@ -58,36 +58,37 @@ def _require_env(key: str) -> str:
 def _build_prompt(api_name: str, original_description: str, filter_key: str) -> str:
     filter_label = FILTER_LABELS[filter_key]
     filter_explainer = FILTER_EXPLAINERS[filter_key]
+    """Build prompt guiding the model to create a filtered API summary and sourcing note."""
     return f"""
-You are a senior pharmaceutical B2B content writer.
+You are a senior pharmaceutical API B2B content writer.
 
-Task:
-You will receive:
-- An API name
-- A sourcing filter applied by the buyer
-- A short explanation of what this filter means
-- The original API product description text
+Goal:
+Given:
+- An API name,
+- A sourcing filter used by the buyer,
+- A short explanation of this filter,
+- And the original API product description,
 
-You must create TWO new short paragraphs that add filter-specific sourcing context,
-without rewriting the original description.
+You must generate TWO short text blocks that can be used on a filtered API product page.
 
 1) filtered_intro:
-   - 2–4 sentences
-   - Explain that this is the {filter_label} view of {api_name} API suppliers.
-   - Explain what buyers usually look for under this filter (documents, quality aspects, markets).
-   - Keep it factual and sourcing-focused.
+   - 3–5 sentences.
+   - A concise API summary tailored to buyers who are viewing {api_name} API suppliers under the "{filter_label}" filter.
+   - Briefly explain what {api_name} is used for at a high level (therapeutic or technical role), and how this filter changes the sourcing context (documentation expectations, typical markets, quality signals).
+   - Focus on sourcing, market and quality aspects, not clinical advice.
 
 2) sourcing_note:
-   - 2–3 sentences
-   - Short note that can be placed AFTER the original description.
-   - Explain how the filter affects supplier selection, documentation review, or market availability.
-   - Do not contradict the original description.
+   - 2–3 sentences.
+   - A short sourcing-focused note that can be placed AFTER the main summary.
+   - Explain how this filter affects supplier selection, documentation review, or market availability for {api_name} API.
+   - This should read like a practical note for procurement / sourcing teams.
 
 Constraints:
-- Do NOT rewrite or summarize the original description.
-- Do NOT provide medical advice.
-- Do NOT claim that finished products are approved by authorities (e.g. do not say 'FDA-approved drug'); keep it at the API/supplier level.
-- Output valid JSON with two string fields: "filtered_intro" and "sourcing_note".
+- You may compress and rephrase the original description, but do not contradict it.
+- Do NOT provide medical or treatment recommendations.
+- Do NOT claim that finished products are approved by authorities (e.g. do not say "FDA-approved drug"); keep it at the API/supplier level.
+- Use only information that could reasonably be inferred from the original description and the filter explanation.
+- Output a valid JSON object with two string fields: "filtered_intro" and "sourcing_note".
 
 API name: {api_name}
 Filter label: {filter_label}
@@ -152,7 +153,12 @@ def apply_filtered_intent(
     completion = client.chat.completions.create(
         model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
         messages=[
-            {"role": "developer", "content": "Generate filter-intent overlays without rewriting the source description."},
+            {
+                "role": "developer",
+                "content": (
+                    "Generate filter-intent overlays that summarize the API for the selected filter and add a sourcing note."
+                ),
+            },
             {"role": "user", "content": prompt},
         ],
     )
@@ -169,15 +175,39 @@ def _normalize_page(page: Mapping[str, Any]) -> Mapping[str, Any]:
     return page
 
 
+def _stringify(value: object) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, (list, tuple, set)):
+        flattened: List[str] = []
+        for item in value:
+            text = str(item).strip()
+            if not text:
+                continue
+            flattened.append(text)
+        return ", ".join(flattened) if flattened else None
+    if isinstance(value, Mapping):
+        return "; ".join(f"{k}: {v}" for k, v in value.items() if v)
+    text = str(value).strip()
+    return text or None
+
+
+def _clean_title(value: object) -> Optional[str]:
+    text = _stringify(value)
+    if not text:
+        return None
+    return text.split("|")[0].strip()
+
+
 def _extract_api_fields(page: Mapping[str, Any]) -> Tuple[str | None, str | None]:
     normalized = _normalize_page(page)
     api_name: str | None = None
     if isinstance(normalized, Mapping):
         hero = normalized.get("hero")
         if isinstance(hero, Mapping):
-            api_name = hero.get("title") or hero.get("genericName")
+            api_name = _clean_title(hero.get("title")) or _stringify(hero.get("genericName"))
         if not api_name:
-            api_name = normalized.get("api_name") or normalized.get("name")
+            api_name = _clean_title(normalized.get("name")) or _stringify(normalized.get("api_name"))
 
     original_description: str | None = None
     clinical_overview = normalized.get("clinicalOverview") if isinstance(normalized, Mapping) else None
