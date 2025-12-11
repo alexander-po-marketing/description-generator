@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import json
 import logging
 import os
@@ -98,13 +99,29 @@ Original description:
 
 
 def _parse_model_response(raw_content: str) -> Dict[str, str]:
+    # базовая очистка
+    raw = (raw_content or "").strip()
+    if not raw:
+        raise FilteredIntentError("Model returned empty content, cannot parse JSON.")
+
+    # срезать ```json ... ``` если модель так ответила
+    if raw.startswith("```"):
+        # убираем первую строку ``` или ```json
+        raw = re.sub(r"^```(?:json)?", "", raw, flags=re.IGNORECASE).strip()
+        # убираем завершающее ```
+        if raw.endswith("```"):
+            raw = raw[:-3].strip()
+
     try:
-        parsed = json.loads(raw_content)
+        parsed = json.loads(raw)
     except json.JSONDecodeError as exc:  # pragma: no cover - depends on model output
-        raise FilteredIntentError(f"Model did not return valid JSON: {exc}") from exc
+        raise FilteredIntentError(f"Model did not return valid JSON: {exc}\nRaw content: {raw_content!r}") from exc
 
     if not isinstance(parsed, dict) or "filtered_intro" not in parsed or "sourcing_note" not in parsed:
-        raise FilteredIntentError("Model response missing required fields: 'filtered_intro' and 'sourcing_note'.")
+        raise FilteredIntentError(
+            "Model response missing required fields: 'filtered_intro' and 'sourcing_note'. "
+            f"Parsed object keys: {list(parsed.keys()) if isinstance(parsed, dict) else type(parsed)}"
+        )
 
     filtered_intro = parsed.get("filtered_intro")
     sourcing_note = parsed.get("sourcing_note")
@@ -112,6 +129,7 @@ def _parse_model_response(raw_content: str) -> Dict[str, str]:
         raise FilteredIntentError("Model response fields must be strings.")
 
     return {"filtered_intro": filtered_intro.strip(), "sourcing_note": sourcing_note.strip()}
+
 
 
 def apply_filtered_intent(
