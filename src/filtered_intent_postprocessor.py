@@ -6,7 +6,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Mapping, MutableMapping, Tuple
 
 from openai import OpenAI
 
@@ -30,6 +30,16 @@ FILTER_EXPLAINERS = {
     "coa": "Suppliers that provide a Certificate of Analysis (CoA) for each batch of the API, detailing assay, impurities and key quality parameters.",
     "iso9001": "Suppliers whose quality management systems are certified according to ISO 9001.",
     "usdmf": "APIs for which a US Drug Master File (US DMF) has been filed by at least one supplier.",
+}
+
+FILTER_BLOCK_TEXT = {
+    "gmp": "filter_block_text_gmp for API_NAME",
+    "cep": "filter_block_text_cep for API_NAME",
+    "wc": "filter_block_text_wc for API_NAME",
+    "fda": "filter_block_text_fda for API_NAME",
+    "coa": "filter_block_text_coa for API_NAME",
+    "iso9001": "filter_block_text_iso9001 for API_NAME",
+    "usdmf": "filter_block_text_usdmf for API_NAME",
 }
 
 
@@ -135,18 +145,54 @@ def apply_filtered_intent(
     return parsed
 
 
-def _iter_items(data: Any) -> Iterable[tuple[Any, Dict[str, Any]]]:
+def _normalize_page(page: Mapping[str, Any]) -> Mapping[str, Any]:
+    if "raw" in page and isinstance(page.get("raw"), Mapping):
+        return page["raw"]  # type: ignore[return-value]
+    return page
+
+
+def _extract_api_fields(page: Mapping[str, Any]) -> Tuple[str | None, str | None]:
+    normalized = _normalize_page(page)
+    api_name: str | None = None
+    if isinstance(normalized, Mapping):
+        hero = normalized.get("hero")
+        if isinstance(hero, Mapping):
+            api_name = hero.get("title") or hero.get("genericName")
+        if not api_name:
+            api_name = normalized.get("api_name") or normalized.get("name")
+
+    original_description: str | None = None
+    clinical_overview = normalized.get("clinicalOverview") if isinstance(normalized, Mapping) else None
+    if isinstance(clinical_overview, Mapping):
+        long_desc = clinical_overview.get("longDescription")
+        if isinstance(long_desc, str):
+            original_description = long_desc
+    if not original_description and isinstance(normalized, Mapping):
+        overview = normalized.get("overview")
+        if isinstance(overview, Mapping):
+            desc = overview.get("description")
+            if isinstance(desc, str):
+                original_description = desc
+
+    return api_name, original_description
+
+
+def _iter_pages(data: Any) -> Iterable[tuple[Any, MutableMapping[str, Any]]]:
     if isinstance(data, list):
         for index, item in enumerate(data):
-            if isinstance(item, dict):
+            if isinstance(item, MutableMapping):
                 yield index, item
-    elif isinstance(data, dict):
-        if {"api_name", "description"}.issubset(data.keys()):
-            yield None, data
-        else:
-            for key, value in data.items():
-                if isinstance(value, dict) and {"api_name", "description"}.issubset(value.keys()):
-                    yield key, value
+    elif isinstance(data, MutableMapping):
+        for key, value in data.items():
+            if isinstance(value, MutableMapping):
+                yield key, value
+
+
+def generate_filter_text(api_name: str, filter_key: str) -> str:
+    template = FILTER_BLOCK_TEXT.get(filter_key)
+    if not template:
+        raise ValueError(f"Unknown filter key '{filter_key}'. Expected one of: {', '.join(FILTER_BLOCK_TEXT)}")
+    return template.replace("API_NAME", api_name)
 
 
 def apply_filtered_intent_to_file(
@@ -167,9 +213,13 @@ def apply_filtered_intent_to_file(
     client = OpenAI(api_key=_require_env("OPENAI_API_KEY"))
 
     mutated = False
-    for key, item in _iter_items(data):
-        api_name = item.get("api_name")
-        original_description = item.get("description")
+    for key, page in _iter_pages(data):
+        normalized_page = _normalize_page(page)
+        if not isinstance(normalized_page, MutableMapping):
+            logger.warning("Skipping item %s because page structure is not a mapping.", key)
+            continue
+
+        api_name, original_description = _extract_api_fields(page)
         if not api_name or not original_description:
             logger.warning("Skipping item %s because required fields are missing.", key)
             continue
@@ -182,13 +232,29 @@ def apply_filtered_intent_to_file(
             client=client,
         )
 
-        filtered_descriptions = item.get("filtered_descriptions")
+        filtered_descriptions = normalized_page.get("filtered_descriptions")
         if not isinstance(filtered_descriptions, dict):
             filtered_descriptions = {}
-            item["filtered_descriptions"] = filtered_descriptions
+            normalized_page["filtered_descriptions"] = filtered_descriptions
         filtered_descriptions[filter_key] = overlays["filtered_description"]
-        item["filtered_intro"] = overlays["filtered_intro"]
-        item["sourcing_note"] = overlays["sourcing_note"]
+
+        filtered_intro = normalized_page.get("filtered_intro")
+        if not isinstance(filtered_intro, dict):
+            filtered_intro = {}
+            normalized_page["filtered_intro"] = filtered_intro
+        filtered_intro[filter_key] = overlays["filtered_intro"]
+
+        sourcing_note = normalized_page.get("sourcing_note")
+        if not isinstance(sourcing_note, dict):
+            sourcing_note = {}
+            normalized_page["sourcing_note"] = sourcing_note
+        sourcing_note[filter_key] = overlays["sourcing_note"]
+
+        filter_section = normalized_page.get("filter_section")
+        if not isinstance(filter_section, dict):
+            filter_section = {}
+            normalized_page["filter_section"] = filter_section
+        filter_section[filter_key] = generate_filter_text(api_name, filter_key)
         mutated = True
 
     if not mutated:
