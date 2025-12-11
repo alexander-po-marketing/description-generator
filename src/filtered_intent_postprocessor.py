@@ -173,6 +173,40 @@ def _extract_api_fields(page: Mapping[str, Any]) -> Tuple[str | None, str | None
     return api_name, original_description
 
 
+def _update_seo_metadata(
+    page: MutableMapping[str, Any], api_name: Optional[str], filter_key: str
+) -> None:
+    if not api_name:
+        return
+
+    label = FILTER_LABELS.get(filter_key)
+    explainer = FILTER_EXPLAINERS.get(filter_key)
+    if not label or not explainer:
+        return
+
+    seo_title = f"{api_name} API suppliers - {label}"
+    meta_description = f"Find {api_name} API manufacturers. {explainer}"
+
+    seo = page.get("seo")
+    if not isinstance(seo, MutableMapping):
+        seo = {}
+        page["seo"] = seo
+    seo["title"] = seo_title
+    seo["metaDescription"] = meta_description
+
+    blocks = page.get("blocks")
+    if isinstance(blocks, list):
+        for block in blocks:
+            if not isinstance(block, MutableMapping) or block.get("id") != "seo":
+                continue
+            value = block.get("value")
+            if not isinstance(value, MutableMapping):
+                value = {}
+                block["value"] = value
+            value["Title"] = seo_title
+            value["Meta description"] = meta_description
+
+
 def _iter_pages(data: Any) -> Iterable[tuple[Any, MutableMapping[str, Any]]]:
     if isinstance(data, list):
         for index, item in enumerate(data):
@@ -316,6 +350,8 @@ def apply_filtered_intent_to_file(
             filter_section = {}
             normalized_page["filter_section"] = filter_section
         filter_section[filter_key] = filter_block_text
+
+        _update_seo_metadata(normalized_page, api_name, filter_key)
         mutated = True
 
     if not mutated:
