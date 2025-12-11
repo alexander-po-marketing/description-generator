@@ -7,7 +7,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, MutableMapping, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Tuple
 
 from openai import OpenAI
 
@@ -169,15 +169,39 @@ def _normalize_page(page: Mapping[str, Any]) -> Mapping[str, Any]:
     return page
 
 
+def _stringify(value: object) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, (list, tuple, set)):
+        flattened: List[str] = []
+        for item in value:
+            text = str(item).strip()
+            if not text:
+                continue
+            flattened.append(text)
+        return ", ".join(flattened) if flattened else None
+    if isinstance(value, Mapping):
+        return "; ".join(f"{k}: {v}" for k, v in value.items() if v)
+    text = str(value).strip()
+    return text or None
+
+
+def _clean_title(value: object) -> Optional[str]:
+    text = _stringify(value)
+    if not text:
+        return None
+    return text.split("|")[0].strip()
+
+
 def _extract_api_fields(page: Mapping[str, Any]) -> Tuple[str | None, str | None]:
     normalized = _normalize_page(page)
     api_name: str | None = None
     if isinstance(normalized, Mapping):
         hero = normalized.get("hero")
         if isinstance(hero, Mapping):
-            api_name = hero.get("title") or hero.get("genericName")
+            api_name = _clean_title(hero.get("title")) or _stringify(hero.get("genericName"))
         if not api_name:
-            api_name = normalized.get("api_name") or normalized.get("name")
+            api_name = _clean_title(normalized.get("name")) or _stringify(normalized.get("api_name"))
 
     original_description: str | None = None
     clinical_overview = normalized.get("clinicalOverview") if isinstance(normalized, Mapping) else None
