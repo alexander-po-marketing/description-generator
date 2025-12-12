@@ -267,7 +267,11 @@ def render_filter_sections(
         if normalized_page is not working_copy:
             _update_seo_metadata(working_copy, derived_filter_key)
 
-        sections = build_filter_section_blocks(working_copy, derived_filter_key)
+        render_source: MutableMapping[str, object] = (
+            normalized_page if isinstance(normalized_page, MutableMapping) else working_copy
+        )
+
+        sections = build_filter_section_blocks(render_source, derived_filter_key)
         if sections:
             rendered[str(api_id)] = sections
     return rendered
