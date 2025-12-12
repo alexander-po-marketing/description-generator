@@ -206,19 +206,15 @@ def _build_filter_hero_block(page: Mapping[str, object], filter_key: Optional[st
     )
     block_text = _filter_block_text(page, filter_key)
 
-    buyer_cheatsheet_parts = []
-    if buyer_cheatsheet_list:
-        buyer_cheatsheet_parts.append(buyer_cheatsheet_list)
-    if block_text:
-        buyer_cheatsheet_parts.append(
-            f"<div class=\"raw-material-seo-filter-block\">{block_text}</div>"
-        )
-    buyer_cheatsheet_content = "".join(buyer_cheatsheet_parts)
+    buyer_cheatsheet_content = buyer_cheatsheet_list or ""
 
     content_parts = [
         f"<h2 class=\"raw-material-seo-hero-title\">{_escape(title)}</h2>",
         f"<p class=\"raw-material-seo-lead raw-material-seo-hero-summary\">{_escape(summary_sentence)}</p>"
         if summary_sentence
+        else "",
+        f"<div class=\"raw-material-seo-filter-block\">{block_text}</div>"
+        if block_text
         else "",
         _subblock("Therapeutic categories", category_chips),
         facts_html,
