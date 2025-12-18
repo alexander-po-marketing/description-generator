@@ -196,6 +196,37 @@ def _filter_block_text(page: Mapping[str, object], filter_key: Optional[str]) ->
     return None
 
 
+def _buyer_cheatsheet_html(page: Mapping[str, object], filter_key: Optional[str]) -> str:
+    hero = page.get("hero") if isinstance(page, Mapping) else None
+    filter_intent = hero.get("filter_intent") if isinstance(hero, Mapping) else None
+    intent_entry = _filter_intent_entry(filter_intent, filter_key) if isinstance(filter_intent, Mapping) else None
+
+    if isinstance(intent_entry, Mapping):
+        buyer_cheatsheet = intent_entry.get("buyerCheatsheet")
+        if isinstance(buyer_cheatsheet, str) and buyer_cheatsheet.strip():
+            return f"<p>{_escape(buyer_cheatsheet.strip())}</p>"
+        if isinstance(buyer_cheatsheet, Mapping):
+            bullets = buyer_cheatsheet.get("bullets")
+            if isinstance(bullets, list):
+                html = _unordered_list(bullets)
+                if html:
+                    return html
+        if isinstance(buyer_cheatsheet, list):
+            html = _unordered_list(buyer_cheatsheet)
+            if html:
+                return html
+
+    buyer_cheatsheet_source = page.get("buyerCheatsheet") if isinstance(page, Mapping) else None
+    if isinstance(buyer_cheatsheet_source, Mapping):
+        bullets = buyer_cheatsheet_source.get("bullets")
+        if isinstance(bullets, list):
+            html = _unordered_list(bullets)
+            if html:
+                return html
+
+    return ""
+
+
 def _origin_label_from_key(filter_key: str) -> Optional[str]:
     if _is_origin_country(filter_key):
         _, _, code = filter_key.partition(":")
@@ -235,12 +266,8 @@ def _build_filter_hero_block(page: Mapping[str, object], filter_key: Optional[st
     primary_indications = _unordered_list(
         page.get("primaryIndications") or hero.get("primaryUseCases") or []
     )
-    buyer_cheatsheet_list = _unordered_list(
-        (page.get("buyerCheatsheet", {}) or {}).get("bullets", [])
-    )
+    buyer_cheatsheet_content = _buyer_cheatsheet_html(page, filter_key)
     block_text = _filter_block_text(page, filter_key)
-
-    buyer_cheatsheet_content = buyer_cheatsheet_list or ""
     block_text_html = block_text
     if block_text and filter_key and _is_origin_filter(filter_key):
         block_text_html = _escape(block_text)
