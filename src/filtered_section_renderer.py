@@ -196,6 +196,37 @@ def _filter_block_text(page: Mapping[str, object], filter_key: Optional[str]) ->
     return None
 
 
+def _buyer_cheatsheet_html(page: Mapping[str, object], filter_key: Optional[str]) -> str:
+    hero = page.get("hero") if isinstance(page, Mapping) else None
+    filter_intent = hero.get("filter_intent") if isinstance(hero, Mapping) else None
+    intent_entry = _filter_intent_entry(filter_intent, filter_key) if isinstance(filter_intent, Mapping) else None
+
+    if isinstance(intent_entry, Mapping):
+        buyer_cheatsheet = intent_entry.get("buyerCheatsheet")
+        if isinstance(buyer_cheatsheet, str) and buyer_cheatsheet.strip():
+            return f"<p>{_escape(buyer_cheatsheet.strip())}</p>"
+        if isinstance(buyer_cheatsheet, Mapping):
+            bullets = buyer_cheatsheet.get("bullets")
+            if isinstance(bullets, list):
+                html = _unordered_list(bullets)
+                if html:
+                    return html
+        if isinstance(buyer_cheatsheet, list):
+            html = _unordered_list(buyer_cheatsheet)
+            if html:
+                return html
+
+    buyer_cheatsheet_source = page.get("buyerCheatsheet") if isinstance(page, Mapping) else None
+    if isinstance(buyer_cheatsheet_source, Mapping):
+        bullets = buyer_cheatsheet_source.get("bullets")
+        if isinstance(bullets, list):
+            html = _unordered_list(bullets)
+            if html:
+                return html
+
+    return ""
+
+
 def _origin_label_from_key(filter_key: str) -> Optional[str]:
     if _is_origin_country(filter_key):
         _, _, code = filter_key.partition(":")
@@ -235,20 +266,19 @@ def _build_filter_hero_block(page: Mapping[str, object], filter_key: Optional[st
     primary_indications = _unordered_list(
         page.get("primaryIndications") or hero.get("primaryUseCases") or []
     )
-    buyer_cheatsheet_list = _unordered_list(
-        (page.get("buyerCheatsheet", {}) or {}).get("bullets", [])
-    )
+    buyer_cheatsheet_content = _buyer_cheatsheet_html(page, filter_key)
     block_text = _filter_block_text(page, filter_key)
-
-    buyer_cheatsheet_content = buyer_cheatsheet_list or ""
+    block_text_html = block_text
+    if block_text and filter_key and _is_origin_filter(filter_key):
+        block_text_html = _escape(block_text)
 
     content_parts = [
         f"<h2 class=\"raw-material-seo-hero-title\">{_escape(title)}</h2>",
         f"<p class=\"raw-material-seo-lead raw-material-seo-hero-summary\">{_escape(summary_sentence)}</p>"
         if summary_sentence
         else "",
-        f"<div class=\"raw-material-seo-filter-block\">{block_text}</div>"
-        if block_text
+        f"<div class=\"raw-material-seo-filter-block\">{block_text_html}</div>"
+        if block_text_html
         else "",
         _subblock("Therapeutic categories", category_chips),
         facts_html,
@@ -289,14 +319,7 @@ def _build_origin_section(page: Mapping[str, object], filter_key: Optional[str])
             if isinstance(section_text, str) and section_text.strip():
                 paragraph_text = section_text.strip()
 
-    paragraph_html = ""
-    if paragraph_text:
-        if paragraph_text.lstrip().startswith("<"):
-            paragraph_html = paragraph_text
-        else:
-            paragraph_html = f"<p>{_escape(paragraph_text)}</p>"
-
-    if not paragraph_html:
+    if not paragraph_text:
         return ""
 
     heading = f"Sourcing {api_name} API produced by suppliers from {origin_label}"
@@ -306,7 +329,7 @@ def _build_origin_section(page: Mapping[str, object], filter_key: Optional[str])
     return (
         "<div class=\"raw-material-seo-section raw-material-seo-section-origin\">"
         f"<h3>{_escape(heading)}</h3>"
-        f"{paragraph_html}"
+        f"<p>{_escape(paragraph_text)}</p>"
         f"{disclaimer}"
         "</div>"
     )
@@ -315,20 +338,8 @@ def _build_origin_section(page: Mapping[str, object], filter_key: Optional[str])
 def build_filter_section_blocks(
     page: Mapping[str, object], filter_key: Optional[str] = None
 ) -> Dict[str, str]:
-    sections = {
-        "hero": _build_filter_hero_block(page, filter_key),
-        "origin": _build_origin_section(page, filter_key),
-        "overview": _build_clinical_overview_content(page),
-        "identification": _build_identification_section(
-            page.get("clinicalOverview", {}), page
-        ),
-        "pharmacology": _build_pharmacology_section(page.get("clinicalOverview", {}), page),
-        "adme_pk": _build_adme_section(page.get("clinicalOverview", {}), page),
-        "formulation": _build_formulation_section(page.get("clinicalOverview", {}), page),
-        "regulatory": _build_regulatory_section(page.get("clinicalOverview", {}), page),
-        "safety": _build_safety_section(page.get("clinicalOverview", {}), page),
-    }
-    return {key: value for key, value in sections.items() if value}
+    hero_block = _build_filter_hero_block(page, filter_key)
+    return {"hero": hero_block} if hero_block else {}
 
 
 def render_filter_sections(
