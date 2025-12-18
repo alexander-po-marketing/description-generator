@@ -220,7 +220,7 @@ def generate_filter_intent_text(api_name: str, filter_key: str, client: OpenAI) 
                 },
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=220,
+            max_completion_tokens=220,
         )
         content = (completion.choices[0].message.content or "").strip()
         if not content:
