@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import json
 import logging
 import os
@@ -20,6 +21,15 @@ FILTER_LABELS = {
     "coa": "with CoA provided for each batch",
     "iso9001": "with ISO 9001-certified quality systems",
     "usdmf": "with US DMF filed",
+    "origin_country:IN": "Produced in India",
+    "origin_country:CN": "Produced in China",
+    "origin_country:US": "Produced in United States",
+    "origin_country:JP": "Produced in Japan",
+    "origin_country:KR": "Produced in South Korea",
+    "origin_region:ASIA": "Produced in Asia",
+    "origin_region:EUROPE": "Produced in Europe",
+    "origin_region:NORTH_AMERICA": "Produced in North America",
+    "origin_region:SOUTH_AMERICA": "Produced in South America",
 }
 
 FILTER_EXPLAINERS = {
@@ -30,6 +40,81 @@ FILTER_EXPLAINERS = {
     "coa": "Suppliers that provide a Certificate of Analysis (CoA) for each batch of the API, detailing assay, impurities and key quality parameters.",
     "iso9001": "Suppliers whose quality management systems are certified according to ISO 9001.",
     "usdmf": "APIs for which a US Drug Master File (US DMF) has been filed by at least one supplier.",
+    "origin_country:IN": "APIs produced in India; buyers consider qualification, logistics, and documentation expectations when sourcing from Indian sites.",
+    "origin_country:CN": "APIs produced in China; procurement teams align qualification, shipping, and documentation checks to Chinese production sites.",
+    "origin_country:US": "APIs produced in the United States; buyers review domestic compliance evidence and align logistics for US-origin material.",
+    "origin_country:JP": "APIs produced in Japan; sourcing teams evaluate Japanese production credentials and related logistics considerations.",
+    "origin_country:KR": "APIs produced in South Korea; buyers align due diligence and supply planning to Korean manufacturing sites.",
+    "origin_region:ASIA": "APIs produced in Asia; procurement teams align qualification and logistics steps for Asian manufacturing footprints.",
+    "origin_region:EUROPE": "APIs produced in Europe; buyers plan qualification and shipping with European production in mind.",
+    "origin_region:NORTH_AMERICA": "APIs produced in North America; sourcing teams review relevant compliance signals and logistics from this region.",
+    "origin_region:SOUTH_AMERICA": "APIs produced in South America; procurement teams assess qualification and freight plans for regional production.",
+}
+
+ORIGIN_COUNTRY_LABELS: dict[str, str] = {
+    "IN": "India",
+    "CN": "China",
+    "US": "United States",
+    "JP": "Japan",
+    "KR": "South Korea",
+}
+
+ORIGIN_REGION_LABELS: dict[str, str] = {
+    "ASIA": "Asia",
+    "EUROPE": "Europe",
+    "NORTH_AMERICA": "North America",
+    "SOUTH_AMERICA": "South America",
+}
+
+ORIGIN_COUNTRY_BACKGROUND: dict[str, str] = {
+    "IN": (
+        "India hosts a large number of API manufacturers spanning regulated and semi-regulated markets.\n"
+        "Export-focused plants often provide CoA and GMP evidence for buyer review.\n"
+        "Lead times can vary by port and shipping lane; buyers usually align incoterms early."
+    ),
+    "CN": (
+        "China is a major global hub for API production across diverse therapeutic areas.\n"
+        "Buyers typically request clear documentation on site compliance and trackability.\n"
+        "Freight planning and customs documentation are important early in the sourcing workflow."
+    ),
+    "US": (
+        "United States production often aligns with FDA expectations and traceable supply chains.\n"
+        "Buyers review GMP evidence, inspection history, and DMF availability where applicable.\n"
+        "Domestic logistics may shorten transit time but still require standard quality checks."
+    ),
+    "JP": (
+        "Japan-based manufacturing emphasizes quality systems and traceability controls.\n"
+        "Procurement teams confirm documentation readiness, including CoA and applicable certificates.\n"
+        "Planning often considers coordination for audits or remote assessments."
+    ),
+    "KR": (
+        "South Korea maintains a mature pharmaceutical manufacturing base with export experience.\n"
+        "Buyers align qualification packages with GMP expectations and batch documentation.\n"
+        "Logistics discussions typically include lane reliability and cold-chain needs if relevant."
+    ),
+}
+
+ORIGIN_REGION_BACKGROUND: dict[str, str] = {
+    "ASIA": (
+        "Asia covers a wide range of API producers serving global markets.\n"
+        "Buyers balance qualification depth with logistics planning across multiple countries.\n"
+        "Documentation expectations focus on GMP evidence, CoA review, and traceable supply chains."
+    ),
+    "EUROPE": (
+        "European production often aligns with EU GMP frameworks and established quality systems.\n"
+        "Procurement teams review site credentials, CoA, and applicable certificates like CEP where relevant.\n"
+        "Regional logistics can support shorter lead times into European markets."
+    ),
+    "NORTH_AMERICA": (
+        "North American manufacturing supports regulated markets with documented quality controls.\n"
+        "Buyers typically confirm GMP evidence, inspection histories, and DMF/CEP availability when applicable.\n"
+        "Lead times and shipping routes can differ between US and Canada but often favor predictable transit."
+    ),
+    "SOUTH_AMERICA": (
+        "South America hosts a mix of regional and export-oriented API plants.\n"
+        "Procurement workflows focus on verifying documentation readiness and supply stability.\n"
+        "Buyers plan freight and customs steps early to align with local manufacturing schedules."
+    ),
 }
 
 FILTER_BLOCK_TEXT = {
@@ -54,11 +139,97 @@ def _require_env(key: str) -> str:
     return value
 
 
+def _is_origin_country(filter_key: str) -> bool:
+    return filter_key.startswith("origin_country:")
+
+
+def _is_origin_region(filter_key: str) -> bool:
+    return filter_key.startswith("origin_region:")
+
+
+def _is_origin_filter(filter_key: str) -> bool:
+    return _is_origin_country(filter_key) or _is_origin_region(filter_key)
+
+
+def _origin_label_from_key(filter_key: str) -> tuple[str | None, str | None]:
+    if _is_origin_country(filter_key):
+        _, _, code = filter_key.partition(":")
+        return ORIGIN_COUNTRY_LABELS.get(code), code
+    if _is_origin_region(filter_key):
+        _, _, region = filter_key.partition(":")
+        return ORIGIN_REGION_LABELS.get(region), region
+    return None, None
+
+
+def _build_origin_filter_prompt(
+    api_name: str, origin_label: str, origin_type: str, origin_background_text: str
+) -> str:
+    return f"""
+You are writing a sourcing note for buyers evaluating {api_name} API suppliers.
+
+Provide ONE paragraph of 3-5 sentences in plain text.
+Focus on why buyers filter by production {origin_type} and how it impacts sourcing steps.
+
+Requirements:
+- Explain why procurement teams look for {api_name} API from this {origin_type} ({origin_label}).
+- Describe how origin affects supplier qualification, due diligence, and documentation checks (e.g., CoA, GMP evidence, DMF/CEP if relevant) without asserting documents exist unless the filter explicitly states it.
+- Mention typical considerations for traceability, audits or remote assessments, and logistics/lead-time planning.
+- Note that the set of suppliers may be narrower than global availability without inventing numbers or unverifiable claims.
+- Avoid stereotypes, politics, or negative comparisons; keep the tone factual and procurement-oriented.
+- Do not give medical advice or alter the base API description.
+
+Background for context only (do not quote or paraphrase closely):
+{origin_background_text}
+
+Return only the paragraph as plain text with no HTML, Markdown, or JSON.
+""".strip()
+
+
 def generate_filter_intent_text(api_name: str, filter_key: str, client: OpenAI) -> str:
     """Generate a short, qualification-focused sourcing paragraph for the hero block."""
 
     if filter_key not in FILTER_LABELS:
         raise ValueError(f"Unknown filter key '{filter_key}'. Expected one of: {', '.join(FILTER_LABELS)}")
+
+    if _is_origin_filter(filter_key):
+        origin_label, origin_token = _origin_label_from_key(filter_key)
+        if not origin_label or not origin_token:
+            raise ValueError(f"Unknown origin filter key '{filter_key}'")
+
+        origin_type = "country" if _is_origin_country(filter_key) else "region"
+        background_lookup = (
+            ORIGIN_COUNTRY_BACKGROUND if _is_origin_country(filter_key) else ORIGIN_REGION_BACKGROUND
+        )
+        origin_background_text = background_lookup.get(origin_token, "")
+        prompt = _build_origin_filter_prompt(
+            api_name=api_name,
+            origin_label=origin_label,
+            origin_type=origin_type,
+            origin_background_text=origin_background_text,
+        )
+
+        completion = client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest"),
+            messages=[
+                {
+                    "role": "developer",
+                    "content": (
+                        "Write a concise sourcing overview for the specified origin filter."
+                        " Keep it procurement-focused and avoid clinical claims."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=220,
+        )
+        content = (completion.choices[0].message.content or "").strip()
+        if not content:
+            return (
+                "This view highlights {api_name} API suppliers with production origin in {origin_label}. "
+                "Buyers use origin filters to align sourcing with qualification and logistics constraints. "
+                "Confirm documentation such as CoA and relevant quality/regulatory files early in the process, as availability can differ by origin."
+            ).format(api_name=api_name, origin_label=origin_label)
+        return content
 
     filter_label = FILTER_LABELS[filter_key]
     template = FILTER_BLOCK_TEXT.get(filter_key)
@@ -145,6 +316,11 @@ def _clean_title(value: object) -> Optional[str]:
     if not text:
         return None
     return text.split("|")[0].strip()
+
+
+def _format_paragraph_html(text: str) -> str:
+    escaped = html.escape(text.strip())
+    return f"<p>{escaped}</p>" if escaped else ""
 
 
 def _extract_api_fields(page: Mapping[str, Any]) -> Tuple[str | None, str | None]:
@@ -257,8 +433,18 @@ def apply_filtered_intent_to_file(
 
         logger.info("Applying filter '%s' to %s", filter_key, api_name)
         filter_intent_text = generate_filter_intent_text(api_name=api_name, filter_key=filter_key, client=client)
-        filter_block_text = generate_filter_text(api_name, filter_key)
-        filter_intent_title = f"{api_name} API manufacturers: {FILTER_LABELS[filter_key]}"
+
+        if _is_origin_filter(filter_key):
+            filter_block_text = _format_paragraph_html(filter_intent_text)
+            origin_label, _ = _origin_label_from_key(filter_key)
+            origin_label = origin_label or FILTER_LABELS[filter_key]
+            if _is_origin_country(filter_key):
+                filter_intent_title = f"{api_name} API suppliers from {origin_label}"
+            else:
+                filter_intent_title = f"{api_name} API suppliers - produced in {origin_label}"
+        else:
+            filter_block_text = generate_filter_text(api_name, filter_key)
+            filter_intent_title = f"{api_name} API manufacturers: {FILTER_LABELS[filter_key]}"
 
         hero = normalized_page.get("hero")
         if not isinstance(hero, MutableMapping):
@@ -270,9 +456,24 @@ def apply_filtered_intent_to_file(
             filter_intent = {}
             hero["filter_intent"] = filter_intent
 
-        filter_intent["title"] = filter_intent_title
-        filter_intent["filter_summary"] = filter_intent_text
-        filter_intent["filter_block_text"] = filter_block_text
+        filter_intent_entry: MutableMapping[str, Any]
+        if _is_origin_filter(filter_key):
+            nested = filter_intent.get(filter_key)
+            if not isinstance(nested, MutableMapping):
+                nested = {}
+                filter_intent[filter_key] = nested
+            filter_intent_entry = nested
+        else:
+            filter_intent_entry = filter_intent
+
+        filter_intent_entry["title"] = filter_intent_title
+        filter_intent_entry["filter_summary"] = filter_intent_text
+        filter_intent_entry["filter_block_text"] = filter_block_text
+
+        if _is_origin_filter(filter_key) and filter_intent_entry is not filter_intent:
+            filter_intent.setdefault("title", filter_intent_title)
+            filter_intent.setdefault("filter_summary", filter_intent_text)
+            filter_intent.setdefault("filter_block_text", filter_block_text)
 
         if isinstance(page, MutableMapping):
             template = page.get("template")
