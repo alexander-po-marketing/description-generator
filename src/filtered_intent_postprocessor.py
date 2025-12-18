@@ -433,8 +433,8 @@ def _update_seo_metadata(
     if not label or not explainer:
         return
 
-    seo_title = f"{api_name} API manufacturers {label} | GMP sourcing"
-    meta_description = f"Compare {api_name} API manufacturers in {label}. {explainer}"
+    seo_title = f"{api_name} {label} | GMP sourcing"
+    meta_description = f"Compare {api_name} {label}. {explainer}"
 
     seo = page.get("seo")
     if not isinstance(seo, MutableMapping):
