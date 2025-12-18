@@ -8,7 +8,15 @@ import json
 from pathlib import Path
 from typing import Dict, Mapping, MutableMapping, Optional
 
-from src.filtered_intent_postprocessor import FILTER_EXPLAINERS, FILTER_LABELS
+from src.filtered_intent_postprocessor import (
+    FILTER_EXPLAINERS,
+    FILTER_LABELS,
+    ORIGIN_COUNTRY_LABELS,
+    ORIGIN_REGION_LABELS,
+    _is_origin_country,
+    _is_origin_filter,
+    _is_origin_region,
+)
 from src.preview_renderer import (
     _build_adme_section,
     _build_clinical_overview_content,
@@ -111,6 +119,9 @@ def _detect_filter_key(
     if isinstance(hero, Mapping):
         filter_intent = hero.get("filter_intent")
         if isinstance(filter_intent, Mapping):
+            for nested_key in filter_intent:
+                if nested_key in FILTER_LABELS:
+                    return str(nested_key)
             title = filter_intent.get("title")
             if isinstance(title, str):
                 normalized_title = title.lower()
@@ -156,14 +167,26 @@ def _update_seo_metadata(page: MutableMapping[str, object], filter_key: Optional
             value["Meta description"] = meta_description
 
 
+def _filter_intent_entry(
+    filter_intent: Mapping[str, object], filter_key: Optional[str]
+) -> Optional[Mapping[str, object]]:
+    if filter_key and filter_key in filter_intent:
+        nested = filter_intent.get(filter_key)
+        if isinstance(nested, Mapping):
+            return nested
+    return filter_intent
+
+
 def _filter_block_text(page: Mapping[str, object], filter_key: Optional[str]) -> Optional[str]:
     hero = page.get("hero") if isinstance(page, Mapping) else None
     if isinstance(hero, Mapping):
         filter_intent = hero.get("filter_intent")
         if isinstance(filter_intent, Mapping):
-            block_text = filter_intent.get("filter_block_text")
-            if isinstance(block_text, str) and block_text.strip():
-                return block_text
+            intent_entry = _filter_intent_entry(filter_intent, filter_key)
+            if isinstance(intent_entry, Mapping):
+                block_text = intent_entry.get("filter_block_text")
+                if isinstance(block_text, str) and block_text.strip():
+                    return block_text
 
     filter_section = page.get("filter_section")
     if isinstance(filter_section, Mapping) and filter_key:
@@ -173,19 +196,30 @@ def _filter_block_text(page: Mapping[str, object], filter_key: Optional[str]) ->
     return None
 
 
+def _origin_label_from_key(filter_key: str) -> Optional[str]:
+    if _is_origin_country(filter_key):
+        _, _, code = filter_key.partition(":")
+        return ORIGIN_COUNTRY_LABELS.get(code)
+    if _is_origin_region(filter_key):
+        _, _, region = filter_key.partition(":")
+        return ORIGIN_REGION_LABELS.get(region)
+    return None
+
+
 def _build_filter_hero_block(page: Mapping[str, object], filter_key: Optional[str]) -> str:
     hero = page.get("hero", {}) if isinstance(page, Mapping) else {}
     filter_intent = hero.get("filter_intent") if isinstance(hero, Mapping) else {}
+    intent_entry = _filter_intent_entry(filter_intent, filter_key) if isinstance(filter_intent, Mapping) else None
 
     title = None
-    if isinstance(filter_intent, Mapping):
-        title = filter_intent.get("title")
+    if isinstance(intent_entry, Mapping):
+        title = intent_entry.get("title")
     if not isinstance(title, str):
         title = hero.get("title") or "API overview"
 
     summary_sentence = None
-    if isinstance(filter_intent, Mapping):
-        summary_sentence = filter_intent.get("filter_summary")
+    if isinstance(intent_entry, Mapping):
+        summary_sentence = intent_entry.get("filter_summary")
     if not isinstance(summary_sentence, str):
         summary_sentence = hero.get("summarySentence") or hero.get("summary")
 
@@ -229,11 +263,61 @@ def _build_filter_hero_block(page: Mapping[str, object], filter_key: Optional[st
     )
 
 
+def _build_origin_section(page: Mapping[str, object], filter_key: Optional[str]) -> str:
+    if not filter_key or not _is_origin_filter(filter_key):
+        return ""
+
+    origin_label = _origin_label_from_key(filter_key)
+    api_name = _derive_api_name(page)
+    if not origin_label or not api_name:
+        return ""
+
+    hero = page.get("hero") if isinstance(page, Mapping) else None
+    filter_intent = hero.get("filter_intent") if isinstance(hero, Mapping) else None
+    intent_entry = _filter_intent_entry(filter_intent, filter_key) if isinstance(filter_intent, Mapping) else None
+
+    paragraph_text = None
+    if isinstance(intent_entry, Mapping):
+        summary_candidate = intent_entry.get("filter_summary")
+        if isinstance(summary_candidate, str) and summary_candidate.strip():
+            paragraph_text = summary_candidate.strip()
+
+    if not paragraph_text:
+        filter_section = page.get("filter_section") if isinstance(page, Mapping) else None
+        if isinstance(filter_section, Mapping):
+            section_text = filter_section.get(filter_key)
+            if isinstance(section_text, str) and section_text.strip():
+                paragraph_text = section_text.strip()
+
+    paragraph_html = ""
+    if paragraph_text:
+        if paragraph_text.lstrip().startswith("<"):
+            paragraph_html = paragraph_text
+        else:
+            paragraph_html = f"<p>{_escape(paragraph_text)}</p>"
+
+    if not paragraph_html:
+        return ""
+
+    heading = f"Sourcing {api_name} API produced by suppliers from {origin_label}"
+    disclaimer = (
+        "<p class=\"raw-material-seo-smallprint\">Origin refers to production location; supplier headquarters may differ.</p>"
+    )
+    return (
+        "<div class=\"raw-material-seo-section raw-material-seo-section-origin\">"
+        f"<h3>{_escape(heading)}</h3>"
+        f"{paragraph_html}"
+        f"{disclaimer}"
+        "</div>"
+    )
+
+
 def build_filter_section_blocks(
     page: Mapping[str, object], filter_key: Optional[str] = None
 ) -> Dict[str, str]:
     sections = {
         "hero": _build_filter_hero_block(page, filter_key),
+        "origin": _build_origin_section(page, filter_key),
         "overview": _build_clinical_overview_content(page),
         "identification": _build_identification_section(
             page.get("clinicalOverview", {}), page
