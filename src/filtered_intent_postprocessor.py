@@ -435,16 +435,22 @@ def apply_filtered_intent_to_file(
         filter_intent_text = generate_filter_intent_text(api_name=api_name, filter_key=filter_key, client=client)
 
         if _is_origin_filter(filter_key):
-            filter_block_text = _format_paragraph_html(filter_intent_text)
-            origin_label, _ = _origin_label_from_key(filter_key)
+            origin_label, origin_token = _origin_label_from_key(filter_key)
             origin_label = origin_label or FILTER_LABELS[filter_key]
-            if _is_origin_country(filter_key):
-                filter_intent_title = f"{api_name} API suppliers from {origin_label}"
-            else:
-                filter_intent_title = f"{api_name} API suppliers - produced in {origin_label}"
+            background_lookup = (
+                ORIGIN_COUNTRY_BACKGROUND if _is_origin_country(filter_key) else ORIGIN_REGION_BACKGROUND
+            )
+            origin_background_text = background_lookup.get(origin_token or "", "")
+
+            filter_intent_title = f"{api_name}: {FILTER_LABELS[filter_key]}"
+            filter_summary_text = FILTER_EXPLAINERS.get(filter_key, "")
+            filter_block_text = filter_intent_text
+            buyer_cheatsheet_text = origin_background_text or None
         else:
             filter_block_text = generate_filter_text(api_name, filter_key)
             filter_intent_title = f"{api_name} API manufacturers: {FILTER_LABELS[filter_key]}"
+            filter_summary_text = filter_intent_text
+            buyer_cheatsheet_text = None
 
         hero = normalized_page.get("hero")
         if not isinstance(hero, MutableMapping):
@@ -467,13 +473,17 @@ def apply_filtered_intent_to_file(
             filter_intent_entry = filter_intent
 
         filter_intent_entry["title"] = filter_intent_title
-        filter_intent_entry["filter_summary"] = filter_intent_text
+        filter_intent_entry["filter_summary"] = filter_summary_text
         filter_intent_entry["filter_block_text"] = filter_block_text
+        if buyer_cheatsheet_text:
+            filter_intent_entry["buyerCheatsheet"] = buyer_cheatsheet_text
 
         if _is_origin_filter(filter_key) and filter_intent_entry is not filter_intent:
             filter_intent.setdefault("title", filter_intent_title)
-            filter_intent.setdefault("filter_summary", filter_intent_text)
+            filter_intent.setdefault("filter_summary", filter_summary_text)
             filter_intent.setdefault("filter_block_text", filter_block_text)
+            if buyer_cheatsheet_text:
+                filter_intent.setdefault("buyerCheatsheet", buyer_cheatsheet_text)
 
         if isinstance(page, MutableMapping):
             template = page.get("template")
