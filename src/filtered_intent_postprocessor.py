@@ -113,7 +113,7 @@ ORIGIN_REGION_BACKGROUND: dict[str, str] = {
     "SOUTH_AMERICA": (
         "South America hosts a mix of domestic-focused and export-oriented API manufacturing sites across several countries.\n"
         "Procurement workflows emphasize verification of documentation readiness, regulatory alignment, and supply continuity.\n"
-        "Freight planning and customs coordination are usually addressed early to align delivery schedules with local production cycles.
+        "Freight planning and customs coordination are usually addressed early to align delivery schedules with local production cycles."
     ),
 }
 
