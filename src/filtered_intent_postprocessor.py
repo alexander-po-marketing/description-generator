@@ -21,13 +21,13 @@ FILTER_LABELS = {
     "coa": "with CoA provided for each batch",
     "iso9001": "with ISO 9001-certified quality systems",
     "usdmf": "with US DMF filed",
-    "origin_country:IN": "Produced in India",
-    "origin_country:CN": "Produced in China",
-    "origin_country:US": "Produced in United States",
-    "origin_country:JP": "Produced in Japan",
-    "origin_country:KR": "Produced in South Korea",
+    "origin_country:IN": "Verified API manufacturers in India",
+    "origin_country:CN": "Verified API manufacturers in China",
+    "origin_country:US": "Verified American API manufacturers (United States)",
+    "origin_country:JP": "Verified API manufacturers in Japan",
+    "origin_country:KR": "Verified API manufacturers in South Korea",
     "origin_region:ASIA": "Produced in Asia",
-    "origin_region:EUROPE": "Produced in Europe",
+    "origin_region:EUROPE": "Produced in Europe (EU)",
     "origin_region:NORTH_AMERICA": "Produced in North America",
     "origin_region:SOUTH_AMERICA": "Produced in South America",
 }
@@ -40,15 +40,15 @@ FILTER_EXPLAINERS = {
     "coa": "Suppliers that provide a Certificate of Analysis (CoA) for each batch of the API, detailing assay, impurities and key quality parameters.",
     "iso9001": "Suppliers whose quality management systems are certified according to ISO 9001.",
     "usdmf": "APIs for which a US Drug Master File (US DMF) has been filed by at least one supplier.",
-    "origin_country:IN": "APIs produced in India; buyers consider qualification, logistics, and documentation expectations when sourcing from Indian sites.",
-    "origin_country:CN": "APIs produced in China; procurement teams align qualification, shipping, and documentation checks to Chinese production sites.",
-    "origin_country:US": "APIs produced in the United States; buyers review domestic compliance evidence and align logistics for US-origin material.",
-    "origin_country:JP": "APIs produced in Japan; sourcing teams evaluate Japanese production credentials and related logistics considerations.",
-    "origin_country:KR": "APIs produced in South Korea; buyers align due diligence and supply planning to Korean manufacturing sites.",
-    "origin_region:ASIA": "APIs produced in Asia; procurement teams align qualification and logistics steps for Asian manufacturing footprints.",
-    "origin_region:EUROPE": "APIs produced in Europe; buyers plan qualification and shipping with European production in mind.",
-    "origin_region:NORTH_AMERICA": "APIs produced in North America; sourcing teams review relevant compliance signals and logistics from this region.",
-    "origin_region:SOUTH_AMERICA": "APIs produced in South America; procurement teams assess qualification and freight plans for regional production.",
+    "origin_country:IN": "APIs manufactured by suppliers from India; buyers typically focus on EU/US GMP history, DMF availability, audit readiness, and predictable export logistics when sourcing from Indian production sites.",
+    "origin_country:CN": "APIs manufactured by suppliers from China; procurement teams pay close attention to regulatory transparency, DMF status, inspection history, and international shipping reliability when evaluating Chinese manufacturers.",
+    "origin_country:US": "APIs manufactured by suppliers from United States; buyers prioritize strong FDA compliance records, domestic supply security, and simplified logistics for US-origin material.",
+    "origin_country:JP": "APIs manufactured by suppliers from Japan; sourcing teams evaluate strict quality standards, regulatory rigor, long-term supply reliability, and typically higher cost structures associated with Japanese production.",
+    "origin_country:KR": "APIs manufactured by suppliers from South Korea; buyers assess regulatory compliance, technological capabilities, export readiness, and consistency of supply from Korean manufacturing sites.",
+    "origin_region:ASIA": "APIs manufactured across Asia; procurement teams compare regulatory maturity, audit history, cost structures, and international logistics across multiple Asian production hubs.",
+    "origin_region:EUROPE": "APIs manufactured in Europe; buyers align sourcing decisions around EMA compliance, high quality expectations, shorter lead times within the EU, and stable regulatory environments.",
+    "origin_region:NORTH_AMERICA": "APIs manufactured in North America; sourcing teams emphasize regulatory trust, supply chain resilience, and streamlined logistics for regional production.",
+    "origin_region:SOUTH_AMERICA": "APIs manufactured in South America; procurement teams assess regulatory alignment, export experience, lead times, and freight complexity when sourcing from regional manufacturers."
 }
 
 ORIGIN_COUNTRY_LABELS: dict[str, str] = {
@@ -68,52 +68,52 @@ ORIGIN_REGION_LABELS: dict[str, str] = {
 
 ORIGIN_COUNTRY_BACKGROUND: dict[str, str] = {
     "IN": (
-        "India hosts a large number of API manufacturers spanning regulated and semi-regulated markets.\n"
-        "Export-focused plants often provide CoA and GMP evidence for buyer review.\n"
-        "Lead times can vary by port and shipping lane; buyers usually align incoterms early."
+        "India is a primary global source for API raw materials and finished APIs, offering scale, cost efficiency, and broad regulatory coverage.\n"
+        "Buyers typically evaluate documentation depth (CoA, GMP, DMF) alongside raw material traceability.\n"
+        "Logistics planning—especially port selection and incoterms—is often addressed upfront to manage lead-time variability."
     ),
     "CN": (
-        "China is a major global hub for API production across diverse therapeutic areas.\n"
-        "Buyers typically request clear documentation on site compliance and trackability.\n"
-        "Freight planning and customs documentation are important early in the sourcing workflow."
+        "China combines scale and chemical depth in API and intermediate production, making it a key sourcing region globally..\n"
+        "Buyers assess regulatory transparency, documentation depth, and material traceability as part of qualification.\n"
+        "Logistics and customs planning are typically coordinated early to ensure predictable lead times."
     ),
     "US": (
-        "United States production often aligns with FDA expectations and traceable supply chains.\n"
-        "Buyers review GMP evidence, inspection history, and DMF availability where applicable.\n"
-        "Domestic logistics may shorten transit time but still require standard quality checks."
+        "US-based API production offers regulatory confidence and high supply chain transparency.\n"
+        "Buyers focus on GMP evidence, FDA inspection outcomes, and documentation readiness.\n"
+        "Shorter logistics cycles are common, though quality release and compliance reviews still govern delivery timelines."
     ),
     "JP": (
-        "Japan-based manufacturing emphasizes quality systems and traceability controls.\n"
-        "Procurement teams confirm documentation readiness, including CoA and applicable certificates.\n"
-        "Planning often considers coordination for audits or remote assessments."
+        "Japanese API production is valued for consistency, documentation discipline, and process reliability.\n"
+        "Buyers assess certification completeness and data transparency early in qualification.\n"
+        "Audit coordination and assessment planning are commonly built into sourcing timelines."
     ),
     "KR": (
-        "South Korea maintains a mature pharmaceutical manufacturing base with export experience.\n"
-        "Buyers align qualification packages with GMP expectations and batch documentation.\n"
-        "Logistics discussions typically include lane reliability and cold-chain needs if relevant."
+        "Korean API production combines regulatory alignment with modern manufacturing capabilities.\n"
+        "Buyers focus on GMP adherence, batch traceability, and documentation completeness.\n"
+        "Logistics planning may factor in route reliability and cold-chain handling depending on the product."
     ),
 }
 
 ORIGIN_REGION_BACKGROUND: dict[str, str] = {
     "ASIA": (
-        "Asia covers a wide range of API producers serving global markets.\n"
-        "Buyers balance qualification depth with logistics planning across multiple countries.\n"
-        "Documentation expectations focus on GMP evidence, CoA review, and traceable supply chains."
+        "Asian API sourcing offers scale and cost advantages alongside varied regulatory environments.\n"
+        "Buyers assess qualification rigor, documentation depth, and logistics reliability on a country-by-country basis.\n"
+        "GMP compliance, CoA validation, and supply chain traceability remain baseline requirements across the region."
     ),
     "EUROPE": (
-        "European production often aligns with EU GMP frameworks and established quality systems.\n"
-        "Procurement teams review site credentials, CoA, and applicable certificates like CEP where relevant.\n"
-        "Regional logistics can support shorter lead times into European markets."
+        "European API production generally operates within EU GMP frameworks, supported by mature quality systems and regulatory oversight.\n"
+        "Procurement teams review site credentials, CoA consistency, and applicable certificates such as CEPs where relevant to the product.\n"
+        "Regional logistics often enable shorter and more predictable lead times into European markets."
     ),
     "NORTH_AMERICA": (
-        "North American manufacturing supports regulated markets with documented quality controls.\n"
-        "Buyers typically confirm GMP evidence, inspection histories, and DMF/CEP availability when applicable.\n"
-        "Lead times and shipping routes can differ between US and Canada but often favor predictable transit."
+        "North American API manufacturing serves regulated markets with well-documented quality and compliance controls.\n"
+        "Buyers typically assess GMP status, inspection histories, and DMF or CEP availability where applicable.\n"
+        "Lead times and shipping routes may differ between the US and Canada but are generally characterized by stable and predictable transit."
     ),
     "SOUTH_AMERICA": (
-        "South America hosts a mix of regional and export-oriented API plants.\n"
-        "Procurement workflows focus on verifying documentation readiness and supply stability.\n"
-        "Buyers plan freight and customs steps early to align with local manufacturing schedules."
+        "South America hosts a mix of domestic-focused and export-oriented API manufacturing sites across several countries.\n"
+        "Procurement workflows emphasize verification of documentation readiness, regulatory alignment, and supply continuity.\n"
+        "Freight planning and customs coordination are usually addressed early to align delivery schedules with local production cycles.
     ),
 }
 
@@ -165,23 +165,23 @@ def _build_origin_filter_prompt(
     api_name: str, origin_label: str, origin_type: str, origin_background_text: str
 ) -> str:
     return f"""
-You are writing a sourcing note for buyers evaluating {api_name} API suppliers.
+Write a sourcing note for procurement teams evaluating suppliers of {api_name} API.
 
-Provide ONE paragraph of 3-5 sentences in plain text.
-Focus on why buyers filter by production {origin_type} and how it impacts sourcing steps.
+Produce ONE plain-text paragraph of 3–5 sentences.
+Explain why buyers filter suppliers by production {origin_type} ({origin_label}) and how this origin choice influences sourcing and procurement workflows.
 
-Requirements:
-- Explain why procurement teams look for {api_name} API from this {origin_type} ({origin_label}).
-- Describe how origin affects supplier qualification, due diligence, and documentation checks (e.g., CoA, GMP evidence, DMF/CEP if relevant) without asserting documents exist unless the filter explicitly states it.
-- Mention typical considerations for traceability, audits or remote assessments, and logistics/lead-time planning.
-- Note that the set of suppliers may be narrower than global availability without inventing numbers or unverifiable claims.
-- Avoid stereotypes, politics, or negative comparisons; keep the tone factual and procurement-oriented.
-- Do not give medical advice or alter the base API description.
+Guidelines:
+- Explain the practical reasons buyers look for {api_name} API from this {origin_type}, and when possible, include API-specific sourcing or supply-chain considerations that are characteristic for this country or region (only if commonly known or logically implied; do not invent facts).
+- Describe how origin affects supplier qualification and due-diligence steps, including documentation review (such as CoA, GMP evidence, DMF or CEP where relevant), without assuming availability unless explicitly stated by the filter.
+- Mention typical considerations for material traceability, audits or remote assessments, and lead-time or freight planning, adapted to this origin.
+- Note that filtering by origin may narrow the available supplier set compared to global sourcing, without using numbers or unverifiable claims.
+- Keep the tone factual, neutral, and procurement-oriented; avoid stereotypes, politics, marketing language, or medical guidance.
+- Do not modify, repeat, or reinterpret the base API description.
 
-Background for context only (do not quote or paraphrase closely):
+Context for reference only (do not quote or closely paraphrase):
 {origin_background_text}
 
-Return only the paragraph as plain text with no HTML, Markdown, or JSON.
+Return only the paragraph in plain text. No formatting, headings, or lists.
 """.strip()
 
 
@@ -214,7 +214,7 @@ def generate_filter_intent_text(api_name: str, filter_key: str, client: OpenAI) 
                 {
                     "role": "developer",
                     "content": (
-                        "Write a concise sourcing overview for the specified origin filter."
+                        "Write a concise sourcing overview for the specified origin."
                         " Keep it procurement-focused and avoid clinical claims."
                     ),
                 },
