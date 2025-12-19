@@ -517,11 +517,18 @@ def apply_filtered_intent_to_file(
                 ORIGIN_COUNTRY_BACKGROUND if _is_origin_country(filter_key) else ORIGIN_REGION_BACKGROUND
             )
             origin_background_text = background_lookup.get(origin_token or "", "")
+            
+            buyer_cheatsheet_items = [
+                line.strip()
+                for line in origin_background_text.splitlines()
+                if line.strip()
+            ]
+            buyer_cheatsheet_text = buyer_cheatsheet_items or None
+
 
             filter_intent_title = f"{api_name}: {FILTER_LABELS[filter_key]}"
             filter_summary_text = FILTER_EXPLAINERS.get(filter_key, "")
             filter_block_text = filter_intent_text
-            buyer_cheatsheet_text = buyer_cheatsheet_items or None
         else:
             filter_block_text = generate_filter_text(api_name, filter_key)
             filter_intent_title = f"{api_name} API manufacturers: {FILTER_LABELS[filter_key]}"
