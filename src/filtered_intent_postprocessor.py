@@ -70,7 +70,7 @@ ORIGIN_COUNTRY_BACKGROUND: dict[str, str] = {
     "IN": (
         "India is a primary global source for API raw materials and finished APIs, offering scale, cost efficiency, and broad regulatory coverage.\n"
         "Buyers typically evaluate documentation depth (CoA, GMP, DMF) alongside raw material traceability.\n"
-        "Logistics planning—especially port selection and incoterms—is often addressed upfront to manage lead-time variability."
+        "Logistics planning - especially port selection and incoterms - is often addressed upfront to manage lead-time variability."
     ),
     "CN": (
         "China combines scale and chemical depth in API and intermediate production, making it a key sourcing region globally..\n"
