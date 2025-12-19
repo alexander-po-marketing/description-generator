@@ -185,6 +185,45 @@ Return only the paragraph in plain text. No formatting, headings, or lists.
 """.strip()
 
 
+def _chat_with_one_retry(
+    *,
+    client: OpenAI,
+    primary_messages: list[Mapping[str, str]],
+    retry_messages: list[Mapping[str, str]],
+    fallback_text: str,
+    api_name: str,
+    filter_key: str,
+) -> str:
+    completion = client.chat.completions.create(
+        model=os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest"),
+        messages=primary_messages,
+    )
+    content = (completion.choices[0].message.content or "").strip()
+    if content:
+        return content
+
+    logger.warning(
+        "Retrying filter intent generation for %s (%s) after empty model output.",
+        api_name,
+        filter_key,
+    )
+
+    retry_completion = client.chat.completions.create(
+        model=os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest"),
+        messages=retry_messages,
+    )
+    retry_content = (retry_completion.choices[0].message.content or "").strip()
+    if retry_content:
+        return retry_content
+
+    logger.warning(
+        "Using fallback filter intent text for %s (%s) after empty model output.",
+        api_name,
+        filter_key,
+    )
+    return fallback_text
+
+
 def generate_filter_intent_text(api_name: str, filter_key: str, client: OpenAI) -> str:
     """Generate a short, qualification-focused sourcing paragraph for the hero block."""
 
@@ -201,6 +240,9 @@ def generate_filter_intent_text(api_name: str, filter_key: str, client: OpenAI) 
             ORIGIN_COUNTRY_BACKGROUND if _is_origin_country(filter_key) else ORIGIN_REGION_BACKGROUND
         )
         origin_background_text = background_lookup.get(origin_token, "")
+        buyer_cheatsheet_items = [
+            line.strip() for line in origin_background_text.splitlines() if line.strip()
+        ]
         prompt = _build_origin_filter_prompt(
             api_name=api_name,
             origin_label=origin_label,
@@ -208,28 +250,44 @@ def generate_filter_intent_text(api_name: str, filter_key: str, client: OpenAI) 
             origin_background_text=origin_background_text,
         )
 
-        completion = client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest"),
-            messages=[
-                {
-                    "role": "developer",
-                    "content": (
-                        "Write a concise sourcing overview for the specified origin."
-                        " Keep it procurement-focused and avoid clinical claims."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=220,
+        primary_messages = [
+            {
+                "role": "developer",
+                "content": (
+                    "Write a concise sourcing overview for the specified origin."
+                    " Keep it procurement-focused and avoid clinical claims."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ]
+        retry_messages = [
+            {
+                "role": "developer",
+                "content": "Provide one plain-text paragraph for procurement teams about sourcing this API from the specified origin.",
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Summarize sourcing {api_name} API from production {origin_type} {origin_label}. "
+                    "Mention typical qualification evidence (e.g., GMP, CoA, DMF/CEP if relevant), supplier vetting, and logistics considerations. "
+                    "Keep it factual, 3-5 sentences, no lists."
+                ),
+            },
+        ]
+        fallback_text = (
+            "This view highlights {api_name} API suppliers with production origin in {origin_label}. "
+            "Buyers use origin filters to align sourcing with qualification and logistics constraints. "
+            "Confirm documentation such as CoA and relevant quality/regulatory files early in the process, as availability can differ by origin."
+        ).format(api_name=api_name, origin_label=origin_label)
+
+        return _chat_with_one_retry(
+            client=client,
+            primary_messages=primary_messages,
+            retry_messages=retry_messages,
+            fallback_text=fallback_text,
+            api_name=api_name,
+            filter_key=filter_key,
         )
-        content = (completion.choices[0].message.content or "").strip()
-        if not content:
-            return (
-                "This view highlights {api_name} API suppliers with production origin in {origin_label}. "
-                "Buyers use origin filters to align sourcing with qualification and logistics constraints. "
-                "Confirm documentation such as CoA and relevant quality/regulatory files early in the process, as availability can differ by origin."
-            ).format(api_name=api_name, origin_label=origin_label)
-        return content
 
     filter_label = FILTER_LABELS[filter_key]
     template = FILTER_BLOCK_TEXT.get(filter_key)
@@ -269,23 +327,41 @@ Qualification background:
 {filter_background}
 """.strip()
 
-    completion = client.chat.completions.create(
-        model=os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest"),
-        messages=[
-            {
-                "role": "developer",
-                "content": (
-                    "Provide a single sourcing-focused paragraph for the specified qualification. Keep it concise and avoid clinical advice."
-                ),
-            },
-            {"role": "user", "content": prompt},
-        ],
+    primary_messages = [
+        {
+            "role": "developer",
+            "content": (
+                "Provide a single sourcing-focused paragraph for the specified qualification. Keep it concise and avoid clinical advice."
+            ),
+        },
+        {"role": "user", "content": prompt},
+    ]
+    retry_messages = [
+        {
+            "role": "developer",
+            "content": "Write one procurement-focused paragraph (no bullets) explaining this qualification for the API.",
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Explain how the '{filter_label}' qualification shapes sourcing {api_name} API. "
+                "Mention documentation buyers expect and how it influences supplier selection. Keep it 3-5 sentences."
+            ),
+        },
+    ]
+    fallback_text = (
+        f"Buyers apply the '{filter_label}' qualification when sourcing {api_name} API to align supplier selection with required documentation, quality evidence, and compliance expectations. "
+        "Confirm availability of supporting files early and consider how this filter may limit the supplier pool while improving qualification confidence."
     )
-    content = (completion.choices[0].message.content or "").strip()
-    if not content:
-        raise FilteredIntentError("Model returned empty content for filter intent text.")
 
-    return content
+    return _chat_with_one_retry(
+        client=client,
+        primary_messages=primary_messages,
+        retry_messages=retry_messages,
+        fallback_text=fallback_text,
+        api_name=api_name,
+        filter_key=filter_key,
+    )
 
 
 def _normalize_page(page: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -435,16 +511,22 @@ def apply_filtered_intent_to_file(
         filter_intent_text = generate_filter_intent_text(api_name=api_name, filter_key=filter_key, client=client)
 
         if _is_origin_filter(filter_key):
-            filter_block_text = _format_paragraph_html(filter_intent_text)
-            origin_label, _ = _origin_label_from_key(filter_key)
+            origin_label, origin_token = _origin_label_from_key(filter_key)
             origin_label = origin_label or FILTER_LABELS[filter_key]
-            if _is_origin_country(filter_key):
-                filter_intent_title = f"{api_name} API suppliers from {origin_label}"
-            else:
-                filter_intent_title = f"{api_name} API suppliers - produced in {origin_label}"
+            background_lookup = (
+                ORIGIN_COUNTRY_BACKGROUND if _is_origin_country(filter_key) else ORIGIN_REGION_BACKGROUND
+            )
+            origin_background_text = background_lookup.get(origin_token or "", "")
+
+            filter_intent_title = f"{api_name}: {FILTER_LABELS[filter_key]}"
+            filter_summary_text = FILTER_EXPLAINERS.get(filter_key, "")
+            filter_block_text = filter_intent_text
+            buyer_cheatsheet_text = buyer_cheatsheet_items or None
         else:
             filter_block_text = generate_filter_text(api_name, filter_key)
             filter_intent_title = f"{api_name} API manufacturers: {FILTER_LABELS[filter_key]}"
+            filter_summary_text = filter_intent_text
+            buyer_cheatsheet_text = None
 
         hero = normalized_page.get("hero")
         if not isinstance(hero, MutableMapping):
@@ -467,13 +549,17 @@ def apply_filtered_intent_to_file(
             filter_intent_entry = filter_intent
 
         filter_intent_entry["title"] = filter_intent_title
-        filter_intent_entry["filter_summary"] = filter_intent_text
+        filter_intent_entry["filter_summary"] = filter_summary_text
         filter_intent_entry["filter_block_text"] = filter_block_text
+        if buyer_cheatsheet_text:
+            filter_intent_entry["buyerCheatsheet"] = buyer_cheatsheet_text
 
         if _is_origin_filter(filter_key) and filter_intent_entry is not filter_intent:
             filter_intent.setdefault("title", filter_intent_title)
-            filter_intent.setdefault("filter_summary", filter_intent_text)
+            filter_intent.setdefault("filter_summary", filter_summary_text)
             filter_intent.setdefault("filter_block_text", filter_block_text)
+            if buyer_cheatsheet_text:
+                filter_intent.setdefault("buyerCheatsheet", buyer_cheatsheet_text)
 
         if isinstance(page, MutableMapping):
             template = page.get("template")
