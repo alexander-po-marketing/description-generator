@@ -240,6 +240,9 @@ def generate_filter_intent_text(api_name: str, filter_key: str, client: OpenAI) 
             ORIGIN_COUNTRY_BACKGROUND if _is_origin_country(filter_key) else ORIGIN_REGION_BACKGROUND
         )
         origin_background_text = background_lookup.get(origin_token, "")
+        buyer_cheatsheet_items = [
+            line.strip() for line in origin_background_text.splitlines() if line.strip()
+        ]
         prompt = _build_origin_filter_prompt(
             api_name=api_name,
             origin_label=origin_label,
@@ -518,7 +521,7 @@ def apply_filtered_intent_to_file(
             filter_intent_title = f"{api_name}: {FILTER_LABELS[filter_key]}"
             filter_summary_text = FILTER_EXPLAINERS.get(filter_key, "")
             filter_block_text = filter_intent_text
-            buyer_cheatsheet_text = origin_background_text or None
+            buyer_cheatsheet_text = buyer_cheatsheet_items or None
         else:
             filter_block_text = generate_filter_text(api_name, filter_key)
             filter_intent_title = f"{api_name} API manufacturers: {FILTER_LABELS[filter_key]}"

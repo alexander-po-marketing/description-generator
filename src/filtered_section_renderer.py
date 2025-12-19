@@ -196,6 +196,18 @@ def _filter_block_text(page: Mapping[str, object], filter_key: Optional[str]) ->
     return None
 
 
+def _buyer_cheatsheet_items(source: object) -> list[str]:
+    if isinstance(source, Mapping):
+        bullets = source.get("bullets")
+        if isinstance(bullets, list):
+            return [str(item).strip() for item in bullets if str(item).strip()]
+    if isinstance(source, (list, tuple)):
+        return [str(item).strip() for item in source if str(item).strip()]
+    if isinstance(source, str) and source.strip():
+        return [line.strip() for line in source.splitlines() if line.strip()]
+    return []
+
+
 def _buyer_cheatsheet_html(page: Mapping[str, object], filter_key: Optional[str]) -> str:
     hero = page.get("hero") if isinstance(page, Mapping) else None
     filter_intent = hero.get("filter_intent") if isinstance(hero, Mapping) else None
@@ -203,26 +215,18 @@ def _buyer_cheatsheet_html(page: Mapping[str, object], filter_key: Optional[str]
 
     if isinstance(intent_entry, Mapping):
         buyer_cheatsheet = intent_entry.get("buyerCheatsheet")
-        if isinstance(buyer_cheatsheet, str) and buyer_cheatsheet.strip():
-            return f"<p>{_escape(buyer_cheatsheet.strip())}</p>"
-        if isinstance(buyer_cheatsheet, Mapping):
-            bullets = buyer_cheatsheet.get("bullets")
-            if isinstance(bullets, list):
-                html = _unordered_list(bullets)
-                if html:
-                    return html
-        if isinstance(buyer_cheatsheet, list):
-            html = _unordered_list(buyer_cheatsheet)
+        bullets = _buyer_cheatsheet_items(buyer_cheatsheet)
+        if bullets:
+            html = _unordered_list(bullets)
             if html:
                 return html
 
     buyer_cheatsheet_source = page.get("buyerCheatsheet") if isinstance(page, Mapping) else None
-    if isinstance(buyer_cheatsheet_source, Mapping):
-        bullets = buyer_cheatsheet_source.get("bullets")
-        if isinstance(bullets, list):
-            html = _unordered_list(bullets)
-            if html:
-                return html
+    bullets = _buyer_cheatsheet_items(buyer_cheatsheet_source)
+    if bullets:
+        html = _unordered_list(bullets)
+        if html:
+            return html
 
     return ""
 
