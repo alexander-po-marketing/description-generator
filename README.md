@@ -77,6 +77,26 @@ src/        # core pipeline modules and CLI entrypoint
 
    Direct FAQs use placeholder substitution; LLM FAQs reuse the existing OpenAI configuration and pull context from hero, overview, pharmacology, ADME, and regulatory slices. Missing placeholders are logged and skipped to keep outputs clean.
 
+5. **Generate certificate-filter FAQs (for filtered API pages)**
+
+   Build certificate-focused FAQs for filter pages (GMP, CEP, WC, FDA-facing, CoA, ISO 9001, US DMF) without reusing the base API FAQ templates:
+
+   ```bash
+   python -m src.cert_faq_generator \
+     --input outputs/filtered_api_pages.json \
+     --output outputs/cert_filter_faqs.json \
+     --max-faqs 5 \
+     --model gpt-4o-mini
+   ```
+
+   Render the certificate FAQ HTML blocks (FAQPage schema only includes certificate FAQs, not the long intro copy):
+
+   ```bash
+   python -m src.cert_faq_renderer \
+     --input outputs/cert_filter_faqs.json \
+     --output outputs/section_html/cert_faq_blocks.json
+   ```
+
 ### Running the FAQ generator manually
 
 The FAQ generator only needs the structured page models produced by the main pipeline:
@@ -137,6 +157,8 @@ Environment variables control OpenAI behavior and defaults:
 - `outputs/api_pages_preview.html` — quick HTML preview of the structured models using the bundled template.
 - `outputs/section_html/section_blocks.json` — dictionary mapping API IDs to per-section HTML fragments ready for database storage.
 - `outputs/api_faqs.json` — templated FAQ entries (direct and LLM-backed) for each API, sourced from the structured page models.
+- `outputs/cert_filter_faqs.json` — certificate-only FAQ entries for filtered API pages (GMP/CEP/WC/etc.).
+- `outputs/section_html/cert_faq_blocks.json` — certificate FAQ HTML blocks + schema for filtered API pages.
 - `logs/prompts.log` — captured prompts for auditing and debugging.
 
 ## Testing and extension
