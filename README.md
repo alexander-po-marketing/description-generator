@@ -1,18 +1,19 @@
 # DrugBank to Pharmaoffer Content Pipeline
 
-This project transforms DrugBank XML exports into structured JSON ready for Pharmaoffer API product pages. The pipeline parses DrugBank data, generates expert pharmaceutical descriptions with OpenAI, builds UI-agnostic page models, and can optionally emit HTML previews as well as per-section HTML blocks for database ingestion.
+This project transforms DrugBank XML exports into structured JSON ready for Pharmaoffer API product pages. The pipeline parses DrugBank data, generates expert pharmaceutical narratives with OpenAI, builds UI-agnostic page models, and can optionally emit HTML previews as well as per-section HTML blocks for database ingestion.
 
 ## Features
 
 - **Modular architecture:** dedicated modules for configuration, parsing, generation, rendering, exporting, and the CLI entrypoint.
 - **Configurable OpenAI usage:** models, completion token limits, retries, and credentials are driven by environment variables.
 - **Robust parsing:** pulls core DrugBank attributes, classifications, products, categories, and references with graceful handling of missing data.
-- **Enhanced prompting:** pharma-grade description and summary prompts with logged inputs for traceability.
-- **Structured page models:** JSON designed for flexible React/Vue rendering (no embedded HTML tags).
+- **Enhanced prompting:** pharma-grade description and summary prompts (plain text) with logged inputs for traceability.
+- **Structured page models:** JSON designed for flexible React/Vue rendering (no embedded HTML tags in core content).
 - **Optional HTML previews:** renderable snippets remain available for debugging.
 - **Section HTML export:** reuse the preview renderer to build clean, per-section HTML fragments suitable for storing directly in the database.
 - **CLI and UI control:** run the pipeline via command line or through the browser-based controller.
 - **Logging and retries:** visibility into each pipeline stage and resilient OpenAI calls.
+- **Resume + cache:** resume from existing page models and reuse prompt hashes via the generation cache.
 
 ## Repository layout
 
@@ -40,16 +41,19 @@ src/        # core pipeline modules and CLI entrypoint
 2. **Run the generator**
 
    ```bash
-    python src/main.py \
-      --xml-path inputs/drugbank.xml \
-      --output-database-json outputs/database.json \
-      --output-page-models-json outputs/api_pages.json \
+   python src/main.py \
+     --xml-path inputs/drugbank.xml \
+     --output-database-json outputs/database.json \
+     --output-page-models-json outputs/api_pages.json \
+     --output-import-json outputs/api_pages_import.json \
      --valid-drugs inputs/valid_ids.txt \
-    --max-drugs 50 \
-    --log-level INFO
+     --max-drugs 50 \
+     --log-level INFO
   ```
 
  Supply `--valid-drugs` as a comma-separated list or a path to a text file (one DrugBank ID per line). Omit it to process all entries. Use `--max-drugs` to cap processing during tests.
+ Use `--resume` to continue from an existing `api_pages.json`, or `--resume-from` to point at a different file.
+ Use `--force-parse-xml` to ignore cached `database.json`.
 
 3. **Export section-level HTML (optional)**
 
@@ -143,18 +147,21 @@ The UI suggests paths from `inputs/`, `outputs/`, and `logs/`, exposes overwrite
 Environment variables control OpenAI behavior and defaults:
 
 - `OPENAI_MODEL` (default `gpt-5.1-chat-latest`)
-- `OPENAI_SUMMARY_MODEL` (default `gpt-4o-mini`)
-- `OPENAI_MAX_COMPLETION_TOKENS` (default `700`)
-- `OPENAI_SUMMARY_MAX_COMPLETION_TOKENS` (default `200`)
+- `OPENAI_SUMMARY_MODEL` (default `gpt-5.1-chat-latest`)
+- `OPENAI_MAX_COMPLETION_TOKENS` (default `1000`)
+- `OPENAI_SUMMARY_MAX_COMPLETION_TOKENS` (default `400`)
 - `OPENAI_MAX_RETRIES` (default `3`)
 - `OPENAI_TIMEOUT_SECONDS` (default `30`)
+- `OPENAI_MAX_WORKERS` (default `8`)
 - `LOG_LEVEL` (default `INFO`)
 
 ## Outputs
 
 - `outputs/database.json` — structured parsed DrugBank data per DrugBank ID (debug/secondary source).
 - `outputs/api_pages.json` — structured, HTML-free page models ready for UI rendering (primary output).
+- `outputs/api_pages_import.json` — template-free page models for clean database imports.
 - `outputs/api_pages_preview.html` — quick HTML preview of the structured models using the bundled template.
+- `outputs/generation_cache.json` — prompt hash cache to reuse model outputs on re-runs.
 - `outputs/section_html/section_blocks.json` — dictionary mapping API IDs to per-section HTML fragments ready for database storage.
 - `outputs/api_faqs.json` — templated FAQ entries (direct and LLM-backed) for each API, sourced from the structured page models.
 - `outputs/cert_filter_faqs.json` — certificate-only FAQ entries for filtered API pages (GMP/CEP/WC/etc.).
