@@ -11,8 +11,9 @@ import argparse
 import concurrent.futures
 import json
 import logging
+import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from src.config import OpenAIConfig
 from src.faq_generator import FAQTemplate, _extract_context, _has_required_fields
@@ -75,43 +76,74 @@ CERT_FAQ_TEMPLATES: List[FAQTemplate] = [
 ]
 
 
-def _load_json(path: str) -> Mapping[str, object]:
+def _normalize_page(page: Mapping[str, object]) -> Mapping[str, object]:
+    raw = page.get("raw")
+    if isinstance(raw, Mapping):
+        return raw
+    return page
+
+
+def _coerce_pages(data: object) -> Dict[str, object]:
+    if isinstance(data, Mapping):
+        if "pages" in data and isinstance(data.get("pages"), list):
+            return _coerce_pages(data.get("pages"))
+        return dict(data)
+    if isinstance(data, list):
+        pages: Dict[str, object] = {}
+        for index, entry in enumerate(data):
+            if isinstance(entry, Mapping):
+                entry_id = entry.get("id") or entry.get("drug_id") or entry.get("drugId")
+                key = str(entry_id) if entry_id is not None else str(index)
+            else:
+                key = str(index)
+            pages[key] = entry
+        return pages
+    raise ValueError("Input JSON must be a mapping of ID to page model or a list of page entries")
+
+
+def _load_json(path: str) -> Dict[str, object]:
     with open(path, "r", encoding="utf-8") as handle:
         data = json.load(handle)
-    if not isinstance(data, Mapping):
-        raise ValueError("Input JSON must be a mapping of ID to page model")
-    return data
+    return _coerce_pages(data)
 
 
 def _detect_filter_key(page: Mapping[str, object], override: Optional[str] = None) -> Optional[str]:
     if override:
         return override
 
-    filter_section = page.get("filter_section")
-    if isinstance(filter_section, Mapping):
-        for key in filter_section:
-            if key in CERT_FILTER_KEYS:
-                return str(key)
+    for candidate in _page_variants(page):
+        filter_section = candidate.get("filter_section")
+        if isinstance(filter_section, Mapping):
+            for key in filter_section:
+                if key in CERT_FILTER_KEYS:
+                    return str(key)
 
-    hero = page.get("hero") if isinstance(page, Mapping) else None
-    if isinstance(hero, Mapping):
-        filter_intent = hero.get("filter_intent")
-        if isinstance(filter_intent, Mapping):
-            for nested_key in filter_intent:
-                if nested_key in CERT_FILTER_KEYS:
-                    return str(nested_key)
-            title = filter_intent.get("title")
-            if isinstance(title, str):
-                normalized_title = title.lower()
-                for key, label in FILTER_LABELS.items():
-                    if key in CERT_FILTER_KEYS and label.lower() in normalized_title:
-                        return key
+        hero = candidate.get("hero")
+        if isinstance(hero, Mapping):
+            filter_intent = hero.get("filter_intent")
+            if isinstance(filter_intent, Mapping):
+                for nested_key in filter_intent:
+                    if nested_key in CERT_FILTER_KEYS:
+                        return str(nested_key)
+                title = filter_intent.get("title")
+                if isinstance(title, str):
+                    normalized_title = title.lower()
+                    for key, label in FILTER_LABELS.items():
+                        if key in CERT_FILTER_KEYS and label.lower() in normalized_title:
+                            return key
 
-    filter_key = page.get("filter_key") if isinstance(page, Mapping) else None
-    if isinstance(filter_key, str) and filter_key in CERT_FILTER_KEYS:
-        return filter_key
+        filter_key = candidate.get("filter_key")
+        if isinstance(filter_key, str) and filter_key in CERT_FILTER_KEYS:
+            return filter_key
 
     return None
+
+
+def _page_variants(page: Mapping[str, object]) -> Tuple[Mapping[str, object], ...]:
+    normalized = _normalize_page(page)
+    if normalized is page:
+        return (page,)
+    return (page, normalized)
 
 
 def _format_context(context_slices: Mapping[str, str], context_keys: Sequence[str]) -> str:
@@ -356,7 +388,9 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
 
 
 def main(argv: Iterable[str] | None = None) -> int:
-    args = parse_args(argv or [])
+    if argv is None:
+        argv = sys.argv[1:]
+    args = parse_args(argv)
     logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO))
 
     pages = _load_json(args.input)
