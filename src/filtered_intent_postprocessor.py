@@ -9,8 +9,6 @@ import os
 from pathlib import Path
 from typing import Any, Iterable, List, Mapping, MutableMapping, Optional, Tuple
 
-from openai import OpenAI
-
 logger = logging.getLogger(__name__)
 
 FILTER_LABELS = {
@@ -492,6 +490,8 @@ def apply_filtered_intent_to_file(
     output_file = Path(output_path)
     with input_file.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
+
+    from openai import OpenAI
 
     client = OpenAI(api_key=_require_env("OPENAI_API_KEY"))
 

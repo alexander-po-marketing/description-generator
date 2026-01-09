@@ -7,8 +7,9 @@ import random
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
+import httpx
 from openai import OpenAI
 
 from src.config import OpenAIConfig
@@ -25,11 +26,16 @@ class OpenAIClient:
 
     def __init__(self, config: OpenAIConfig, *, prompt_log_path: str | None = None):
         api_key = _require_env("OPENAI_API_KEY")
+        timeout = httpx.Timeout(
+            config.timeout_seconds,
+            connect=config.connect_timeout_seconds,
+            read=config.read_timeout_seconds,
+        )
         self.client = OpenAI(
             api_key=api_key,
             organization=_optional_env("OPENAI_ORG"),
             project=_optional_env("OPENAI_PROJECT"),
-            timeout=config.timeout_seconds,
+            timeout=timeout,
         )
         self.config = config
         self.prompt_log_path = Path(prompt_log_path) if prompt_log_path else None
@@ -107,6 +113,8 @@ class OpenAIClient:
         max_tokens: int,
         developer_message: str,
         user_message: str,
+        response_format: Optional[dict[str, Any]] = None,
+        idempotency_key: Optional[str] = None,
     ) -> str:
         self._log_prompt(model=model, developer_message=developer_message, user_message=user_message)
         tokens = self._estimate_tokens(developer_message, user_message)
@@ -116,13 +124,16 @@ class OpenAIClient:
             raise RuntimeError("Concurrency limiter not initialized")
         with self._semaphore:
             self._throttle(tokens)
+            extra_headers = {"Idempotency-Key": idempotency_key} if idempotency_key else None
             completion = self.client.chat.completions.create(
                 model=model,
                 max_completion_tokens=max_tokens,
+                response_format=response_format,
                 messages=[
                     {"role": "developer", "content": developer_message},
                     {"role": "user", "content": user_message},
                 ],
+                extra_headers=extra_headers,
             )
             return completion.choices[0].message.content or ""
 
