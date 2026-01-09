@@ -11,6 +11,7 @@ import argparse
 import concurrent.futures
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
@@ -387,7 +388,9 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
 
 
 def main(argv: Iterable[str] | None = None) -> int:
-    args = parse_args(argv or [])
+    if argv is None:
+        argv = sys.argv[1:]
+    args = parse_args(argv)
     logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO))
 
     pages = _load_json(args.input)
