@@ -305,6 +305,7 @@ class GeneratedContent:
     description: str
     summary: str
     summary_sentence: Optional[str] = None
+    faqs: Optional[list[dict[str, str]]] = None
 
 
 @dataclass

@@ -54,6 +54,7 @@ src/        # core pipeline modules and CLI entrypoint
  Supply `--valid-drugs` as a comma-separated list or a path to a text file (one DrugBank ID per line). Omit it to process all entries. Use `--max-drugs` to cap processing during tests.
  Use `--resume` to continue from an existing `api_pages.json`, or `--resume-from` to point at a different file.
  Use `--force-parse-xml` to ignore cached `database.json`.
+ Use `--use-existing-database` to explicitly reuse `outputs/database.json` if present.
 
 3. **Export section-level HTML (optional)**
 
@@ -142,17 +143,47 @@ The `/interface/index.html` UI wraps the CLI with a simple control panel to set 
 
 The UI suggests paths from `inputs/`, `outputs/`, and `logs/`, exposes overwrite/continue safeguards, and displays stdout/stderr from the underlying CLI run.
 
+## Large batch mode (1,000+ drugs)
+
+For large batches, use checkpointing + resumability to keep memory stable and avoid rework:
+
+```bash
+python src/main.py \
+  --xml-path inputs/drugbank.xml \
+  --output-page-models-json outputs/api_pages.json \
+  --output-import-json outputs/api_pages_import.json \
+  --checkpoint-every 25 \
+  --submit-chunk-size 200 \
+  --max-workers 8 \
+  --max-concurrent-requests 10 \
+  --max-requests-per-minute 300 \
+  --max-tokens-per-minute 200000 \
+  --use-existing-database \
+  --resume
+```
+
+- **Checkpointing:** every N drugs (default 25) the pipeline writes page models, generation cache, and `outputs/progress.json`.
+- **Resume:** rerun with `--resume` and completed DrugBank IDs are skipped automatically.
+- **Concurrency controls:** `--max-concurrent-requests`, `--max-requests-per-minute`, and `--max-tokens-per-minute` keep OpenAI usage within limits.
+- **Single-call mode:** add `--single-call-generation` (and `--include-faqs` if needed) to reduce OpenAI calls per drug.
+- **Database reuse:** add `--use-existing-database` to skip re-parsing XML when `outputs/database.json` already exists.
+
 ## Configuration
 
 Environment variables control OpenAI behavior and defaults:
 
 - `OPENAI_MODEL` (default `gpt-5.1-chat-latest`)
 - `OPENAI_SUMMARY_MODEL` (default `gpt-5.1-chat-latest`)
+- `OPENAI_SINGLE_CALL_MODEL` (default `OPENAI_MODEL`)
+- `OPENAI_REPAIR_MODEL` (default `gpt-5.1-mini`)
 - `OPENAI_MAX_COMPLETION_TOKENS` (default `1000`)
 - `OPENAI_SUMMARY_MAX_COMPLETION_TOKENS` (default `400`)
 - `OPENAI_MAX_RETRIES` (default `3`)
 - `OPENAI_TIMEOUT_SECONDS` (default `30`)
 - `OPENAI_MAX_WORKERS` (default `8`)
+- `OPENAI_MAX_CONCURRENT_REQUESTS` (default `10`)
+- `OPENAI_MAX_REQUESTS_PER_MINUTE` (optional)
+- `OPENAI_MAX_TOKENS_PER_MINUTE` (optional)
 - `LOG_LEVEL` (default `INFO`)
 
 ## Outputs

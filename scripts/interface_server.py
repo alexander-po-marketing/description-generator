@@ -71,11 +71,18 @@ def resolve_path(value: str | None, default_dir: Path | None = None) -> Path | N
         return None
     candidate = Path(value)
     if not candidate.is_absolute():
-        base = default_dir or REPO_ROOT
-        candidate = base / candidate
+        if default_dir is not None:
+            if candidate.parts and candidate.parts[0] == default_dir.name:
+                candidate = REPO_ROOT / candidate
+            else:
+                candidate = REPO_ROOT / default_dir / candidate
+        else:
+            candidate = REPO_ROOT / candidate
     candidate = candidate.resolve()
-    if not candidate.is_relative_to(REPO_ROOT):
-        raise ValueError(f"Path {candidate} is outside the repository root")
+    try:
+        candidate.relative_to(REPO_ROOT)
+    except ValueError as exc:
+        raise ValueError(f"Path {candidate} is outside the repository root") from exc
     return candidate
 
 
@@ -117,6 +124,25 @@ def build_command(options: dict, template_path: Path | None = None) -> list[str]
 
     if options.get("maxDrugs"):
         command.extend(["--max-drugs", str(options["maxDrugs"])])
+
+    if options.get("forceParseXml"):
+        command.append("--force-parse-xml")
+    if options.get("useExistingDatabase"):
+        command.append("--use-existing-database")
+    if options.get("checkpointEvery"):
+        command.extend(["--checkpoint-every", str(options["checkpointEvery"])])
+    if options.get("submitChunkSize"):
+        command.extend(["--submit-chunk-size", str(options["submitChunkSize"])])
+    if options.get("singleCallGeneration"):
+        command.append("--single-call-generation")
+    if options.get("includeFaqs"):
+        command.append("--include-faqs")
+    if options.get("maxConcurrentRequests"):
+        command.extend(["--max-concurrent-requests", str(options["maxConcurrentRequests"])])
+    if options.get("maxRequestsPerMinute"):
+        command.extend(["--max-requests-per-minute", str(options["maxRequestsPerMinute"])])
+    if options.get("maxTokensPerMinute"):
+        command.extend(["--max-tokens-per-minute", str(options["maxTokensPerMinute"])])
 
     if template_path:
         command.extend(["--template-definition", str(template_path)])
@@ -170,6 +196,8 @@ def build_env(options: dict) -> dict:
         "projectId": "OPENAI_PROJECT",
         "model": "OPENAI_MODEL",
         "summaryModel": "OPENAI_SUMMARY_MODEL",
+        "singleCallModel": "OPENAI_SINGLE_CALL_MODEL",
+        "repairModel": "OPENAI_REPAIR_MODEL",
     }
     for source, target in mapping.items():
         value = options.get(source)

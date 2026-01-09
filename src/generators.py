@@ -41,6 +41,22 @@ def _context_lines(context: Dict[str, object]) -> str:
             lines.append(f"{key}: {value}")
     return "\n".join(lines)
 
+
+def build_single_call_context(drug: DrugData) -> Dict[str, object]:
+    return {
+        "API Name": drug.name,
+        "CAS Number": drug.cas_number,
+        "Description": drug.description,
+        "Classification description": _classification_description(drug),
+        "Indication": drug.indication,
+        "Pharmacodynamics": drug.pharmacodynamics,
+        "Mechanism of Action": drug.mechanism_of_action,
+        "Groups/Approval": drug.groups,
+        "Drug Categories": drug.categories,
+        "Products": [asdict(product) for product in drug.products if product],
+        "Targets": [asdict(target) for target in drug.targets if target],
+    }
+
 def _classification_description(drug: DrugData) -> str:
     classification = getattr(drug, "classification", None)
     if isinstance(classification, dict):
@@ -115,7 +131,6 @@ def build_summary_sentence_context(drug: DrugData) -> Dict[str, object]:
         "Indications": drug.indication,
         "Therapeutic classes": drug.categories,
         "Key markets": unique_countries_from_products(drug.products),
-        
     }
 
 
@@ -135,6 +150,28 @@ def build_summary_sentence_prompt(drug: DrugData, description: str) -> str:
     ).strip()
 
 
+def build_single_call_prompt(drug: DrugData, *, include_faqs: bool = False) -> str:
+    context = build_single_call_context(drug)
+    faqs_instruction = (
+        "\"faqs\": an array of 3 short FAQ objects with keys \"question\" and \"answer\"."
+        if include_faqs
+        else "\"faqs\": optional, omit if you are unsure."
+    )
+    return dedent(
+        f"""
+        You are a senior pharmaceutical medical writer. Generate a JSON object with:
+        - description: 260-320 word plain-text description (no HTML/Markdown) with short paragraphs separated by blank lines.
+        - summary: 1-2 sentence summary (max 60 words).
+        - summary_sentence: exactly one sentence (18–30 words) that starts with 'A medication that ...'.
+        - {faqs_instruction}
+
+        Use this DrugBank-derived data:
+        { _context_lines(context) or 'Name: Unknown' }
+
+        Output JSON only. Do NOT include markdown fences or commentary.
+        """
+    ).strip()
+
 def build_formulation_notes_context(drug: DrugData) -> Dict[str, object]:
     routes = sorted({dosage.route for dosage in drug.dosages if getattr(dosage, "route", None)})
     classification_description = _classification_description(drug)
@@ -151,7 +188,6 @@ def build_formulation_notes_context(drug: DrugData) -> Dict[str, object]:
         "Routes": routes,
         "Groups": drug.groups,
         "Food interactions": drug.food_interactions,
-        
     }
 
 
