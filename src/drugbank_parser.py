@@ -8,6 +8,7 @@ structure.
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
@@ -128,6 +129,7 @@ class DrugbankParser:
 
         logger.info("Parsed %s drugs", len(results))
         return results
+
 
     # ---- Parsing helpers ------------------------------------------------
     def _want(self, tag: str) -> bool:
@@ -629,3 +631,18 @@ def parse_drugbank_xml(config: PipelineConfig) -> Dict[str, DrugData]:
 
     return DrugbankParser(config).parse()
 
+
+def load_database_json(path: str) -> Dict[str, DrugData]:
+    logger.info("Loading parsed database JSON from %s", path)
+    with open(path, "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    if not isinstance(data, dict):
+        raise ValueError("Parsed database JSON must be a mapping of drug IDs to payloads.")
+    parsed: Dict[str, DrugData] = {}
+    for drug_id, payload in data.items():
+        if isinstance(payload, DrugData):
+            parsed[drug_id] = payload
+        elif isinstance(payload, dict):
+            parsed[drug_id] = DrugData.from_serializable(payload)
+    logger.info("Loaded %s drugs from parsed JSON", len(parsed))
+    return parsed

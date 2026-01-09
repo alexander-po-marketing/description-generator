@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from pathlib import Path
 from typing import Callable, Optional
@@ -15,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIClient:
+    _prompt_lock = threading.Lock()
+
     def __init__(self, config: OpenAIConfig, *, prompt_log_path: str | None = None):
         api_key = _require_env("OPENAI_API_KEY")
         self.client = OpenAI(
@@ -67,8 +70,9 @@ class OpenAIClient:
             f"Developer: {developer_message}\n"
             f"User: {user_message}\n\n"
         )
-        with self.prompt_log_path.open("a", encoding="utf-8") as handle:
-            handle.write(entry)
+        with self._prompt_lock:
+            with self.prompt_log_path.open("a", encoding="utf-8") as handle:
+                handle.write(entry)
 
     def generate_description(self, prompt: str) -> str:
         return self._retry(
@@ -126,4 +130,3 @@ def _optional_env(key: str) -> str:
 
 
 import os  # placed at end to avoid linting issues with optional imports
-
