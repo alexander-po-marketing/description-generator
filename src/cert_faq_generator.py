@@ -215,6 +215,7 @@ def _generate_llm_answer(
     client: Optional[OpenAIClient],
     model: Optional[str],
     filter_key: str,
+    max_tokens: Optional[int] = None,
 ) -> Optional[str]:
     if client is None:
         logger.warning("No OpenAI client available; skipping certificate FAQ %s", template.id)
@@ -226,7 +227,7 @@ def _generate_llm_answer(
         template=template,
         filter_key=filter_key,
     )
-    return client.generate_text(prompt, model=model)
+    return client.generate_text(prompt, model=model, max_tokens=max_tokens)
 
 
 def generate_certificate_faqs_for_page(
@@ -276,6 +277,7 @@ def generate_certificate_faqs_for_page(
             client=client,
             model=model,
             filter_key=detected_filter_key,
+            max_tokens=client.config.max_completion_tokens if client else None,
         )
         if not answer:
             logger.debug("Skipping FAQ %s for %s due to empty answer", template.id, api_id)
