@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type, TypeVar
+
+T = TypeVar("T")
 
 
 @dataclass
@@ -200,6 +202,103 @@ class DrugData:
         data["targets"] = [asdict(target) for target in self.targets]
         return data
 
+    @classmethod
+    def from_serializable(cls, payload: Dict[str, object]) -> "DrugData":
+        def _get(*keys: str) -> Optional[object]:
+            for key in keys:
+                if key in payload:
+                    return payload.get(key)
+            return None
+
+        def _as_list(value: Optional[object]) -> List[object]:
+            if value is None:
+                return []
+            if isinstance(value, list):
+                return value
+            return [value]
+
+        def _build_list(value: Optional[object], model: Type[T]) -> List[T]:
+            items = _as_list(value)
+            result: List[T] = []
+            for item in items:
+                if isinstance(item, model):
+                    result.append(item)
+                elif isinstance(item, dict):
+                    result.append(model(**item))
+            return result
+
+        def _build_atc_codes(value: Optional[object]) -> List[ATCCode]:
+            items = _as_list(value)
+            results: List[ATCCode] = []
+            for item in items:
+                if isinstance(item, ATCCode):
+                    results.append(item)
+                    continue
+                if isinstance(item, dict):
+                    levels = _build_list(item.get("levels"), ATCLevel)
+                    results.append(ATCCode(code=item.get("code"), levels=levels))
+            return results
+
+        def _build_general_references(value: Optional[object]) -> GeneralReferences:
+            if isinstance(value, GeneralReferences):
+                return value
+            if isinstance(value, dict):
+                links = _build_list(value.get("links"), RegulatoryLink)
+                return GeneralReferences(links=links)
+            return GeneralReferences()
+
+        raw_fields = payload.get("raw_fields") or payload.get("rawFields") or {}
+
+        return cls(
+            drugbank_id=str(_get("drugbank_id", "drugbankId", "drugbank-id") or ""),
+            name=_get("name"),
+            description=_get("description"),
+            cas_number=_get("cas_number", "casNumber", "cas-number"),
+            unii=_get("unii"),
+            drug_type=_get("drug_type", "drugType"),
+            type=_get("type"),
+            state=_get("state"),
+            molecular_formula=_get("molecular_formula", "molecularFormula"),
+            average_mass=_get("average_mass", "averageMass"),
+            monoisotopic_mass=_get("monoisotopic_mass", "monoisotopicMass"),
+            molecular_weight=_get("molecular_weight", "molecularWeight"),
+            smiles=_get("smiles"),
+            logp=_get("logp", "logP"),
+            water_solubility=_get("water_solubility", "waterSolubility"),
+            melting_point=_get("melting_point", "meltingPoint"),
+            indication=_get("indication"),
+            pharmacodynamics=_get("pharmacodynamics"),
+            mechanism_of_action=_get("mechanism_of_action", "mechanism-of-action", "mechanismOfAction"),
+            toxicity=_get("toxicity"),
+            absorption=_get("absorption"),
+            half_life=_get("half_life", "half-life", "halfLife"),
+            protein_binding=_get("protein_binding", "proteinBinding"),
+            metabolism=_get("metabolism"),
+            route_of_elimination=_get("route_of_elimination", "route-of-elimination", "routeOfElimination"),
+            volume_of_distribution=_get("volume_of_distribution", "volume-of-distribution", "volumeOfDistribution"),
+            clearance=_get("clearance"),
+            groups=list(_as_list(_get("groups"))),
+            classification=_get("classification") or {},
+            categories=list(_as_list(_get("categories"))),
+            international_brands=list(_as_list(_get("international_brands", "internationalBrands"))),
+            food_interactions=list(_as_list(_get("food_interactions", "foodInteractions"))),
+            atc_codes=_build_atc_codes(_get("atc_codes", "atcCodes")),
+            dosages=_build_list(_get("dosages"), Dosage),
+            patents=_build_list(_get("patents"), Patent),
+            targets=_build_list(_get("targets"), Target),
+            drug_interactions=_build_list(_get("drug_interactions", "drugInteractions"), DrugInteraction),
+            regulatory_links=_build_list(_get("regulatory_links", "regulatoryLinks"), RegulatoryLink),
+            regulatory_approvals=_build_list(_get("regulatory_approvals", "regulatoryApprovals"), RegulatoryApproval),
+            products=_build_list(_get("products"), Product),
+            synthesis_reference=_get("synthesis_reference", "synthesis-reference", "synthesisReference"),
+            scientific_articles=_build_list(_get("scientific_articles", "scientificArticles"), ReferenceArticle),
+            general_references=_build_general_references(_get("general_references", "generalReferences")),
+            packagers=list(_as_list(_get("packagers"))),
+            manufacturers=list(_as_list(_get("manufacturers"))),
+            external_identifiers=_build_list(_get("external_identifiers", "externalIdentifiers"), ExternalIdentifier),
+            raw_fields=raw_fields if isinstance(raw_fields, dict) else {},
+        )
+
 
 @dataclass
 class GeneratedContent:
@@ -212,4 +311,3 @@ class GeneratedContent:
 class DrugGenerationResult:
     drug: DrugData
     generated: GeneratedContent
-

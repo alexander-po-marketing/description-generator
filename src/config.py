@@ -38,8 +38,12 @@ class PipelineConfig:
     import_json: str = "outputs/api_pages_import.json"
     template_definition: Optional[str] = None
     prompt_log: str = "logs/prompts.log"
+    generation_cache_json: str = "outputs/generation_cache.json"
     valid_drug_ids: Set[str] = field(default_factory=set)
     max_drugs: Optional[int] = None
+    max_workers: int = int(os.getenv("OPENAI_MAX_WORKERS", "8"))
+    use_existing_database: bool = True
+    resume_from: Optional[str] = None
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
     desired_fields: Set[str] = field(
         default_factory=lambda: {
@@ -96,10 +100,14 @@ class PipelineConfig:
         import_json: Optional[str] = None,
         preview_html: Optional[str] = None,
         prompt_log: Optional[str] = None,
+        generation_cache_json: Optional[str] = None,
         template_definition: Optional[str] = None,
         *,
         valid_drug_ids: Optional[Iterable[str]] = None,
         max_drugs: Optional[int] = None,
+        max_workers: Optional[int] = None,
+        use_existing_database: bool = True,
+        resume_from: Optional[str] = None,
         log_level: Optional[str] = None,
     ) -> "PipelineConfig":
         return cls(
@@ -109,9 +117,13 @@ class PipelineConfig:
             import_json=import_json or "outputs/api_pages_import.json",
             preview_html=preview_html or "outputs/api_pages_preview.html",
             prompt_log=prompt_log or "logs/prompts.log",
+            generation_cache_json=generation_cache_json or "outputs/generation_cache.json",
             template_definition=template_definition,
             valid_drug_ids=set(valid_drug_ids or []),
             max_drugs=max_drugs,
+            max_workers=max_workers or int(os.getenv("OPENAI_MAX_WORKERS", "8")),
+            use_existing_database=use_existing_database,
+            resume_from=resume_from,
             log_level=log_level or os.getenv("LOG_LEVEL", "INFO"),
         )
 

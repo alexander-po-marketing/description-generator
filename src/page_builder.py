@@ -227,12 +227,12 @@ def _ensure_generated_fields(
         desc_prompt = build_description_prompt(drug)
         description_text = client.generate_description(desc_prompt)
 
-    if not summary_text and generation_enabled("summary"):
-        summary_prompt = build_summary_prompt(drug, description_text or "")
+    if description_text and not summary_text and generation_enabled("summary"):
+        summary_prompt = build_summary_prompt(drug, description_text)
         summary_text = client.generate_summary(summary_prompt)
 
-    if not summary_sentence_text and generation_enabled("summary_sentence"):
-        sentence_prompt = build_summary_sentence_prompt(drug, description_text or "")
+    if description_text and not summary_sentence_text and generation_enabled("summary_sentence"):
+        sentence_prompt = build_summary_sentence_prompt(drug, description_text)
         summary_sentence_text = client.generate_text(sentence_prompt)
 
     description_clean = _sanitize_text(description_text) or ""
