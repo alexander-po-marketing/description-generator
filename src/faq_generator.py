@@ -12,7 +12,6 @@ from string import Formatter
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence
 
 from src.config import OpenAIConfig
-from src.openai_client import OpenAIClient
 
 logger = logging.getLogger(__name__)
 
@@ -701,6 +700,8 @@ def main(argv: Iterable[str] | None = None) -> int:
     client: Optional[OpenAIClient] = None
     if llm_needed:
         try:
+            from src.openai_client import OpenAIClient
+
             client = OpenAIClient(OpenAIConfig())
         except EnvironmentError as exc:  # pragma: no cover - env dependent
             logger.warning("OpenAI credentials missing; LLM FAQs will be skipped: %s", exc)

@@ -14,7 +14,8 @@ Performance notes:
 
 CLI flags (new):
 - --cache-path, --repair-model, --max-concurrent-requests, --max-in-flight,
-  --max-retries, --failed-path, --max-workers
+  --max-retries, --failed-path, --max-workers, --timeout-seconds,
+  --connect-timeout-seconds
 """
 
 from __future__ import annotations
@@ -31,14 +32,14 @@ import sys
 import threading
 import time
 from collections import deque
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from src.config import OpenAIConfig
 from src.faq_generator import FAQTemplate, _extract_context, _has_required_fields
 from src.filtered_intent_postprocessor import FILTER_EXPLAINERS, FILTER_LABELS
-from src.openai_client import OpenAIClient
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,8 @@ _FAQ_DEVELOPER_MESSAGE = (
 _REPAIR_DEVELOPER_MESSAGE = (
     "You repair invalid JSON into valid JSON without changing meaning."
 )
+
+_JSON_ONLY_SUFFIX = "Return ONLY JSON. No markdown. No code fences. No commentary."
 
 
 class RequestLimiter:
@@ -181,16 +184,74 @@ class DeadLetterWriter:
         self._lock = threading.Lock()
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
-    def write(self, *, api_id: str, filter_key: str, error: str) -> None:
+    def write(
+        self,
+        *,
+        api_id: str,
+        api_name: str,
+        filter_key: str,
+        exception_name: str,
+        reason: str,
+        raw_output: str,
+    ) -> None:
         entry = {
             "api_id": api_id,
+            "api_name": api_name,
             "filter_key": filter_key,
-            "error": error,
+            "exception": exception_name,
+            "reason": reason,
+            "raw_output_excerpt": _truncate_text(raw_output, 500),
             "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
         }
         with self._lock:
             with self.path.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+@dataclass
+class ValidationStats:
+    missing_keys: int = 0
+    empty_answers: int = 0
+    question_mismatches: int = 0
+    unanswered_questions: int = 0
+
+    @property
+    def total_failures(self) -> int:
+        return (
+            self.missing_keys
+            + self.empty_answers
+            + self.question_mismatches
+            + self.unanswered_questions
+        )
+
+
+@dataclass
+class ParseDiagnostics:
+    raw_length: int
+    json_extracted: bool
+    parsed_items: int
+    repair_used: bool
+    validation_failures: int
+
+
+@dataclass
+class GenerationOutcome:
+    api_id: str
+    api_name: str
+    filter_key: str
+    faqs: List[Dict[str, object]]
+    diagnostics: Optional[ParseDiagnostics]
+    error_type: Optional[str] = None
+    error_reason: Optional[str] = None
+
+
+@dataclass
+class GenerationStats:
+    total_candidates: int = 0
+    skipped_missing_filter: int = 0
+    failed_timeout: int = 0
+    failed_parse_validation: int = 0
+    succeeded: int = 0
 
 
 def _normalize_page(page: Mapping[str, object]) -> Mapping[str, object]:
@@ -297,6 +358,31 @@ def _normalize_text(value: str) -> str:
     return "\n".join(line.rstrip() for line in value.strip().splitlines()).strip()
 
 
+def _truncate_text(value: str, limit: int) -> str:
+    if len(value) <= limit:
+        return value
+    return value[:limit].rstrip() + "…"
+
+
+def _log_diagnostics(
+    *,
+    api_id: str,
+    api_name: str,
+    questions_count: int,
+    diagnostics: ParseDiagnostics,
+) -> None:
+    logger.info(
+        "FAQ diagnostics api_id=%s api_name=%s questions=%d raw_len=%d json_extracted=%s parsed_items=%d validation_failures=%d",
+        api_id,
+        api_name,
+        questions_count,
+        diagnostics.raw_length,
+        diagnostics.json_extracted,
+        diagnostics.parsed_items,
+        diagnostics.validation_failures,
+    )
+
+
 def _build_bulk_prompt(
     *,
     context: Mapping[str, str],
@@ -315,6 +401,8 @@ def _build_bulk_prompt(
         '- "question": the exact question text provided below\n'
         '- "answer": a 2-4 sentence answer\n\n'
         f"Return at most {max_faqs} FAQ items. Do not add extra keys or commentary.\n\n"
+        f"{_JSON_ONLY_SUFFIX}\n\n"
+        "If a top-level object is required, wrap the array in {\"faqs\": [...]}.\n\n"
         "Certificate filter context:\n"
         f"- API name: {context.get('drug_name')}\n"
         f"- CAS: {context.get('cas')}\n"
@@ -387,6 +475,8 @@ def _build_repair_prompt(
         "Return a JSON array of objects with exactly two keys: question and answer.\n"
         "Use the exact question text provided; keep answers 2-4 sentences.\n"
         f"Return at most {max_faqs} items.\n\n"
+        f"{_JSON_ONLY_SUFFIX}\n\n"
+        "If a top-level object is required, wrap the array in {\"faqs\": [...]}.\n\n"
         "Questions:\n"
         f"{questions_block}\n\n"
         "Invalid response:\n"
@@ -397,23 +487,30 @@ def _build_repair_prompt(
 
 def _clean_response_text(text: str) -> str:
     cleaned = text.strip()
-    cleaned = re.sub(r"^```(?:json)?", "", cleaned, flags=re.IGNORECASE).strip()
-    cleaned = re.sub(r"```$", "", cleaned).strip()
+    cleaned = re.sub(r"```(?:json)?", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = cleaned.replace("```", "").strip()
     return cleaned
 
 
-def _extract_json_payload(text: str) -> Optional[object]:
+def _extract_json_payload(text: str) -> tuple[Optional[object], Optional[str]]:
     cleaned = _clean_response_text(text)
     decoder = json.JSONDecoder()
+    last_error: Optional[str] = None
     for index, char in enumerate(cleaned):
         if char not in "[{":
             continue
         try:
             payload, _ = decoder.raw_decode(cleaned[index:])
         except json.JSONDecodeError:
+            last_error = "JSON decode failed"
             continue
-        return payload
-    return None
+        return payload, None
+    if cleaned:
+        try:
+            return json.loads(cleaned), None
+        except json.JSONDecodeError as exc:
+            last_error = f"{exc.__class__.__name__}: {exc.msg}"
+    return None, last_error
 
 
 def _parse_faq_payload(payload: object, max_faqs: int) -> Optional[List[Dict[str, str]]]:
@@ -437,6 +534,82 @@ def _parse_faq_payload(payload: object, max_faqs: int) -> Optional[List[Dict[str
     return parsed or None
 
 
+def _parse_faqs_with_repair(
+    raw_response: str,
+    *,
+    max_faqs: int,
+    repair_func: Optional[Callable[[], Optional[str]]] = None,
+) -> tuple[Optional[List[Dict[str, str]]], bool, Optional[str]]:
+    payload, error_reason = _extract_json_payload(raw_response)
+    parsed = _parse_faq_payload(payload, max_faqs) if payload else None
+    if parsed is not None or not repair_func:
+        return parsed, False, error_reason
+    repaired = repair_func()
+    payload, error_reason = _extract_json_payload(repaired or "")
+    parsed = _parse_faq_payload(payload, max_faqs) if payload else None
+    return parsed, True, error_reason
+
+
+def _validate_faq_items(
+    question_items: Sequence[Tuple[FAQTemplate, str]],
+    parsed: Sequence[Dict[str, str]],
+    *,
+    filter_key: str,
+    filter_label: str,
+) -> tuple[List[Dict[str, object]], ValidationStats]:
+    stats = ValidationStats()
+    normalized_expected = [question.strip().lower() for _, question in question_items]
+    expected_lookup = {question: idx for idx, question in enumerate(normalized_expected)}
+    answers_by_question: Dict[str, str] = {}
+    for item in parsed:
+        question = item.get("question")
+        answer = item.get("answer")
+        if not isinstance(question, str) or not isinstance(answer, str):
+            stats.missing_keys += 1
+            continue
+        question = question.strip()
+        answer = answer.strip()
+        if not answer:
+            stats.empty_answers += 1
+            continue
+        normalized_question = question.lower()
+        if normalized_question not in expected_lookup:
+            stats.question_mismatches += 1
+        answers_by_question[normalized_question] = answer
+
+    faqs: List[Dict[str, object]] = []
+    for index, (template, question_text) in enumerate(question_items):
+        normalized_question = normalized_expected[index]
+        answer = answers_by_question.get(normalized_question)
+        if not answer and index < len(parsed):
+            fallback_answer = parsed[index].get("answer")
+            if isinstance(fallback_answer, str) and fallback_answer.strip():
+                answer = fallback_answer.strip()
+        if not answer:
+            stats.unanswered_questions += 1
+            continue
+        output_id = f"{template.id}__{filter_key}"
+        faqs.append(
+            {
+                "id": output_id,
+                "template_id": template.id,
+                "group": template.group,
+                "question": question_text,
+                "answer": answer.strip(),
+                "mode": template.mode,
+                "tags": list(template.tags),
+                "filter_key": filter_key,
+                "filter_label": filter_label,
+            }
+        )
+    return faqs, stats
+
+
+def _is_response_format_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return "response_format" in message or ("json" in message and "schema" in message)
+
+
 def _generate_llm_bulk(
     *,
     client: Optional[OpenAIClient],
@@ -446,11 +619,14 @@ def _generate_llm_bulk(
     max_retries: int = 5,
     limiter: Optional[RequestLimiter] = None,
     developer_message: str = _FAQ_DEVELOPER_MESSAGE,
+    response_format: Optional[Dict[str, Any]] = None,
+    idempotency_key: Optional[str] = None,
 ) -> Optional[str]:
     if client is None:
         logger.warning("No OpenAI client available; skipping certificate FAQ generation")
         return None
-    def _call() -> str:
+
+    def _call(request_response_format: Optional[Dict[str, Any]]) -> str:
         if limiter:
             with limiter:
                 return client._chat_completion(
@@ -458,15 +634,25 @@ def _generate_llm_bulk(
                     max_tokens=max_tokens or client.config.max_completion_tokens,
                     developer_message=developer_message,
                     user_message=prompt,
+                    response_format=request_response_format,
+                    idempotency_key=idempotency_key,
                 )
         return client._chat_completion(
             model=model or client.config.summary_model,
             max_tokens=max_tokens or client.config.max_completion_tokens,
             developer_message=developer_message,
             user_message=prompt,
+            response_format=request_response_format,
+            idempotency_key=idempotency_key,
         )
 
-    return _call_with_retries(_call, max_retries=max_retries)
+    try:
+        return _call_with_retries(lambda: _call(response_format), max_retries=max_retries)
+    except Exception as exc:
+        if response_format and _is_response_format_error(exc):
+            logger.warning("JSON response_format unsupported; retrying without JSON mode")
+            return _call_with_retries(lambda: _call(None), max_retries=max_retries)
+        raise
 
 
 def generate_certificate_faqs_for_page(
@@ -484,18 +670,35 @@ def generate_certificate_faqs_for_page(
     cache: Optional[CacheStore],
     failed_writer: Optional[DeadLetterWriter],
     detected_filter_key: Optional[str] = None,
-) -> List[Dict[str, object]]:
+) -> GenerationOutcome:
     context, context_slices = _extract_context(api_id, page)
     detected_filter_key = detected_filter_key or _detect_filter_key(page, override=filter_key)
+    api_name = context.get("drug_name") or api_id
     if not detected_filter_key or detected_filter_key not in CERT_FILTER_KEYS:
         logger.info("Skipping %s due to missing certificate filter key", api_id)
-        return []
+        return GenerationOutcome(
+            api_id=api_id,
+            api_name=api_name,
+            filter_key=detected_filter_key or "unknown",
+            faqs=[],
+            diagnostics=None,
+            error_type="missing_filter",
+            error_reason="Missing certificate filter key",
+        )
 
     filter_label = FILTER_LABELS.get(detected_filter_key)
     filter_explainer = FILTER_EXPLAINERS.get(detected_filter_key)
     if not filter_label or not filter_explainer:
         logger.warning("Missing filter metadata for %s", detected_filter_key)
-        return []
+        return GenerationOutcome(
+            api_id=api_id,
+            api_name=api_name,
+            filter_key=detected_filter_key,
+            faqs=[],
+            diagnostics=None,
+            error_type="missing_filter_metadata",
+            error_reason="Missing filter metadata",
+        )
 
     context["filter_key"] = detected_filter_key
     context["filter_label"] = filter_label
@@ -515,7 +718,15 @@ def generate_certificate_faqs_for_page(
         question_items.append((template, question_text))
 
     if not question_items:
-        return []
+        return GenerationOutcome(
+            api_id=api_id,
+            api_name=api_name,
+            filter_key=detected_filter_key,
+            faqs=[],
+            diagnostics=None,
+            error_type="missing_questions",
+            error_reason="No FAQ templates available for context",
+        )
 
     context_keys: List[str] = []
     for template, _ in question_items:
@@ -549,8 +760,22 @@ def generate_certificate_faqs_for_page(
     if cache:
         cached = cache.get(cache_key)
         if cached is not None:
-            return cached
+            diagnostics = ParseDiagnostics(
+                raw_length=0,
+                json_extracted=True,
+                parsed_items=len(cached),
+                repair_used=False,
+                validation_failures=0,
+            )
+            return GenerationOutcome(
+                api_id=api_id,
+                api_name=api_name,
+                filter_key=detected_filter_key,
+                faqs=cached,
+                diagnostics=diagnostics,
+            )
 
+    idempotency_key = hashlib.sha256(cache_key.encode("utf-8")).hexdigest()
     raw_response = _generate_llm_bulk(
         client=client,
         model=model,
@@ -558,21 +783,43 @@ def generate_certificate_faqs_for_page(
         max_tokens=client.config.max_completion_tokens if client else None,
         max_retries=max_retries,
         limiter=limiter,
+        response_format={"type": "json_object"},
+        idempotency_key=idempotency_key,
     )
     if not raw_response:
-        return []
-
-    payload = _extract_json_payload(raw_response)
-    parsed = _parse_faq_payload(payload, max_faqs or len(questions)) if payload else None
-
-    if parsed is None:
-        repair_prompt = _build_repair_prompt(
-            raw_response=raw_response,
-            questions=questions,
-            max_faqs=max_faqs or len(questions),
+        diagnostics = ParseDiagnostics(
+            raw_length=0,
+            json_extracted=False,
+            parsed_items=0,
+            repair_used=False,
+            validation_failures=0,
         )
-        try:
-            repaired = _generate_llm_bulk(
+        _log_diagnostics(
+            api_id=api_id,
+            api_name=api_name,
+            questions_count=len(questions),
+            diagnostics=diagnostics,
+        )
+        return GenerationOutcome(
+            api_id=api_id,
+            api_name=api_name,
+            filter_key=detected_filter_key,
+            faqs=[],
+            diagnostics=diagnostics,
+            error_type="empty_response",
+            error_reason="Empty response from model",
+        )
+
+    repair_prompt = _build_repair_prompt(
+        raw_response=raw_response,
+        questions=questions,
+        max_faqs=max_faqs or len(questions),
+    )
+    try:
+        parsed, repair_used, parse_error = _parse_faqs_with_repair(
+            raw_response,
+            max_faqs=max_faqs or len(questions),
+            repair_func=lambda: _generate_llm_bulk(
                 client=client,
                 model=repair_model or model,
                 prompt=repair_prompt,
@@ -580,69 +827,124 @@ def generate_certificate_faqs_for_page(
                 max_retries=max_retries,
                 limiter=limiter,
                 developer_message=_REPAIR_DEVELOPER_MESSAGE,
+                response_format={"type": "json_object"},
+                idempotency_key=f"{idempotency_key}-repair",
+            ),
+        )
+    except Exception as exc:
+        error_message = f"Repair call failed: {exc}"
+        logger.warning("Repair call failed for %s: %s", api_id, exc)
+        if failed_writer:
+            failed_writer.write(
+                api_id=api_id,
+                api_name=api_name,
+                filter_key=detected_filter_key,
+                exception_name=exc.__class__.__name__,
+                reason=error_message,
+                raw_output=raw_response,
             )
-        except Exception as exc:
-            error_message = f"Repair call failed: {exc}"
-            logger.warning("Repair call failed for %s: %s", api_id, exc)
-            if failed_writer:
-                failed_writer.write(
-                    api_id=api_id,
-                    filter_key=detected_filter_key,
-                    error=error_message,
-                )
-            return []
+        diagnostics = ParseDiagnostics(
+            raw_length=len(raw_response),
+            json_extracted=False,
+            parsed_items=0,
+            repair_used=True,
+            validation_failures=0,
+        )
+        _log_diagnostics(
+            api_id=api_id,
+            api_name=api_name,
+            questions_count=len(questions),
+            diagnostics=diagnostics,
+        )
+        return GenerationOutcome(
+            api_id=api_id,
+            api_name=api_name,
+            filter_key=detected_filter_key,
+            faqs=[],
+            diagnostics=diagnostics,
+            error_type="parse_validation",
+            error_reason=error_message,
+        )
 
-        payload = _extract_json_payload(repaired or "")
-        parsed = _parse_faq_payload(payload, max_faqs or len(questions)) if payload else None
-
+    json_extracted = parsed is not None
+    parsed_count = len(parsed) if parsed else 0
     if parsed is None:
-        error_message = "Invalid JSON after repair"
+        error_message = parse_error or "Invalid JSON after repair"
         logger.warning("Invalid JSON for %s after repair", api_id)
         if failed_writer:
             failed_writer.write(
                 api_id=api_id,
+                api_name=api_name,
                 filter_key=detected_filter_key,
-                error=error_message,
+                exception_name="JSONDecodeError",
+                reason=error_message,
+                raw_output=raw_response,
             )
-        return []
-
-    normalized_questions = [question.strip().lower() for question in questions]
-    answers_by_question = {
-        item["question"].strip().lower(): item["answer"] for item in parsed
-    }
-
-    faqs: List[Dict[str, object]] = []
-    for index, (template, question_text) in enumerate(question_items):
-        normalized_question = normalized_questions[index]
-        answer = answers_by_question.get(normalized_question)
-        if not answer and index < len(parsed):
-            answer = parsed[index]["answer"]
-        if not answer:
-            continue
-        output_id = f"{template.id}__{detected_filter_key}"
-        faqs.append(
-            {
-                "id": output_id,
-                "template_id": template.id,
-                "group": template.group,
-                "question": question_text,
-                "answer": answer.strip(),
-                "mode": template.mode,
-                "tags": list(template.tags),
-                "filter_key": detected_filter_key,
-                "filter_label": filter_label,
-            }
+        diagnostics = ParseDiagnostics(
+            raw_length=len(raw_response),
+            json_extracted=False,
+            parsed_items=0,
+            repair_used=repair_used,
+            validation_failures=0,
         )
+        _log_diagnostics(
+            api_id=api_id,
+            api_name=api_name,
+            questions_count=len(questions),
+            diagnostics=diagnostics,
+        )
+        return GenerationOutcome(
+            api_id=api_id,
+            api_name=api_name,
+            filter_key=detected_filter_key,
+            faqs=[],
+            diagnostics=diagnostics,
+            error_type="parse_validation",
+            error_reason=error_message,
+        )
+
+    faqs, validation_stats = _validate_faq_items(
+        question_items,
+        parsed,
+        filter_key=detected_filter_key,
+        filter_label=filter_label,
+    )
+
+    diagnostics = ParseDiagnostics(
+        raw_length=len(raw_response),
+        json_extracted=json_extracted,
+        parsed_items=parsed_count,
+        repair_used=repair_used,
+        validation_failures=validation_stats.total_failures,
+    )
+
+    _log_diagnostics(
+        api_id=api_id,
+        api_name=api_name,
+        questions_count=len(questions),
+        diagnostics=diagnostics,
+    )
 
     if not faqs:
         logger.warning("No valid FAQs parsed for %s after JSON validation", api_id)
         if failed_writer:
             failed_writer.write(
                 api_id=api_id,
+                api_name=api_name,
                 filter_key=detected_filter_key,
-                error="No valid FAQs after parsing",
+                exception_name="ValidationError",
+                reason="No valid FAQs after parsing",
+                raw_output=raw_response,
             )
-        return []
+        return GenerationOutcome(
+            api_id=api_id,
+            api_name=api_name,
+            filter_key=detected_filter_key,
+            faqs=[],
+            diagnostics=diagnostics,
+            error_type="parse_validation",
+            error_reason="No valid FAQs after parsing",
+        )
 
     if cache:
         cache_entry = {
@@ -657,7 +959,13 @@ def generate_certificate_faqs_for_page(
         }
         cache.set(cache_key, cache_entry)
 
-    return faqs
+    return GenerationOutcome(
+        api_id=api_id,
+        api_name=api_name,
+        filter_key=detected_filter_key,
+        faqs=faqs,
+        diagnostics=diagnostics,
+    )
 
 
 def _generate_for_single_page(
@@ -675,26 +983,57 @@ def _generate_for_single_page(
     cache: Optional[CacheStore],
     failed_writer: Optional[DeadLetterWriter],
     detected_filter_key: Optional[str],
-) -> tuple[str, List[Dict[str, object]]]:
+) -> GenerationOutcome:
     if not isinstance(page, Mapping):
         logger.warning("Skipping %s because page entry is not a mapping", api_id)
-        return api_id, []
-    faqs = generate_certificate_faqs_for_page(
-        api_id,
-        page,
-        templates=templates,
-        client=client,
-        model=model,
-        max_faqs=max_faqs,
-        filter_key=filter_key,
-        repair_model=repair_model,
-        max_retries=max_retries,
-        limiter=limiter,
-        cache=cache,
-        failed_writer=failed_writer,
-        detected_filter_key=detected_filter_key,
-    )
-    return api_id, faqs
+        return GenerationOutcome(
+            api_id=api_id,
+            api_name=api_id,
+            filter_key=detected_filter_key or "unknown",
+            faqs=[],
+            diagnostics=None,
+            error_type="invalid_page",
+            error_reason="Page entry is not a mapping",
+        )
+    try:
+        return generate_certificate_faqs_for_page(
+            api_id,
+            page,
+            templates=templates,
+            client=client,
+            model=model,
+            max_faqs=max_faqs,
+            filter_key=filter_key,
+            repair_model=repair_model,
+            max_retries=max_retries,
+            limiter=limiter,
+            cache=cache,
+            failed_writer=failed_writer,
+            detected_filter_key=detected_filter_key,
+        )
+    except Exception as exc:  # pragma: no cover - network errors
+        context, _ = _extract_context(api_id, page)
+        api_name = context.get("drug_name") or api_id
+        error_type = "timeout" if _is_transient_error(exc) else "exception"
+        if failed_writer:
+            failed_writer.write(
+                api_id=api_id,
+                api_name=api_name,
+                filter_key=detected_filter_key or "unknown",
+                exception_name=exc.__class__.__name__,
+                reason=str(exc),
+                raw_output="",
+            )
+        logger.exception("Failed to generate certificate FAQs for %s", api_id)
+        return GenerationOutcome(
+            api_id=api_id,
+            api_name=api_name,
+            filter_key=detected_filter_key or "unknown",
+            faqs=[],
+            diagnostics=None,
+            error_type=error_type,
+            error_reason=str(exc),
+        )
 
 
 def generate_certificate_faqs(
@@ -712,8 +1051,9 @@ def generate_certificate_faqs(
     max_retries: int = 5,
     cache: Optional[CacheStore] = None,
     failed_writer: Optional[DeadLetterWriter] = None,
-) -> Dict[str, List[Dict[str, object]]]:
+) -> tuple[Dict[str, List[Dict[str, object]]], GenerationStats]:
     faq_output: Dict[str, List[Dict[str, object]]] = {}
+    stats = GenerationStats(total_candidates=len(pages))
     limiter = RequestLimiter(max_concurrent_requests)
     eligible: List[Tuple[str, Mapping[str, object], str]] = []
     for api_id, page in pages.items():
@@ -723,6 +1063,7 @@ def generate_certificate_faqs(
         detected = _detect_filter_key(page, override=filter_key)
         if not detected or detected not in CERT_FILTER_KEYS:
             logger.info("Skipping %s due to missing certificate filter key", api_id)
+            stats.skipped_missing_filter += 1
             continue
         eligible.append((api_id, page, detected))
 
@@ -758,15 +1099,19 @@ def generate_certificate_faqs(
             )
             for future in done:
                 api_id = in_flight.pop(future)
-                try:
-                    result_api_id, faqs = future.result()
-                except Exception:
-                    logger.exception("Failed to generate certificate FAQs for %s", api_id)
-                    continue
-
-                if faqs:
-                    faq_output[result_api_id] = faqs
-    return faq_output
+                outcome = future.result()
+                if outcome.faqs:
+                    faq_output[outcome.api_id] = outcome.faqs
+                    stats.succeeded += 1
+                elif outcome.error_type == "timeout":
+                    stats.failed_timeout += 1
+                elif outcome.error_type and outcome.error_type not in {
+                    "missing_filter",
+                    "missing_filter_metadata",
+                    "missing_questions",
+                }:
+                    stats.failed_parse_validation += 1
+    return faq_output, stats
 
 
 def parse_args(argv: Iterable[str]) -> argparse.Namespace:
@@ -818,6 +1163,18 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         help="Path to write failed API generations as JSONL",
     )
     parser.add_argument(
+        "--timeout-seconds",
+        type=int,
+        default=None,
+        help="OpenAI client timeout in seconds (default: 120)",
+    )
+    parser.add_argument(
+        "--connect-timeout-seconds",
+        type=int,
+        default=None,
+        help="OpenAI client connect timeout in seconds (default: 30)",
+    )
+    parser.add_argument(
         "--max-workers",
         type=int,
         default=None,
@@ -842,7 +1199,17 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     client: Optional[OpenAIClient] = None
     try:
-        client = OpenAIClient(OpenAIConfig())
+        from src.openai_client import OpenAIClient
+
+        config = OpenAIConfig()
+        if args.timeout_seconds is not None:
+            config.timeout_seconds = args.timeout_seconds
+            config.read_timeout_seconds = args.timeout_seconds
+        if args.connect_timeout_seconds is not None:
+            config.connect_timeout_seconds = args.connect_timeout_seconds
+        if args.max_concurrent_requests:
+            config.max_concurrent_requests = args.max_concurrent_requests
+        client = OpenAIClient(config)
     except EnvironmentError as exc:  # pragma: no cover - env dependent
         logger.warning("OpenAI credentials missing; certificate FAQs will be skipped: %s", exc)
         client = None
@@ -851,7 +1218,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     failed_writer = DeadLetterWriter(Path(args.failed_path)) if args.failed_path else None
 
     max_workers = args.max_workers or int(os.getenv("OPENAI_MAX_WORKERS", "8"))
-    faqs = generate_certificate_faqs(
+    faqs, stats = generate_certificate_faqs(
         pages,
         client=client,
         model=args.model,
@@ -872,6 +1239,17 @@ def main(argv: Iterable[str] | None = None) -> int:
     tmp_path.write_text(json.dumps(faqs, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp_path.replace(output_path)
     logger.info("Wrote certificate FAQs for %d APIs to %s", len(faqs), output_path)
+    if stats.total_candidates and len(faqs) == 0:
+        summary = (
+            "No certificate FAQs generated.\n"
+            f"total_candidates={stats.total_candidates} "
+            f"skipped_missing_filter={stats.skipped_missing_filter} "
+            f"failed_timeout={stats.failed_timeout} "
+            f"failed_parse_validation={stats.failed_parse_validation} "
+            f"succeeded={stats.succeeded}"
+        )
+        logger.error(summary)
+        return 1
     return 0
 
 

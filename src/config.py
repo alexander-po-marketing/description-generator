@@ -28,7 +28,9 @@ class OpenAIConfig:
         os.getenv("OPENAI_SUMMARY_MAX_COMPLETION_TOKENS", "400")
     )
     max_retries: int = int(os.getenv("OPENAI_MAX_RETRIES", "3"))
-    timeout_seconds: int = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "30"))
+    timeout_seconds: int = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "120"))
+    connect_timeout_seconds: int = int(os.getenv("OPENAI_CONNECT_TIMEOUT_SECONDS", "30"))
+    read_timeout_seconds: int = int(os.getenv("OPENAI_READ_TIMEOUT_SECONDS", "120"))
     max_concurrent_requests: int = int(os.getenv("OPENAI_MAX_CONCURRENT_REQUESTS", "10"))
     max_requests_per_minute: Optional[int] = (
         int(os.getenv("OPENAI_MAX_REQUESTS_PER_MINUTE", ""))
