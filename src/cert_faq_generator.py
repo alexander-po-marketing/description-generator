@@ -3,15 +3,35 @@
 To add a new certificate filter, update FILTER_LABELS/FILTER_EXPLAINERS in
 src/filtered_intent_postprocessor.py and include the new key in CERT_FILTER_KEYS
 below.
+
+Performance notes:
+- For 1,000+ APIs, prefer --max-concurrent-requests 8-10 and --max-in-flight 300.
+- Caching uses an append-only JSONL file to reuse prior generations on reruns.
+- Reruns can resume cheaply by reusing --cache-path and the same model/settings.
+- Single-call generation reduces OpenAI calls from N-per-FAQ to ~1 per API.
+- Example: python -m src.cert_faq_generator --cache-path outputs/cert_faq_cache.jsonl \\
+  --max-concurrent-requests 8 --max-in-flight 300
+
+CLI flags (new):
+- --cache-path, --repair-model, --max-concurrent-requests, --max-in-flight,
+  --max-retries, --failed-path, --max-workers
 """
 
 from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import hashlib
 import json
 import logging
+import os
+import random
+import re
 import sys
+import threading
+import time
+from collections import deque
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
@@ -74,6 +94,103 @@ CERT_FAQ_TEMPLATES: List[FAQTemplate] = [
         tags=["workflow", "qualification"],
     ),
 ]
+
+_FAQ_DEVELOPER_MESSAGE = (
+    "You are an expert pharmaceutical procurement writer creating certificate-focused FAQs. "
+    "Be factual, concise, and avoid marketing language."
+)
+
+_REPAIR_DEVELOPER_MESSAGE = (
+    "You repair invalid JSON into valid JSON without changing meaning."
+)
+
+
+class RequestLimiter:
+    def __init__(self, max_concurrent: int) -> None:
+        self._semaphore = threading.BoundedSemaphore(max(1, max_concurrent))
+
+    def __enter__(self) -> "RequestLimiter":
+        self._semaphore.acquire()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self._semaphore.release()
+
+
+class CacheStore:
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self._lock = threading.Lock()
+        self._data: Dict[str, Dict[str, object]] = {}
+        self._load()
+
+    def _load(self) -> None:
+        if not self.path.exists():
+            return
+        if self.path.suffix == ".jsonl":
+            for line in self.path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                key = entry.get("key")
+                if isinstance(key, str):
+                    self._data[key] = entry
+        else:
+            try:
+                content = json.loads(self.path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                return
+            if isinstance(content, dict):
+                for key, entry in content.items():
+                    if isinstance(key, str) and isinstance(entry, dict):
+                        self._data[key] = entry
+
+    def get(self, key: str) -> Optional[List[Dict[str, object]]]:
+        entry = self._data.get(key)
+        if not entry:
+            return None
+        faqs = entry.get("faqs")
+        if isinstance(faqs, list):
+            return faqs
+        return None
+
+    def set(self, key: str, entry: Dict[str, object]) -> None:
+        with self._lock:
+            self._data[key] = entry
+            if self.path.suffix == ".jsonl":
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+                with self.path.open("a", encoding="utf-8") as handle:
+                    handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            else:
+                self._write_atomic_json(self.path, self._data)
+
+    @staticmethod
+    def _write_atomic_json(path: Path, data: Mapping[str, object]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
+        tmp_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp_path.replace(path)
+
+
+class DeadLetterWriter:
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self._lock = threading.Lock()
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
+    def write(self, *, api_id: str, filter_key: str, error: str) -> None:
+        entry = {
+            "api_id": api_id,
+            "filter_key": filter_key,
+            "error": error,
+            "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        }
+        with self._lock:
+            with self.path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 def _normalize_page(page: Mapping[str, object]) -> Mapping[str, object]:
@@ -176,58 +293,180 @@ def _guardrails_for_filter(filter_key: str) -> List[str]:
     return guardrails
 
 
-def _build_llm_prompt(
+def _normalize_text(value: str) -> str:
+    return "\n".join(line.rstrip() for line in value.strip().splitlines()).strip()
+
+
+def _build_bulk_prompt(
     *,
-    question: str,
     context: Mapping[str, str],
     context_slices: Mapping[str, str],
-    template: FAQTemplate,
     filter_key: str,
+    questions: Sequence[str],
+    max_faqs: int,
+    context_keys: Sequence[str],
 ) -> str:
-    context_block = _format_context(context_slices, template.context_keys)
+    context_block = _format_context(context_slices, context_keys)
     guardrails = "\n".join(f"- {item}" for item in _guardrails_for_filter(filter_key))
-    return (
-        "You are an expert pharmaceutical procurement writer creating certificate-focused FAQs. "
-        "Answer only the certificate qualification question using the provided context.\n\n"
-        f"Question: {question}\n\n"
+    questions_block = "\n".join(f"{idx + 1}. {question}" for idx, question in enumerate(questions))
+    prompt = (
+        "Generate certificate-focused FAQ answers as strict JSON.\n\n"
+        "Return a JSON array of objects. Each object must have:\n"
+        '- "question": the exact question text provided below\n'
+        '- "answer": a 2-4 sentence answer\n\n'
+        f"Return at most {max_faqs} FAQ items. Do not add extra keys or commentary.\n\n"
         "Certificate filter context:\n"
         f"- API name: {context.get('drug_name')}\n"
         f"- CAS: {context.get('cas')}\n"
         f"- Filter label: {context.get('filter_label')}\n"
         f"- Filter explainer: {context.get('filter_explainer')}\n"
         f"- Filter key: {context.get('filter_key')}\n"
-        f"Additional context:\n{context_block}\n\n"
+        f"Additional context:\n{context_block or '- (none)'}\n\n"
         "Constraints:\n"
-        "- Keep the answer to 2-4 sentences.\n"
         "- Avoid marketing language, speculation, or promises.\n"
         "- Do not restate long intro copy.\n"
         f"{guardrails}\n"
-        "- If context is insufficient, stay high-level and factual without inventing details."
+        "- If context is insufficient, stay high-level and factual without inventing details.\n\n"
+        "Questions:\n"
+        f"{questions_block}"
     )
+    return _normalize_text(prompt)
 
 
-def _generate_llm_answer(
+def _is_transient_error(exc: Exception) -> bool:
+    status_code = getattr(exc, "status_code", None) or getattr(
+        getattr(exc, "response", None), "status_code", None
+    )
+    if status_code in {429, 500, 502, 503, 504}:
+        return True
+    if isinstance(exc, (TimeoutError, ConnectionError, OSError)):
+        return True
+    message = str(exc).lower()
+    transient_markers = [
+        "timed out",
+        "timeout",
+        "connection reset",
+        "connection aborted",
+        "temporarily unavailable",
+        "rate limit",
+        "too many requests",
+        "service unavailable",
+        "bad gateway",
+    ]
+    return any(marker in message for marker in transient_markers)
+
+
+def _call_with_retries(
+    func,
     *,
-    template: FAQTemplate,
-    question: str,
-    context: Mapping[str, str],
-    context_slices: Mapping[str, str],
+    max_retries: int,
+    base_delay: float = 1.0,
+    max_delay: float = 20.0,
+) -> str:
+    for attempt in range(max_retries + 1):
+        try:
+            return func()
+        except Exception as exc:  # pragma: no cover - network errors
+            if attempt >= max_retries or not _is_transient_error(exc):
+                raise
+            delay = min(max_delay, base_delay * (2 ** attempt)) + random.random()
+            logger.warning("Retrying OpenAI call after error: %s", exc)
+            time.sleep(delay)
+    raise RuntimeError("Failed to complete OpenAI request")
+
+
+def _build_repair_prompt(
+    *,
+    raw_response: str,
+    questions: Sequence[str],
+    max_faqs: int,
+) -> str:
+    questions_block = "\n".join(f"{idx + 1}. {question}" for idx, question in enumerate(questions))
+    prompt = (
+        "Repair the following text into valid JSON.\n\n"
+        "Return a JSON array of objects with exactly two keys: question and answer.\n"
+        "Use the exact question text provided; keep answers 2-4 sentences.\n"
+        f"Return at most {max_faqs} items.\n\n"
+        "Questions:\n"
+        f"{questions_block}\n\n"
+        "Invalid response:\n"
+        f"{raw_response}"
+    )
+    return _normalize_text(prompt)
+
+
+def _clean_response_text(text: str) -> str:
+    cleaned = text.strip()
+    cleaned = re.sub(r"^```(?:json)?", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"```$", "", cleaned).strip()
+    return cleaned
+
+
+def _extract_json_payload(text: str) -> Optional[object]:
+    cleaned = _clean_response_text(text)
+    decoder = json.JSONDecoder()
+    for index, char in enumerate(cleaned):
+        if char not in "[{":
+            continue
+        try:
+            payload, _ = decoder.raw_decode(cleaned[index:])
+        except json.JSONDecodeError:
+            continue
+        return payload
+    return None
+
+
+def _parse_faq_payload(payload: object, max_faqs: int) -> Optional[List[Dict[str, str]]]:
+    if isinstance(payload, dict):
+        if "faqs" in payload:
+            payload = payload["faqs"]
+        elif "items" in payload:
+            payload = payload["items"]
+    if not isinstance(payload, list):
+        return None
+    parsed: List[Dict[str, str]] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        question = item.get("question")
+        answer = item.get("answer")
+        if isinstance(question, str) and isinstance(answer, str):
+            parsed.append({"question": question.strip(), "answer": answer.strip()})
+        if len(parsed) >= max_faqs:
+            break
+    return parsed or None
+
+
+def _generate_llm_bulk(
+    *,
     client: Optional[OpenAIClient],
     model: Optional[str],
-    filter_key: str,
+    prompt: str,
     max_tokens: Optional[int] = None,
+    max_retries: int = 5,
+    limiter: Optional[RequestLimiter] = None,
+    developer_message: str = _FAQ_DEVELOPER_MESSAGE,
 ) -> Optional[str]:
     if client is None:
-        logger.warning("No OpenAI client available; skipping certificate FAQ %s", template.id)
+        logger.warning("No OpenAI client available; skipping certificate FAQ generation")
         return None
-    prompt = _build_llm_prompt(
-        question=question,
-        context=context,
-        context_slices=context_slices,
-        template=template,
-        filter_key=filter_key,
-    )
-    return client.generate_text(prompt, model=model, max_tokens=max_tokens)
+    def _call() -> str:
+        if limiter:
+            with limiter:
+                return client._chat_completion(
+                    model=model or client.config.summary_model,
+                    max_tokens=max_tokens or client.config.max_completion_tokens,
+                    developer_message=developer_message,
+                    user_message=prompt,
+                )
+        return client._chat_completion(
+            model=model or client.config.summary_model,
+            max_tokens=max_tokens or client.config.max_completion_tokens,
+            developer_message=developer_message,
+            user_message=prompt,
+        )
+
+    return _call_with_retries(_call, max_retries=max_retries)
 
 
 def generate_certificate_faqs_for_page(
@@ -239,9 +478,15 @@ def generate_certificate_faqs_for_page(
     model: Optional[str],
     max_faqs: Optional[int],
     filter_key: Optional[str],
+    repair_model: Optional[str],
+    max_retries: int,
+    limiter: Optional[RequestLimiter],
+    cache: Optional[CacheStore],
+    failed_writer: Optional[DeadLetterWriter],
+    detected_filter_key: Optional[str] = None,
 ) -> List[Dict[str, object]]:
     context, context_slices = _extract_context(api_id, page)
-    detected_filter_key = _detect_filter_key(page, override=filter_key)
+    detected_filter_key = detected_filter_key or _detect_filter_key(page, override=filter_key)
     if not detected_filter_key or detected_filter_key not in CERT_FILTER_KEYS:
         logger.info("Skipping %s due to missing certificate filter key", api_id)
         return []
@@ -256,33 +501,124 @@ def generate_certificate_faqs_for_page(
     context["filter_label"] = filter_label
     context["filter_explainer"] = filter_explainer
 
-    faqs: List[Dict[str, object]] = []
+    question_items: List[Tuple[FAQTemplate, str]] = []
     for template in templates:
-        if max_faqs is not None and len(faqs) >= max_faqs:
+        if max_faqs is not None and len(question_items) >= max_faqs:
             break
         if not _has_required_fields(template, context):
             continue
-
         try:
             question_text = template.question.format(**context)
         except KeyError as exc:
             logger.debug("Missing placeholder %s for question %s", exc, template.id)
             continue
+        question_items.append((template, question_text))
 
-        answer = _generate_llm_answer(
-            template=template,
-            question=question_text,
-            context=context,
-            context_slices=context_slices,
-            client=client,
-            model=model,
-            filter_key=detected_filter_key,
-            max_tokens=client.config.max_completion_tokens if client else None,
+    if not question_items:
+        return []
+
+    context_keys: List[str] = []
+    for template, _ in question_items:
+        for key in template.context_keys:
+            if key not in context_keys:
+                context_keys.append(key)
+    if not context_keys:
+        context_keys = ["regulatory", "supply"]
+
+    questions = [question for _, question in question_items]
+    prompt = _build_bulk_prompt(
+        context=context,
+        context_slices=context_slices,
+        filter_key=detected_filter_key,
+        questions=questions,
+        max_faqs=max_faqs or len(questions),
+        context_keys=context_keys,
+    )
+
+    prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+    cache_key = "|".join(
+        [
+            model or (client.config.summary_model if client else ""),
+            detected_filter_key,
+            api_id,
+            str(max_faqs or len(questions)),
+            prompt_hash,
+        ]
+    )
+
+    if cache:
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+    raw_response = _generate_llm_bulk(
+        client=client,
+        model=model,
+        prompt=prompt,
+        max_tokens=client.config.max_completion_tokens if client else None,
+        max_retries=max_retries,
+        limiter=limiter,
+    )
+    if not raw_response:
+        return []
+
+    payload = _extract_json_payload(raw_response)
+    parsed = _parse_faq_payload(payload, max_faqs or len(questions)) if payload else None
+
+    if parsed is None:
+        repair_prompt = _build_repair_prompt(
+            raw_response=raw_response,
+            questions=questions,
+            max_faqs=max_faqs or len(questions),
         )
-        if not answer:
-            logger.debug("Skipping FAQ %s for %s due to empty answer", template.id, api_id)
-            continue
+        try:
+            repaired = _generate_llm_bulk(
+                client=client,
+                model=repair_model or model,
+                prompt=repair_prompt,
+                max_tokens=client.config.max_completion_tokens if client else None,
+                max_retries=max_retries,
+                limiter=limiter,
+                developer_message=_REPAIR_DEVELOPER_MESSAGE,
+            )
+        except Exception as exc:
+            error_message = f"Repair call failed: {exc}"
+            logger.warning("Repair call failed for %s: %s", api_id, exc)
+            if failed_writer:
+                failed_writer.write(
+                    api_id=api_id,
+                    filter_key=detected_filter_key,
+                    error=error_message,
+                )
+            return []
 
+        payload = _extract_json_payload(repaired or "")
+        parsed = _parse_faq_payload(payload, max_faqs or len(questions)) if payload else None
+
+    if parsed is None:
+        error_message = "Invalid JSON after repair"
+        logger.warning("Invalid JSON for %s after repair", api_id)
+        if failed_writer:
+            failed_writer.write(
+                api_id=api_id,
+                filter_key=detected_filter_key,
+                error=error_message,
+            )
+        return []
+
+    normalized_questions = [question.strip().lower() for question in questions]
+    answers_by_question = {
+        item["question"].strip().lower(): item["answer"] for item in parsed
+    }
+
+    faqs: List[Dict[str, object]] = []
+    for index, (template, question_text) in enumerate(question_items):
+        normalized_question = normalized_questions[index]
+        answer = answers_by_question.get(normalized_question)
+        if not answer and index < len(parsed):
+            answer = parsed[index]["answer"]
+        if not answer:
+            continue
         output_id = f"{template.id}__{detected_filter_key}"
         faqs.append(
             {
@@ -297,6 +633,30 @@ def generate_certificate_faqs_for_page(
                 "filter_label": filter_label,
             }
         )
+
+    if not faqs:
+        logger.warning("No valid FAQs parsed for %s after JSON validation", api_id)
+        if failed_writer:
+            failed_writer.write(
+                api_id=api_id,
+                filter_key=detected_filter_key,
+                error="No valid FAQs after parsing",
+            )
+        return []
+
+    if cache:
+        cache_entry = {
+            "key": cache_key,
+            "api_id": api_id,
+            "filter_key": detected_filter_key,
+            "model": model or (client.config.summary_model if client else ""),
+            "max_faqs": max_faqs or len(questions),
+            "prompt_hash": prompt_hash,
+            "faqs": faqs,
+            "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        }
+        cache.set(cache_key, cache_entry)
+
     return faqs
 
 
@@ -309,6 +669,12 @@ def _generate_for_single_page(
     model: Optional[str],
     max_faqs: Optional[int],
     filter_key: Optional[str],
+    repair_model: Optional[str],
+    max_retries: int,
+    limiter: Optional[RequestLimiter],
+    cache: Optional[CacheStore],
+    failed_writer: Optional[DeadLetterWriter],
+    detected_filter_key: Optional[str],
 ) -> tuple[str, List[Dict[str, object]]]:
     if not isinstance(page, Mapping):
         logger.warning("Skipping %s because page entry is not a mapping", api_id)
@@ -321,6 +687,12 @@ def _generate_for_single_page(
         model=model,
         max_faqs=max_faqs,
         filter_key=filter_key,
+        repair_model=repair_model,
+        max_retries=max_retries,
+        limiter=limiter,
+        cache=cache,
+        failed_writer=failed_writer,
+        detected_filter_key=detected_filter_key,
     )
     return api_id, faqs
 
@@ -333,34 +705,67 @@ def generate_certificate_faqs(
     model: Optional[str] = None,
     max_faqs: Optional[int] = None,
     max_workers: int = 8,
+    max_concurrent_requests: int = 8,
+    max_in_flight: int = 300,
     filter_key: Optional[str] = None,
+    repair_model: Optional[str] = None,
+    max_retries: int = 5,
+    cache: Optional[CacheStore] = None,
+    failed_writer: Optional[DeadLetterWriter] = None,
 ) -> Dict[str, List[Dict[str, object]]]:
     faq_output: Dict[str, List[Dict[str, object]]] = {}
+    limiter = RequestLimiter(max_concurrent_requests)
+    eligible: List[Tuple[str, Mapping[str, object], str]] = []
+    for api_id, page in pages.items():
+        if not isinstance(page, Mapping):
+            logger.warning("Skipping %s because page entry is not a mapping", api_id)
+            continue
+        detected = _detect_filter_key(page, override=filter_key)
+        if not detected or detected not in CERT_FILTER_KEYS:
+            logger.info("Skipping %s due to missing certificate filter key", api_id)
+            continue
+        eligible.append((api_id, page, detected))
+
+    work_queue: deque[Tuple[str, Mapping[str, object], str]] = deque(eligible)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_api_id = {
-            executor.submit(
-                _generate_for_single_page,
-                api_id,
-                page,
-                templates=templates,
-                client=client,
-                model=model,
-                max_faqs=max_faqs,
-                filter_key=filter_key,
-            ): api_id
-            for api_id, page in pages.items()
-        }
+        in_flight: Dict[concurrent.futures.Future, str] = {}
+        while work_queue or in_flight:
+            while work_queue and len(in_flight) < max_in_flight:
+                api_id, page, detected_filter_key = work_queue.popleft()
+                future = executor.submit(
+                    _generate_for_single_page,
+                    api_id,
+                    page,
+                    templates=templates,
+                    client=client,
+                    model=model,
+                    max_faqs=max_faqs,
+                    filter_key=filter_key,
+                    repair_model=repair_model,
+                    max_retries=max_retries,
+                    limiter=limiter,
+                    cache=cache,
+                    failed_writer=failed_writer,
+                    detected_filter_key=detected_filter_key,
+                )
+                in_flight[future] = api_id
 
-        for future in concurrent.futures.as_completed(future_to_api_id):
-            api_id = future_to_api_id[future]
-            try:
-                result_api_id, faqs = future.result()
-            except Exception:
-                logger.exception("Failed to generate certificate FAQs for %s", api_id)
+            if not in_flight:
                 continue
+            done, _ = concurrent.futures.wait(
+                in_flight.keys(),
+                return_when=concurrent.futures.FIRST_COMPLETED,
+            )
+            for future in done:
+                api_id = in_flight.pop(future)
+                try:
+                    result_api_id, faqs = future.result()
+                except Exception:
+                    logger.exception("Failed to generate certificate FAQs for %s", api_id)
+                    continue
 
-            if faqs:
-                faq_output[result_api_id] = faqs
+                if faqs:
+                    faq_output[result_api_id] = faqs
     return faq_output
 
 
@@ -380,6 +785,44 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     )
     parser.add_argument("--max-faqs", type=int, help="Maximum FAQs per API")
     parser.add_argument("--model", help="Override model for LLM FAQs (defaults to summary model)")
+    parser.add_argument(
+        "--repair-model",
+        help="Model to use for one-time JSON repair (defaults to --model)",
+    )
+    parser.add_argument(
+        "--cache-path",
+        default="outputs/cert_faq_cache.jsonl",
+        help="Path to JSONL/JSON cache for generated FAQs",
+    )
+    parser.add_argument(
+        "--max-concurrent-requests",
+        type=int,
+        default=8,
+        help="Maximum concurrent OpenAI requests across threads",
+    )
+    parser.add_argument(
+        "--max-in-flight",
+        type=int,
+        default=300,
+        help="Maximum in-flight futures to avoid memory spikes",
+    )
+    parser.add_argument(
+        "--max-retries",
+        type=int,
+        default=5,
+        help="Maximum retries for transient OpenAI errors",
+    )
+    parser.add_argument(
+        "--failed-path",
+        default="outputs/cert_faq_failed.jsonl",
+        help="Path to write failed API generations as JSONL",
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=None,
+        help="Thread pool size (defaults to OPENAI_MAX_WORKERS or 8)",
+    )
     parser.add_argument(
         "--filter-key",
         choices=sorted(CERT_FILTER_KEYS),
@@ -404,18 +847,30 @@ def main(argv: Iterable[str] | None = None) -> int:
         logger.warning("OpenAI credentials missing; certificate FAQs will be skipped: %s", exc)
         client = None
 
+    cache = CacheStore(Path(args.cache_path)) if args.cache_path else None
+    failed_writer = DeadLetterWriter(Path(args.failed_path)) if args.failed_path else None
+
+    max_workers = args.max_workers or int(os.getenv("OPENAI_MAX_WORKERS", "8"))
     faqs = generate_certificate_faqs(
         pages,
         client=client,
         model=args.model,
         max_faqs=args.max_faqs,
+        max_workers=max_workers,
+        max_concurrent_requests=args.max_concurrent_requests,
+        max_in_flight=args.max_in_flight,
         filter_key=args.filter_key,
+        repair_model=args.repair_model or args.model,
+        max_retries=args.max_retries,
+        cache=cache,
+        failed_writer=failed_writer,
     )
 
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8") as handle:
-        json.dump(faqs, handle, ensure_ascii=False, indent=2)
+    tmp_path = output_path.with_suffix(output_path.suffix + ".tmp")
+    tmp_path.write_text(json.dumps(faqs, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path.replace(output_path)
     logger.info("Wrote certificate FAQs for %d APIs to %s", len(faqs), output_path)
     return 0
 
